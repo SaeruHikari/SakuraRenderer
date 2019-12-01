@@ -1,0 +1,12 @@
+#pragma once
+#include <windows.h>
+#include <dxgiformat.h>
+#include <d3d12.h>
+#include "Common\Microsoft\d3dx12.h"
+#include "Utils/d3dUtil.h"
+#include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
+#include "UploadBuffer.h"
+#include "Common/HikaUtils/HikaCommonUtils/GeometryGenerator.h"
+#include "FrameResource.h"
+#include "Utils/MeshImporter.h"
+#include "Dx12Samplers.h"

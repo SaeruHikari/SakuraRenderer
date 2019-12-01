@@ -1,0 +1,37 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+<Qt_DEFINES_>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB</Qt_DEFINES_>
+<Qt_INCLUDEPATH_>D:/OpenLib/Qt/Qt5.12.5/5.12.5/msvc2017/include;D:/OpenLib/Qt/Qt5.12.5/5.12.5/msvc2017/include/QtWidgets;D:/OpenLib/Qt/Qt5.12.5/5.12.5/msvc2017/include/QtGui;D:/OpenLib/Qt/Qt5.12.5/5.12.5/msvc2017/include/QtANGLE;D:/OpenLib/Qt/Qt5.12.5/5.12.5/msvc2017/include/QtCore</Qt_INCLUDEPATH_>
+<Qt_LIBS_>$(Qt_LIBS_);D:\OpenLib\Qt\Qt5.12.5\5.12.5\msvc2017\lib\Qt5Widgets.lib</Qt_LIBS_> 
+<Qt_LIBS_>$(Qt_LIBS_);D:\OpenLib\Qt\Qt5.12.5\5.12.5\msvc2017\lib\Qt5Gui.lib</Qt_LIBS_> 
+<Qt_LIBS_>$(Qt_LIBS_);D:\OpenLib\Qt\Qt5.12.5\5.12.5\msvc2017\lib\Qt5Core.lib</Qt_LIBS_> 
+<Qt_LIBS_>$(Qt_LIBS_);D:\OpenLib\Qt\Qt5.12.5\5.12.5\msvc2017\lib\qtmain.lib</Qt_LIBS_> 
+<Qt_LIBPATH_>$(Qt_LIBPATH_);C:\opensslx86\lib</Qt_LIBPATH_> 
+<Qt_LIBPATH_>$(Qt_LIBPATH_);C:\Utils\my_sql\mysql-5.6.11-win32\lib</Qt_LIBPATH_> 
+<Qt_LIBPATH_>$(Qt_LIBPATH_);C:\Utils\postgresqlx86\pgsql\lib</Qt_LIBPATH_> 
+<Qt_LIBS_>$(Qt_LIBS_);shell32.lib</Qt_LIBS_> 
+<Qt_INCLUDEPATH_
+      >$(Qt_INCLUDEPATH_);Release\moc\Source\UI;Release\moc\Source\UI\Viewport;Release\moc\Source\Applications;Release\uic\Source\UI;Release\uic\Source\UI\Viewport</Qt_INCLUDEPATH_>
+    <QtBkup_QtInstall
+      >msvc2017</QtBkup_QtInstall>
+    <QtBkup_QtModules
+      >core;gui;widgets</QtBkup_QtModules>
+    <QtBkup_QtPathBinaries
+      >bin</QtBkup_QtPathBinaries>
+    <QtBkup_QtPathLibraryExecutables
+      >bin</QtBkup_QtPathLibraryExecutables>
+    <QtBkup_QtHeaderSearchPath
+      ></QtBkup_QtHeaderSearchPath>
+    <QtBkup_QtLibrarySearchPath
+      ></QtBkup_QtLibrarySearchPath>
+    <QtBkup_QtVariables
+      >DEFINES;INCLUDEPATH;LIBS</QtBkup_QtVariables>
+    <QtBkup_QMakeCodeLines
+      ></QtBkup_QMakeCodeLines>
+  </PropertyGroup>
+  <ItemGroup>
+    <QtVar Include="Qt_DEFINES_"><Value>$(Qt_DEFINES_)</Value></QtVar>
+<QtVar Include="Qt_INCLUDEPATH_"><Value>$(Qt_INCLUDEPATH_)</Value></QtVar>
+<QtVar Include="Qt_LIBS_"><Value>$(Qt_LIBS_)</Value></QtVar>
+  </ItemGroup>
+</Project>

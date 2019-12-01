@@ -1,0 +1,36 @@
+﻿  GameTimer.cpp
+  GeometryGenerator.cpp
+D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\GameTimer.cpp(124,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  MathHelper.cpp
+D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.cpp(830,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SD3DCamera.cpp
+D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp(84,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  d3dUtil.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp(275,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  DDSTextureLoader.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(192,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  FrameResource.cpp
+D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.cpp(2368,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  Dx12Samplers.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.cpp(3,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  MeshImporter.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp(60,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  UploadVertices.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(331,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  dllmain.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp(2,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraEntity.cpp
+D:\Coding\Sakura\SakuraCore\Source\dllmain.cpp(20,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SDxRendererGM.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Core\Entities\SakuraEntity.cpp(17,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraD3D12GraphicsManager.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1535,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraGraphicsManagerBase.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.cpp(346,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraScene.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.cpp(9,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SCore.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Core\Scene\SakuraScene.cpp(39,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraCore.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Core\SCore.cpp(76,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\SakuraCore.cpp(34,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{458F0EDF-40B3-4825-8514-4A58C6B7485E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>SakuraCore</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)Includes;$(SolutionDir);$(ProjectDir)Source;$(IncludePath)</IncludePath>
+    <SourcePath>$(SolutionDir);$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir);$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /r /y $(OutDir)$(ProjectName).lib $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+xcopy /r /y $(OutDir)$(ProjectName).dll $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+xcopy /r /y $(OutDir)$(ProjectName).dll $(SolutionDir)Win32\Debug
+xcopy /r /y $(OutDir)$(ProjectName).lib $(SolutionDir)Libs
+xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(SolutionDir)Libs
+xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(SolutionDir)Includes
+xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\GameTimer.h" />
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.h" />
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\HikaCommonUtil.h" />
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.h" />
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\TextureLoader.hpp" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.h" />
+    <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\DX12Definations.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\FrameResource.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadBuffer.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.h" />
+    <ClInclude Include="Source\Common\Microsoft\d3dx12.h" />
+    <ClInclude Include="Source\Common\Thirdparty\stb_image.h" />
+    <ClInclude Include="Source\Framework\Core\Entities\SakuraEntity.h" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\GBufferPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\HDR2CubeMapPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\SkySpherePass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\SsaoPass.hpp" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\D3DCommon.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Pass.hpp" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SRenderTarget.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.h" />
+    <ClInclude Include="Source\Framework\Core\Interface\Interface.hpp" />
+    <ClInclude Include="Source\Framework\Core\Interface\IRuntimeModule.h" />
+    <ClInclude Include="Source\Framework\Core\Interface\ISObject.h" />
+    <ClInclude Include="Source\Framework\Core\Scene\Properties\SakuraNodeProperties.h" />
+    <ClInclude Include="Source\Framework\Core\Scene\SakuraScene.h" />
+    <ClInclude Include="Source\Framework\Core\Scene\SakuraSceneNode.hpp" />
+    <ClInclude Include="Source\Framework\Core\SCore.h" />
+    <ClInclude Include="Source\SakuraCoreUtils.h" />
+    <ClInclude Include="Source\SakuraCore.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\GameTimer.cpp" />
+    <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.cpp" />
+    <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp" />
+    <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\FrameResource.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp" />
+    <ClCompile Include="Source\dllmain.cpp" />
+    <ClCompile Include="Source\Framework\Core\Entities\SakuraEntity.cpp" />
+    <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp" />
+    <ClCompile Include="Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.cpp" />
+    <ClCompile Include="Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.cpp" />
+    <ClCompile Include="Source\Framework\Core\Scene\SakuraScene.cpp" />
+    <ClCompile Include="Source\Framework\Core\SCore.cpp" />
+    <ClCompile Include="Source\SakuraCore.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
