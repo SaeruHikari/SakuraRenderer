@@ -39,7 +39,7 @@ float4 AmbientBRDF_MultiScattering(float3 ConvColor, float3 PrefilteredColor, fl
     BRDFLUT = PreintegratedDGF_LUT(BRDFLUT.xyz, F0);
     float3 diffuse = ConvColor * Cdlin;
     float3 spec = PrefilteredColor * BRDFLUT.xyz;
-    
+    spec = 0;
     return float4(KD * diffuse * BRDFLUT.a + spec, BRDFLUT.a);
 }
 

@@ -4,6 +4,6 @@
     "\\PBR",
     "\\PBR\\Pipeline"
   ],
-  "SelectedNode": "\\PBR\\Pipeline\\DisneyPBRShader.hlsl",
+  "SelectedNode": "\\PBR\\Pipeline\\BRDF.hlsl",
   "PreviewInSolutionExplorer": false
 }

@@ -51,7 +51,7 @@ namespace SGraphics
 
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources)
 		{
-			mSrvDescriptorHeaps.resize(1);
+			//mSrvDescriptorHeaps.resize(1);
 			mSrvResources = srvResources;
 			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			BuildDescriptorHeaps();

@@ -17,6 +17,10 @@
 #include "Pipeline/IBL/HDR2CubeMapPass.hpp"
 #include "Pipeline/IBL/CubeMapConvolutionPass.hpp"
 
+#define TINYEXR_IMPLEMENTATION
+#include "Includes/tinyexr.h"
+#include "Pipeline/IBL/BRDFLutPass.hpp"
+
 namespace SGraphics
 {
 	bool SDxRendererGM::Initialize()
@@ -130,6 +134,32 @@ namespace SGraphics
 #endif
 
 #if defined(Sakura_IBL)
+		// Draw brdf Lut
+		mCaptureRT2D = std::make_shared<SRenderTarget2D>(1024, 1024, false);
+		std::shared_ptr<SBrdfLutPass> brdfPass = std::make_shared<SBrdfLutPass>(md3dDevice.Get());
+		brdfPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
+		std::vector<ID3D12Resource*> nul;
+		brdfPass->Initialize(nul);
+		//Update the viewport transform to cover the client area
+		D3D12_VIEWPORT screenViewport;
+		D3D12_RECT scissorRect;
+		screenViewport.TopLeftX = 0;
+		screenViewport.TopLeftY = 0;
+		screenViewport.Width = static_cast<float>(2048);
+		screenViewport.Height = static_cast<float>(2048);
+		screenViewport.MinDepth = 0.0f;
+		screenViewport.MaxDepth = 1.0f;
+		scissorRect = { 0, 0, 2048, 2048 };
+		mCommandList->RSSetViewports(1, &screenViewport);
+		mCommandList->RSSetScissorRects(1, &scissorRect);
+		mCaptureRT2D->BuildRTResource(md3dDevice.Get(),
+			mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+			mCaptureDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			mCaptureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		brdfPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource,
+			&mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(), 1);
+
+
 		mDrawSkyPass = std::make_shared<SkySpherePass>(md3dDevice.Get());
 		mDrawSkyPass->PushRenderItems(mRenderLayers[SRenderLayers::E_SKY]);
 #endif
@@ -143,7 +173,6 @@ namespace SGraphics
 		mHDRResource.push_back(mHDRTexture->Resource.Get());
 		mHDRUnpackPass->Initialize(mHDRResource);
 #endif
-		
 		// Execute the initialization commands.
 		ThrowIfFailed(mCommandList->Close());
 		ID3D12CommandList* cmdsList[] = { mCommandList.Get() };
@@ -473,7 +502,6 @@ namespace SGraphics
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-
 		// Done recording commands.
 		ThrowIfFailed(mCommandList->Close());
 		
@@ -570,6 +598,100 @@ namespace SGraphics
 		
 	}
 
+	float* SDxRendererGM::CaputureBuffer(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
+		ID3D12Resource* resourceToRead, size_t outChannels /*= 4*/)
+	{
+		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
+
+		// Reuse the memory associated with command recording.
+		// We can only reset when the associated command lists have finished execution on the GPU.
+		ThrowIfFailed(cmdListAlloc->Reset());
+
+		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+		// Reusing the command list reuses memory.
+		ThrowIfFailed(cmdList->Reset(cmdListAlloc.Get(), mPSOs["ForwardShading"].Get()));
+
+		// The output buffer (created below) is on a default heap, so only the GPU can access it.
+		float outputBufferSize = outChannels * sizeof(float) * resourceToRead->GetDesc().Height * resourceToRead->GetDesc().Width;
+
+		// The readback buffer (created below) is on a readback heap, so that the CPU can access it.
+		D3D12_HEAP_PROPERTIES readbackHeapProperties{ CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK) };
+		D3D12_RESOURCE_DESC readbackBufferDesc{ CD3DX12_RESOURCE_DESC::Buffer(outputBufferSize) };
+		ComPtr<::ID3D12Resource> readbackBuffer;
+		ThrowIfFailed(device->CreateCommittedResource(
+			&readbackHeapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&readbackBufferDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr, IID_PPV_ARGS(&readbackBuffer)));
+
+		{
+			D3D12_RESOURCE_BARRIER outputBufferResourceBarrier
+			{
+				CD3DX12_RESOURCE_BARRIER::Transition(
+					resourceToRead,
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					D3D12_RESOURCE_STATE_COPY_SOURCE)
+			};
+			cmdList->ResourceBarrier(1, &outputBufferResourceBarrier);
+		}
+
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT  fp;
+		UINT nrow;
+		UINT64 rowsize, size;
+		device->GetCopyableFootprints(&resourceToRead->GetDesc(), 0, 1, 0, &fp, &nrow, &rowsize, &size);
+
+		D3D12_TEXTURE_COPY_LOCATION td;
+		td.pResource = readbackBuffer.Get();
+		td.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		td.PlacedFootprint = fp;
+		
+		D3D12_TEXTURE_COPY_LOCATION ts;
+		ts.pResource = resourceToRead;
+		ts.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		ts.SubresourceIndex = 0;
+		cmdList->CopyTextureRegion(&td, 0, 0, 0, &ts, nullptr);
+
+		{
+			D3D12_RESOURCE_BARRIER outputBufferResourceBarrier
+			{
+				CD3DX12_RESOURCE_BARRIER::Transition(
+					resourceToRead,
+					D3D12_RESOURCE_STATE_COPY_SOURCE,
+					D3D12_RESOURCE_STATE_GENERIC_READ)
+			};
+			cmdList->ResourceBarrier(1, &outputBufferResourceBarrier);
+		}
+
+		// Code goes here to close, execute (and optionally reset) the command list, and also
+		// to use a fence to wait for the command queue.
+		cmdList->Close();
+		// Add the command list to the queue for execution.
+		ID3D12CommandList* cmdsLists[] = { cmdList };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		FlushCommandQueue();
+		// The code below assumes that the GPU wrote FLOATs to the buffer.
+		D3D12_RANGE readbackBufferRange{ 0, outputBufferSize };
+		FLOAT* pReadbackBufferData{};
+		ThrowIfFailed(
+			readbackBuffer->Map
+			(
+				0,
+				&readbackBufferRange,
+				reinterpret_cast<void**>(&pReadbackBufferData)
+			)
+		);
+		const char** err = nullptr;
+		SaveEXR(pReadbackBufferData, resourceToRead->GetDesc().Width, resourceToRead->GetDesc().Height,
+			3, 0, "Capture.exr", err);
+		D3D12_RANGE emptyRange{ 0, 0 };
+		readbackBuffer->Unmap
+		(
+			0,
+			&emptyRange
+		);
+		return pReadbackBufferData;
+	}
 
 	void SDxRendererGM::OnKeyDown(double deltaTime)
 	{
@@ -589,6 +711,11 @@ namespace SGraphics
 
 		if (GetAsyncKeyState('F') & 0x8000)
 			mCamera.SetPosition(0.0f, 0.0f, 0.0f);
+
+		if (GetAsyncKeyState('P') & 0x8000)
+		{
+			float* hdrbuffer = CaputureBuffer(md3dDevice.Get(), mCommandList.Get(), mHDRTexture->Resource.Get(), 3);
+		}
 
 		mCamera.UpdateViewMatrix();
 	}
@@ -867,6 +994,9 @@ namespace SGraphics
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mGBufferSrvDescriptorHeap)));
+		
+		srvHeapDesc.NumDescriptors = 1;
+		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mCaptureDescriptorHeap)));
 
 
 		srvHeapDesc.NumDescriptors = GBufferRTNum + GBufferSrvStartAt + LUTNum;
@@ -1553,6 +1683,10 @@ namespace SGraphics
 		rtvHeapDesc.NodeMask = 0;
 		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
 			&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
+
+		rtvHeapDesc.NumDescriptors = 1;
+		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+			&rtvHeapDesc, IID_PPV_ARGS(mCaptureRtvHeap.GetAddressOf())));
 
 		//Create depth/stencil view descriptor 
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;

@@ -189,6 +189,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Common\Thirdparty\stb_image.h" />
     <ClInclude Include="Source\Framework\Core\Entities\SakuraEntity.h" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\GBufferPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\BRDFLutPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\HDR2CubeMapPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\SkySpherePass.hpp" />

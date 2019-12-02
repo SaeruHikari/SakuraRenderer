@@ -122,7 +122,7 @@ std::shared_ptr<SD3DTexture> d3dUtil::LoadHDRTexture(ID3D12Device* device,
 {
 	int height, width, nrComp;
 	float* data = stbi_loadf(HikaCommonUtils::WstringToString(_path).c_str(), &width, &height, &nrComp, 0);
-
+	
 	D3D12_RESOURCE_DESC hdrDesc;
 	ZeroMemory(&hdrDesc, sizeof(D3D12_RESOURCE_DESC));
 	hdrDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -178,7 +178,6 @@ std::shared_ptr<SD3DTexture> d3dUtil::LoadHDRTexture(ID3D12Device* device,
 
 	return texMap;
 }
-
 
 std::wstring DxException::ToString() const
 {

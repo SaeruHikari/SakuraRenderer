@@ -126,6 +126,9 @@
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\BRDFLutPass.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">

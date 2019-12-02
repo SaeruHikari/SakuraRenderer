@@ -98,6 +98,12 @@ namespace SGraphics
 		virtual void OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) override;
 		virtual void OnKeyDown(double deltaTime) override;
 
+		float* CaputureBuffer(
+			ID3D12Device* device,
+			ID3D12GraphicsCommandList* cmdList,
+			ID3D12Resource* resourceToRead,
+			size_t outChannels = 4);
+
 	protected:
 		virtual void OnResize(UINT Width, UINT Height) override;
 
@@ -177,6 +183,10 @@ namespace SGraphics
 		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + SkyCubeConvNum + LUTNum;
 		std::shared_ptr<SRenderTarget2D>* GBufferRTs;
 
+		std::shared_ptr<SRenderTarget2D> mCaptureRT2D;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCaptureRtvHeap = nullptr;
+		ComPtr<ID3D12DescriptorHeap> mCaptureDescriptorHeap = nullptr;
+
 		POINT mLastMousePos;
 
 	protected:
@@ -191,7 +201,6 @@ namespace SGraphics
 
 		ComPtr<ID3D12DescriptorHeap> mGBufferSrvDescriptorHeap = nullptr;
 		ComPtr<ID3D12DescriptorHeap> mDeferredSrvDescriptorHeap = nullptr;
-
 
 		std::vector<ID3D12Resource*> mGBufferSrvResources;
 		// GBuffer N D output

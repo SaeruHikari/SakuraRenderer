@@ -54,7 +54,7 @@ float4 PS(VertexOut pin) : SV_Target
 
     
     float3 Disney = 0;
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 0; i++)
     {
         L = -gLights[i].Direction;
         Disney += PI * gLights[i].Strength  
@@ -80,7 +80,6 @@ float4 PS(VertexOut pin) : SV_Target
     prefilteredColor, brdfLut,
     V, N, mat).xyz;
 #endif
-    
     //return ambientC.xyzz;
     float3 FinalColor = Disney.xyz + ambientC.xyz;
     FinalColor = ACESToneMapping(FinalColor, 1.f);
