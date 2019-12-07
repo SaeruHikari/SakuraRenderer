@@ -20,7 +20,7 @@ namespace SGraphics
 		float mWidthPercentage = 1;
 		float mHeightPercentage = 1;
 	
-		FLOAT mClearColor[4] = { 1,0,0,0 };
+		FLOAT mClearColor[4] = { 0,0,0,0 };
 	};
 
 	class SRenderTarget2D 

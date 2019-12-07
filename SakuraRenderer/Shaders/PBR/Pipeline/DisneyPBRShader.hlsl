@@ -1,15 +1,14 @@
 // Saeru Hikari
 
 //#define SAKURA_ENABLE_ANISO
-
 // Forward shading registers
 #include "GBufferRegisters.hlsl"
 //Include structures and functions for lighting
 #include "DisneyBRDF.hlsl"
 #include "PassCommon.hlsl"
+#include "MaterialCB.hlsl"
 #include "VertexCommon.hlsl"
 #include "Samplers.hlsl"
-#include "ShadingUtils.hlsl"
 
 
 float4 PS(VertexOut pin) : SV_Target

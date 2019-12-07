@@ -1,5 +1,6 @@
 #ifndef _GBUFFER_REGISTERS_
 #define _GBUFFER_REGISTERS_
+#include "CommonCBs.hlsl"
 //Texture2D gBaseColorMap : register(t0);
 //Texture2D gRMOMap : register(t1);
 //Texture2D gSpecularMap  : register(t2);

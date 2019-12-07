@@ -1,51 +1,11 @@
 #include "VertexCommon.hlsl"
 #include "Utils.hlsl"
 #include "Samplers.hlsl"
-
-struct Light
-{
-	float3 Strength;
-	float FalloffStart; // point/spot light only
-	float3 Direction;   // directional/spot light only
-	float FalloffEnd;   // point/spot light only
-	float3 Position;    // point light only
-	float SpotPower;    // spot light only
-};
+#include "CommonCBs.hlsl"
 
 TextureCube gCubeMap[5] : register(t0);
 
 // Constant data that varies per frame.
-cbuffer cbPerObject : register(b0)
-{
-    float4x4 gWorld;
-    float4x4 gTexTransform;
-};
-
-// Constant data that varies per material.
-cbuffer cbPass : register(b1)
-{
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3   gEyePosW;
-    int      gAddOnMsg;
-    float2   gRenderTargetSize;
-    float2   gInvRenderTargetSize;
-    float    gNearZ;
-    float    gFarZ;
-    float    gTotalTime;
-    float    gDeltaTime;
-    float4   gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
-    Light    gLights[16];
-};
 
 VertexOut VS(VertexIn vin)
 {
@@ -122,7 +82,10 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return gCubeMap[2].Sample(gsamLinearWrap, pin.PosL);
+    float3 FinalColor = gCubeMap[0].Sample(gsamLinearWrap, pin.PosL).xyz;
+    FinalColor = ACESToneMapping(FinalColor, 1.f);
+    FinalColor = pow(FinalColor, 1 / 2.2);
+    return float4(FinalColor, 1.f);
 }
 
 float4 PS_Conv(VertexOut pin): SV_Target
@@ -162,7 +125,7 @@ float4 PS_Conv(VertexOut pin): SV_Target
         float3 R = N;
         float3 V = R;
     
-        uint sampleC = 1024;
+        uint sampleC = 2048;
         float3 prefilteredC = float3(0.f, 0.f, 0.f);
         float totalWeight = 0;
     
@@ -183,7 +146,7 @@ float4 PS_Conv(VertexOut pin): SV_Target
                 float HdotV = max(dot(H, V), 0.0);
                 float pdf = D * NdotH / (4.0 * HdotV) + 0.0001;
 
-                float resolution = 2048.0; // resolution of source cubemap (per face)
+                float resolution = 2048.0 ; // resolution of source cubemap (per face)
                 float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
                 float saSample = 1.0 / (float(sampleC) * pdf + 0.0001);
                 

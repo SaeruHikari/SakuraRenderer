@@ -4,6 +4,6 @@
     "\\PBR",
     "\\PBR\\Pipeline"
   ],
-  "SelectedNode": "\\PBR\\Pipeline\\SkyPass.hlsl",
+  "SelectedNode": "\\PBR\\Pipeline\\DeferredRegisters.hlsl",
   "PreviewInSolutionExplorer": false
 }

@@ -193,6 +193,8 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\HDR2CubeMapPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\SkySpherePass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\MotionVectorPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\ScreenSpaceEfx\TAAPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\SsaoPass.hpp" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\D3DCommon.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Pass.hpp" />
@@ -215,12 +217,12 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.cpp" />
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp" />
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\FrameResource.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp" />
-    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp" />
     <ClCompile Include="Source\dllmain.cpp" />
     <ClCompile Include="Source\Framework\Core\Entities\SakuraEntity.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp" />

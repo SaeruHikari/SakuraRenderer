@@ -10,7 +10,7 @@
 //Include structures and functions for lighting
 #include "DisneyBRDF.hlsl"
 #include "Samplers.hlsl"
-#include "ShadingUtils.hlsl"
+#include "Utils.hlsl"
 
 VertexOut VS(VertexIn vin) 
 {

@@ -4,6 +4,6 @@
     "\\PBR",
     "\\PBR\\Pipeline"
   ],
-  "SelectedNode": "\\PBR\\Pipeline\\BRDF.hlsl",
+  "SelectedNode": "\\PBR\\Pipeline\\HDR2CubeMapPass.hlsl",
   "PreviewInSolutionExplorer": false
 }

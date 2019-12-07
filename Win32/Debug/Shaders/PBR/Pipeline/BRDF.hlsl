@@ -3,7 +3,7 @@
 
 // a = pow2((roughness + 1) / 2) 
 // Unreal 4 take it as a = roughness * roughness.
-
+#include "Utils.hlsl"
 #define PI 3.14159265358979323846
 
 float sqr(float x) { return x * x;}
@@ -20,6 +20,8 @@ float Pow5(float src)
 // [Burley 2012, "Physically-Based Shading at Disney"]
 float3 Diffuse_Burley_Disney( float3 DiffuseColor, float Roughness, float NoV, float NoL, float VoH )
 {
+    Roughness = Roughness * Roughness;
+    Roughness = Roughness * Roughness;
 	float FD90 = 0.5 + 2 * VoH * VoH * Roughness;
 	float FdV = 1 + (FD90 - 1) * Pow5( 1 - NoV );
 	float FdL = 1 + (FD90 - 1) * Pow5( 1 - NoL );
@@ -69,11 +71,10 @@ float D_GTR1(float alpha, float NoH)
     return (a2 - 1.0) / (PI * log(a2) * t);
 }
 
-float D_GTR2(float alpha, float NoH)
+// GGX: GTR with γ = 2
+float D_GTR2(float a2, float NoH)
 {
-    float a2 = alpha * alpha;
     float t = 1.0 + (a2 - 1.0) * NoH * NoH;
-
     return a2 / (PI * t * t);
 }
 
@@ -111,6 +112,10 @@ float3 F_SchlikWithNoise(float VoH, float3 SpecularColor)
     return (1 - SpecularColor) * Fc + SpecularColor;
 }
 
+float3 F_Schlik(float3 F0, float F90, float u)
+{
+    return F0 + (F90 - F0) * Pow5(1.f - u);
+}
 
 //
 //
@@ -132,6 +137,10 @@ float3 F_SchlikRoughnessWithNoise(float VoH, float3 SpecularColor, float Roughne
 // Smith-GGX: [Smith 1967, "Geometrical shadowing of a random rough surface"]
 float G_Smith_GGX( float a2, float NoV, float NoL )
 {
+    float G_SmV = NoV * sqrt((-NoV * a2 + NoV) * NoV + a2);
+    float G_SmL = NoL * sqrt((-NoL * a2 + NoL) * NoL + a2);
+    return (0.5 / (G_SmV + G_SmL));
+    
 	float G_SmithV = NoV + sqrt( NoV * (NoV - NoV * a2) + a2 );
 	float G_SmithL = NoL + sqrt( NoL * (NoL - NoL * a2) + a2 );
 	return rcp( G_SmithV * G_SmithL );

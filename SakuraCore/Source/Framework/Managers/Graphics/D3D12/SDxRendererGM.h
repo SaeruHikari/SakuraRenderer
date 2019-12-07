@@ -22,6 +22,9 @@ namespace SGraphics
 	class SkySpherePass;
 	class SHDR2CubeMapPass;
 	class SCubeMapConvPass;
+	class SBrdfLutPass;
+	class STaaPass;
+	class SMotionVectorPass;
 
 	class SRenderTarget2D;
 
@@ -86,6 +89,19 @@ namespace SGraphics
 			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
 			return srvGPU;
 		}
+		inline auto GetScreenEfxSrvCPU(int offset)
+		{
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mScreenEfxSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			srvCPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			return srvCPU;
+		}
+		inline auto GetScreenEfxSrvGPU(int offset)
+		{
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(mScreenEfxSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			return srvGPU;
+		}
+		
 	public:
 		virtual bool Initialize() override;
 		virtual void Draw() override;
@@ -172,18 +188,6 @@ namespace SGraphics
 		SD3DCamera mCamera;
 		SD3DCamera mCubeMapCamera[6];
 
-		int GBufferResourceSrv = 0;
-		int GBufferMaterials = 0;
-		inline static const int GBufferRTNum = 4;
-		inline static const int LUTNum = 1;
-		inline static const int SkyCubeMips = 8;
-		inline static const int SkyCubePrefilters = 5;
-		inline static const int SkyCubeConvNum = 1;
-		inline static const int SkyCubeConvFilterNum = SkyCubePrefilters + SkyCubeConvNum;
-		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + SkyCubeConvNum + LUTNum;
-		std::shared_ptr<SRenderTarget2D>* GBufferRTs;
-
-		std::shared_ptr<SRenderTarget2D> mCaptureRT2D;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCaptureRtvHeap = nullptr;
 		ComPtr<ID3D12DescriptorHeap> mCaptureDescriptorHeap = nullptr;
 
@@ -193,27 +197,62 @@ namespace SGraphics
 		void BuildCubeFaceCamera(float x, float y, float z);
 
 	protected:
-		std::shared_ptr<SHDR2CubeMapPass> mHDRUnpackPass = nullptr;
+		// Rtvs
+		int GBufferResourceSrv = 0;
+		int GBufferMaterials = 0;
+		inline static const int GBufferRTNum = 4;// 1 : SSAO
+		inline static const int LUTNum = 1;
+		inline static const int SkyCubeMips = 8;
+		inline static const int SkyCubePrefilters = 5;
+		inline static const int SkyCubeConvNum = 1;
+		inline static const int SkyCubeConvFilterNum = SkyCubePrefilters + SkyCubeConvNum;
+		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + SkyCubeConvNum + LUTNum;
+
+		// Screen Efx phase Rtvs
+		#define MotionVectorRtvStart 0
+		inline static const int MotionVectorRtvNum = 1;
+		#define TAARtvsStart  MotionVectorRtvNum + MotionVectorRtvStart
+		inline static const int TAARtvsNum = 3;
+		#define ScreenEfxRtvsCount TAARtvsStart + TAARtvsNum
+
+	protected:
+		std::shared_ptr<SRenderTarget2D> mMotionVectorRT;
+		std::shared_ptr<SRenderTarget2D>* GBufferRTs;
+		std::shared_ptr<SRenderTarget2D> mBrdfLutRT2D;
+		std::shared_ptr<SRenderTarget2D>* mTaaRTs;
+
 		std::shared_ptr<SGBufferPass> mGbufferPass = nullptr;
 		std::shared_ptr<SsaoPass> mSsaoPass = nullptr;
 		std::shared_ptr<SkySpherePass> mDrawSkyPass = nullptr;
-		std::shared_ptr<SCubeMapConvPass> mCubeMapConvPass = nullptr;
+		std::shared_ptr<STaaPass> mTaaPass = nullptr;
+		std::shared_ptr<SMotionVectorPass> mMotionVectorPass = nullptr;
 
+		// GBuffer phase.
 		ComPtr<ID3D12DescriptorHeap> mGBufferSrvDescriptorHeap = nullptr;
+		// Deferred phase.
 		ComPtr<ID3D12DescriptorHeap> mDeferredSrvDescriptorHeap = nullptr;
+		// Screen Space Efx phase.
+		ComPtr<ID3D12DescriptorHeap> mScreenEfxSrvDescriptorHeap = nullptr;
+		ComPtr<ID3D12DescriptorHeap> mScreenEfxRtvDescriptorHeap = nullptr;
 
 		std::vector<ID3D12Resource*> mGBufferSrvResources;
-		// GBuffer N D output
 		std::vector<ID3D12Resource*> mSsaoSrvResources;
+		std::vector<ID3D12Resource*> mTaaResources;
 
 		// HDRI & IBL
 		std::shared_ptr<SD3DTexture> mHDRTexture;
 		std::shared_ptr<SD3DTexture> mBRDF_LUT;
+
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 		// SRenderTargetCubeMultiLevels<5>
 		std::shared_ptr<SRenderTargetCube> mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
 		std::shared_ptr<SRenderTargetCube> mSkyCubeRT[SkyCubeMips];
+
+		//TAA
+		inline static const int TAA_SAMPLE_COUNT = 8;
+		inline static const float TAA_JITTER_DISTANCE = 1.f;
+
 	};
 
 }

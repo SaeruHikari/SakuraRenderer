@@ -32,6 +32,23 @@ namespace SGraphics
 			return __dx12Pass::Initialize(srvResources);
 		}
 
+		virtual bool Initialize(std::vector<ComPtr<ID3D12DescriptorHeap>> descriptorHeaps)
+		{
+			if (PS == nullptr)
+				PS = d3dUtil::CompileShader(L"Shaders\\PBR\\Pipeline\\Ssao.hlsl", nullptr, "PS", "ps_5_1");
+			if (VS == nullptr)
+				VS = d3dUtil::CompileShader(L"Shaders\\PBR\\Pipeline\\Ssao.hlsl", nullptr, "VS", "vs_5_1");
+			mInputLayout =
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			};
+			// Startup SSAO .
+			BuildKernalOffsets();
+
+			return __dx12Pass::Initialize(descriptorHeaps);
+		}
+
 		virtual bool StartUp(ID3D12GraphicsCommandList* cmdList) override
 		{
 			BuildRandomVectorTexture(cmdList);
@@ -39,12 +56,12 @@ namespace SGraphics
 		}
 
 		// bind resource to srv heap ?
-		void BuildDescriptorHeaps()
+		void BuildDescriptorHeaps(std::vector<ID3D12Resource*> mSrvResources)
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 			srvHeapDesc.NumDescriptors = 3;
 			srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; 
 			ThrowIfFailed(mDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeaps[0])));
 
 			// Fill out the heap with actual descriptors:

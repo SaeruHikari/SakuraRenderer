@@ -29,7 +29,7 @@ namespace SGraphics
 		}
 
 		// bind resource to srv heap
-		void BuildDescriptorHeaps()
+		void BuildDescriptorHeaps(std::vector<ID3D12Resource*> mSrvResources)
 		{
 			mSrvDescriptorHeaps.resize(1);
 			//

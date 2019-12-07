@@ -1,4 +1,4 @@
-#include "ScreenQuadVertex.hlsl"
+#include "PassCommon.hlsl"
 
 Texture2D gNormalMap    : register(t0);
 Texture2D gDepthMap     : register(t1);
@@ -9,6 +9,19 @@ SamplerState gsamLinearClamp : register(s1);
 SamplerState gsamDepthMap : register(s2);
 SamplerState gsamLinearWrap : register(s3);
 
+struct VertexIn
+{
+    float3 PosL : POSITION;
+    float2 TexC : TEXCOORD;
+};
+
+struct VertexOut
+{
+    float4 PosH : SV_Position;
+    float2 TexC : TEXCOORD;
+    float3 PosV : POSITION;
+};
+
 cbuffer cbSsao : register(b0)
 {
 	float4x4 gView;
@@ -16,12 +29,9 @@ cbuffer cbSsao : register(b0)
     float4x4 gInvProj;
     float4x4 gProjTex;
 	float4   gOffsetVectors[14];
-
-    // For SsaoBlur.hlsl
-    float4 gBlurWeights[3];
-
-    float2 gInvRenderTargetSize;
-
+    float2   gInvRenderTargetSize;
+    uint     gAddOnMsg;
+    uint     pad;
     // Coordinates given in view space.
     float    gOcclusionRadius;
     float    gOcclusionFadeStart;
@@ -80,7 +90,7 @@ VertexOut VS(VertexIn vin)
 
     vout.TexC = vin.TexC;
 	// Quad covering screen in NDC space.
-    vout.PosH = float4(2.0f*vout.TexC.x - 1.0f, 1.0f - 2.0f*vout.TexC.y, 0.0f, 1.0f);
+    vout.PosH = float4(2.0f * vout.TexC.x - 1.0f, 1.0f - 2.0f * vout.TexC.y, 0.0f, 1.0f);
 
     // Transform quad corners to view space near plane.
     float4 ph = mul(vout.PosH, gInvProj);
@@ -169,9 +179,5 @@ float4 PS(VertexOut pin) : SV_Target
 	occlusionSum /= gSampleCount;
 	
 	float access = pow(1.0f - occlusionSum, 6.f);
-	
-	float4 res = float4(N.xyz, saturate(access));
-	// Sharpen the contrast of the SSAO map to make the SSAO affect more dramatic.
-	return res;
-	return saturate(access);
+    return float4(N.xyz, saturate(access));
 }

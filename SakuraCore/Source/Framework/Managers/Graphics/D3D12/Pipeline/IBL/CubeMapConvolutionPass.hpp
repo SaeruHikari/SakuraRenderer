@@ -29,7 +29,7 @@ namespace SGraphics
 		}
 
 		// bind resource to srv heap
-		void BuildDescriptorHeaps()
+		void BuildDescriptorHeaps(std::vector<ID3D12Resource*> mSrvResources)
 		{
 			mSrvDescriptorHeaps.resize(1);
 			//
@@ -152,7 +152,6 @@ namespace SGraphics
 
 		void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SRenderItem* ri)
 		{
-			// ... NO
 			D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
 			cmdList->SetGraphicsRootConstantBufferView(0, objCBAddress);
 		}

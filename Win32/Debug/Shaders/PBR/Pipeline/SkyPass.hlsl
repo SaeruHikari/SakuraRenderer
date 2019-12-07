@@ -1,51 +1,11 @@
 #include "VertexCommon.hlsl"
 #include "Utils.hlsl"
 #include "Samplers.hlsl"
+#include "CommonCBs.hlsl"
 
-struct Light
-{
-	float3 Strength;
-	float FalloffStart; // point/spot light only
-	float3 Direction;   // directional/spot light only
-	float FalloffEnd;   // point/spot light only
-	float3 Position;    // point light only
-	float SpotPower;    // spot light only
-};
-
-TextureCube gCubeMap : register(t0);
+TextureCube gCubeMap[5] : register(t0);
 
 // Constant data that varies per frame.
-cbuffer cbPerObject : register(b0)
-{
-    float4x4 gWorld;
-    float4x4 gTexTransform;
-};
-
-// Constant data that varies per material.
-cbuffer cbPass : register(b1)
-{
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3   gEyePosW;
-    int      gAddOnMsg;
-    float2   gRenderTargetSize;
-    float2   gInvRenderTargetSize;
-    float    gNearZ;
-    float    gFarZ;
-    float    gTotalTime;
-    float    gDeltaTime;
-    float4   gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
-    Light    gLights[16];
-};
 
 VertexOut VS(VertexIn vin)
 {
@@ -122,7 +82,10 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return gCubeMap.SampleLevel(gsamLinearWrap, pin.PosL, 1);
+    float3 FinalColor = gCubeMap[0].Sample(gsamLinearWrap, pin.PosL).xyz;
+    FinalColor = ACESToneMapping(FinalColor, 1.f);
+    FinalColor = pow(FinalColor, 1 / 2.2);
+    return float4(FinalColor, 1.f);
 }
 
 float4 PS_Conv(VertexOut pin): SV_Target
@@ -149,7 +112,7 @@ float4 PS_Conv(VertexOut pin): SV_Target
                 float3 sampleVec =
              tangentSample.x * right + tangentSample.y * up + tangentSample.z * N;
 
-                irradiance = gCubeMap.SampleLevel(gsamLinearWrap, sampleVec, 0).xyz *
+                irradiance = gCubeMap[0].Sample(gsamLinearWrap, sampleVec).xyz *
              cos(theta) * sin(theta) + irradiance;
                 nrSamples = nrSamples + 1;
             }
@@ -162,13 +125,13 @@ float4 PS_Conv(VertexOut pin): SV_Target
         float3 R = N;
         float3 V = R;
     
-        uint sampleC = 512;
+        uint sampleC = 2048;
         float3 prefilteredC = float3(0.f, 0.f, 0.f);
         float totalWeight = 0;
     
         for (uint i = 0u; i < sampleC; ++i)
         {
-            float roughness = (gAddOnMsg - 1) / 4;
+            float roughness = ((float)gAddOnMsg - 1.f) / 4.f;
             float2 Xi = Hammersley(i, sampleC);
             float3 H = ImportanceSampleGGX(Xi, N, roughness);
             float3 L = normalize(2.0 * dot(V, H) * H - V);
@@ -183,11 +146,13 @@ float4 PS_Conv(VertexOut pin): SV_Target
                 float HdotV = max(dot(H, V), 0.0);
                 float pdf = D * NdotH / (4.0 * HdotV) + 0.0001;
 
-                float resolution = 512.0; // resolution of source cubemap (per face)
+                float resolution = 2048.0 ; // resolution of source cubemap (per face)
                 float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
                 float saSample = 1.0 / (float(sampleC) * pdf + 0.0001);
-
-                prefilteredC = prefilteredC + gCubeMap.SampleLevel(gsamLinearWrap, L, (gAddOnMsg - 1)).rgb * NoL;
+                
+                float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
+                
+                prefilteredC = prefilteredC + gCubeMap[mipLevel].Sample(gsamLinearWrap, L).rgb * NoL;
                 totalWeight = totalWeight + NoL;
             }
         }

@@ -64,7 +64,7 @@ float4 PS(VertexOut pin) : SV_Target
     {
         L = -gLights[i].Direction;
         Disney += 2.2 * PI * gLights[i].Strength  
-         * DisneyBRDF(L, V, N, pin.Tangent, BiNormal, mat);
+         * DisneyBRDF(L, V, N, mat);
     }
        
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 0.f);

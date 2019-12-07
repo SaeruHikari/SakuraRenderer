@@ -4,6 +4,7 @@
 #include "VertexCommon.hlsl"
 #include "GBufferRegisters.hlsl"
 #include "Samplers.hlsl"
+#include "MaterialCB.hlsl"
 
 struct GBuffer
 {
@@ -34,16 +35,17 @@ GBuffer PS(VertexOut pin) : SV_Target
     gBuffer.Albedo = gBuffer.Albedo * float4(gBaseColor, gOpacity);
     
     gBuffer.Normal = float4(N, 1.f);
-    gBuffer.WPos = float4(pin.PosW, 0.f);
-    
+
     float Metallic =
         gMetallic *  RMO.g;
     
     float Roughness = 
         gRoughness * RMO.r;
-    
+
     float Occlusion = 
         RMO.b;
+    
+    gBuffer.WPos = float4(pin.PosW, 0.f);
     gBuffer.RoughnessMetallicOcclusion
         = float4(Roughness, Metallic, Occlusion, 1.f);
 

@@ -6,10 +6,10 @@ namespace SGraphics
 	class SGBufferPass : public SDx12Pass
 	{
 	public:
-		SGBufferPass(ID3D12Device* device)
-			:SDx12Pass(device)
+		bool bWriteDepth = true;
+		SGBufferPass(ID3D12Device* device, bool bwriteDpeth)
+			:SDx12Pass(device), bWriteDepth(bwriteDpeth)
 		{
-
 		}
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources) override
 		{
@@ -27,10 +27,25 @@ namespace SGraphics
 			};
 			return __dx12Pass::Initialize(srvResources);
 		}
-		
+		virtual bool Initialize(std::vector<ComPtr<ID3D12DescriptorHeap>> descriporHeaps)
+		{
+			if (PS == nullptr)
+				PS = d3dUtil::CompileShader(L"Shaders\\PBR\\Pipeline\\GBuffer.hlsl", nullptr, "PS", "ps_5_1");
+			if (VS == nullptr)
+				VS = d3dUtil::CompileShader(L"Shaders\\PBR\\Pipeline\\StandardVS.hlsl", nullptr, "VS", "vs_5_1");
+			mInputLayout =
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "Tangent", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			};
+			return __dx12Pass::Initialize(descriporHeaps);
+		}
 		int DebugNumSrvResource = 100;
 		// bind resource to srv heap ?
-		void BuildDescriptorHeaps()
+		void BuildDescriptorHeaps(std::vector<ID3D12Resource*> mSrvResources)
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 			// !
@@ -82,6 +97,11 @@ namespace SGraphics
 
 			gbufferPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			gbufferPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			if (!bWriteDepth)
+			{
+				gbufferPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+				gbufferPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+			}
 			gbufferPsoDesc.SampleMask = UINT_MAX;
 			gbufferPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			gbufferPsoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;

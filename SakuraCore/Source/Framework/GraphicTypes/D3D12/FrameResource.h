@@ -9,6 +9,7 @@ struct SRenderMeshConstants
 {
 	DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+	DirectX::XMFLOAT4X4 PrevWorld = MathHelper::Identity4x4();
 };
 
 struct SPassConstants
@@ -28,7 +29,10 @@ struct SPassConstants
 	float TotalTime = 0.f;
 	float DeltaTime = 0.f;
 	DirectX::XMFLOAT4 AmbientLight = { 0.f, 0.f, 0.f, 1.f };
-
+	DirectX::XMFLOAT2 Jitter = { 0.f, 0.f };
+	DirectX::XMFLOAT2 Pad = { 0.f, 0.f };
+	DirectX::XMFLOAT4X4 PrevViewProj = MathHelper::Identity4x4();
+	DirectX::XMFLOAT4X4 UnjitteredViewProj = MathHelper::Identity4x4();
 	// Indices [0, NUM_DIR_LIGHTS] are directional lights;
 	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS + NUM_POINT_LIGHTS] are point lights;
 	// indices [NUM_DIR_LIGHTS + NUM_POINT_LIGHTS, NUM_DIR_LIGHTS + NUM_POINT_LIGHTS + NUM_SPOT_LIGHTS]
@@ -45,16 +49,21 @@ struct SsaoConstants
 	DirectX::XMFLOAT4X4 ProjTex;
 	DirectX::XMFLOAT4   OffsetVectors[14];
 
-	// For SsaoBlur.hlsl
-	DirectX::XMFLOAT4 BlurWeights[3];
-
 	DirectX::XMFLOAT2 InvRenderTargetSize = { 0.0f, 0.0f };
-
+	UINT AddOnMsg = -1;
+	UINT Pad1;
 	// Coordinates given in view space.
 	float    OcclusionRadius = 0.5f;
 	float    OcclusionFadeStart = 0.2f;
 	float    OcclusionFadeEnd = 2.f;
 	float    SurfaceEpsilon = 0.05f;
+};
+
+// TAA constants
+struct TaaConstants
+{
+	DirectX::XMFLOAT4X4 JitterredProj;
+
 };
 
 // Stores the resources needed for the CPU to build the command lists

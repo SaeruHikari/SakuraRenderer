@@ -1,6 +1,6 @@
-#include "GBufferRegisters.hlsl"
 #include "PassCommon.hlsl"
 #include "VertexCommon.hlsl"
+#include "CommonCBs.hlsl"
 
 VertexOut VS(VertexIn vin)
 {

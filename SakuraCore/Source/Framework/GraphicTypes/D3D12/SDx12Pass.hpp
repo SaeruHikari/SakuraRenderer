@@ -11,12 +11,14 @@ namespace SGraphics
 		__dx12Pass(ID3D12Device* device)
 			:mDevice(device)
 		{
+			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		}
 		__dx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps, 
 			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
 			:mDevice(device), PS(ps), VS(vs), mInputLayout(inputLayout)
 		{
+			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		}
 		__dx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
@@ -27,6 +29,7 @@ namespace SGraphics
 			PS = d3dUtil::CompileShader(psPath, nullptr, psTarg, "ps_5_1");
 			mDevice = device;
 			mInputLayout = inputLayout;
+			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 		__dx12Pass(const __dx12Pass&& rhs) = delete;
 		__dx12Pass(const __dx12Pass& rhs) = delete;
@@ -35,29 +38,30 @@ namespace SGraphics
 
 
 		// Fill descriptor heaps
-		virtual void BuildDescriptorHeaps() = 0;
+		virtual void BuildDescriptorHeaps(std::vector<ID3D12Resource*> srvResources) = 0;
 		// Build root signature
 		virtual void BuildRootSignature() = 0;
 		//Build PSO
 		virtual void BuildPSO() = 0;
 
-
-		// Inject resources:
-		// ! Directly copy.
-		virtual void InjectSrvResources(std::vector<ID3D12Resource*> srvResources)
+		virtual bool Initialize()
 		{
-			mSrvResources = srvResources;
+			BuildRootSignature();
+			BuildPSO();
+			return true;
+		}
+
+		virtual bool Initialize(std::vector<ComPtr<ID3D12DescriptorHeap>> srvHeaps)
+		{
+			mSrvDescriptorHeaps = srvHeaps;
+			return Initialize();
 		}
 
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources)
 		{
-			//mSrvDescriptorHeaps.resize(1);
-			mSrvResources = srvResources;
-			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			BuildDescriptorHeaps();
-			BuildRootSignature();
-			BuildPSO();
-			return true;
+			mSrvDescriptorHeaps.resize(1);
+			BuildDescriptorHeaps(srvResources);
+			return Initialize();
 		}
 
 		virtual bool StartUp(ID3D12GraphicsCommandList* cmdList)
@@ -73,7 +77,6 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> mSrvDescriptorHeaps;
-		std::vector<ID3D12Resource*> mSrvResources;
 
 		UINT mCbvSrvDescriptorSize = 0;
 
@@ -124,12 +127,15 @@ namespace SGraphics
 			cmdList->OMSetRenderTargets(rtv_num, rtvs, true, dsv);
 
 			// Set descriptor heaps:
-			ID3D12DescriptorHeap** descriptorHeaps = new ID3D12DescriptorHeap* [mSrvDescriptorHeaps.size()];
+			ID3D12DescriptorHeap** descriptorHeaps = mSrvDescriptorHeaps.size() == 0 
+				? nullptr : new ID3D12DescriptorHeap* [mSrvDescriptorHeaps.size()];
+
 			for(size_t i = 0; i < mSrvDescriptorHeaps.size(); i++)
 				 descriptorHeaps[i] = mSrvDescriptorHeaps[i].Get();
 
 			cmdList->SetPipelineState(mPSO.Get());
-			cmdList->SetDescriptorHeaps(mSrvDescriptorHeaps.size(), descriptorHeaps);
+			if(mSrvDescriptorHeaps.size() != 0)
+				cmdList->SetDescriptorHeaps(mSrvDescriptorHeaps.size(), descriptorHeaps);
 			cmdList->SetGraphicsRootSignature(mRootSignature.Get());
 
 			// Bind resource for this pass...

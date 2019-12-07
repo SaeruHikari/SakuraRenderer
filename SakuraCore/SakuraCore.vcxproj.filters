@@ -129,6 +129,12 @@
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\BRDFLutPass.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\ScreenSpaceEfx\TAAPass.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\MotionVectorPass.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">
@@ -173,9 +179,6 @@
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\FrameResource.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -183,6 +186,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

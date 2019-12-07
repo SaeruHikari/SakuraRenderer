@@ -1,5 +1,4 @@
 // Saeru Hikari
-
 //#define SAKURA_ENABLE_ANISO
 
 #include "ScreenQuadVertex.hlsl"
@@ -14,6 +13,18 @@
 #include "Samplers.hlsl"
 #include "ShadingUtils.hlsl"
 
+#define PREFILTER_MIP_LEVEL 4
+
+float3 PrefilteredColor(float3 viewDir, float3 normal, float roughness)
+{
+    float roughnessLevel = roughness * PREFILTER_MIP_LEVEL;
+    int fl = floor(roughnessLevel) + 1;
+    int cl = ceil(roughnessLevel) + 1;
+    float3 R = reflect(-viewDir, normal);
+    float3 flSample = gIBLCubeMap[fl].Sample(gsamLinearWrap, R).rgb;
+    float3 clSample = gIBLCubeMap[cl].Sample(gsamLinearWrap, R).rgb;
+    return lerp(flSample, clSample, (roughnessLevel - fl));
+}
 
 float4 PS(VertexOut pin) : SV_Target
 {
@@ -26,14 +37,10 @@ float4 PS(VertexOut pin) : SV_Target
     mat.Opacity = Albedo.a;
     mat.Metallic = RMO.g;
     mat.Roughness = RMO.r;
-
     //
     mat.SpecularTint = 0;
-    mat.SpecularStrength = 0;
+    mat.SpecularStrength = 1;
     mat.SpecularColor = 0;
-    mat.Anisotropic = 0;
-    mat.Subsurface = 0;
-    mat.SubsurfaceColor = 0;
     mat.Clearcoat = 0;
     mat.ClearcoarGloss = 0;
     mat.Sheen = 0;
@@ -41,27 +48,39 @@ float4 PS(VertexOut pin) : SV_Target
    
     float3 V = normalize(gEyePosW - WPos.rgb);
     float3 N = normalize(WNormal.rgb);
-    float3 X = cross(N, gLights[0].Direction);
-    float3 Y = cross(N, V);
     float3 L = -gLights[0].Direction;
 
-    // Recompute Bi-Normal for better details.
-    // !!!!!! no tangent info in GBuffer !!!!
-    float3 BiNormal = N;
-    
+    float AO = RMO.b ;
+    // * WNormal.a
+    float3 prefilteredColor = PrefilteredColor(V, N, mat.Roughness);
+    float3 ambientC;
+    float4 brdfLut;
+    #define BRDF_LUT_MULTISCATTER
+#if defined(BRDF_LUT_CLASSIC)
+    brdfLut = gBRDFLUT.Sample(gsamLinearWrap, float2(max(dot(N, V), 0.0f), mat.Roughness));
+    ambientC = AO *
+    AmbientBRDF(gIBLCubeMap[0].SampleLevel(gsamLinearWrap, N, 0).xyz,
+    prefilteredColor, brdfLut.xyz,
+    V, N, mat).xyz;
+#elif defined(BRDF_LUT_MULTISCATTER)
+    brdfLut = gBRDFLUT.Sample(gsamLinearWrap, float2(max(dot(N, V), 0.0f), mat.Roughness));
+    ambientC = AO *
+    AmbientBRDF_MultiScattering(gIBLCubeMap[0].SampleLevel(gsamLinearWrap, N, 0).xyz,
+    prefilteredColor, brdfLut,
+    V, N, L, mat).xyz;
+#endif
+
     float3 Disney = 0;
-    for(int i = 0; i < 0; i++)
+    for (int i = 0; i < 3; i++)
     {
         L = -gLights[i].Direction;
-        Disney += PI * gLights[i].Strength  
-         * DisneyBRDF(L, V, N, X, Y, mat);
+        Disney += gLights[i].Strength  
+         * DisneyBRDF_MultiScattering(L, V, N, mat, brdfLut.rgb);
     }
-
-    float3 ambientC = WNormal.a * AmbientBRDF(gIBLCubeMap[0].SampleLevel(gsamLinearWrap, N, 0).xyz, V, N, mat);
-
+    //return ambientC.xyzz;
     float3 FinalColor = Disney.xyz + ambientC.xyz;
-    FinalColor = FinalColor / (FinalColor + float3(1.f, 1.f, 1.f));
-    FinalColor = pow(FinalColor, 1/2.2);
-    //return gIBLCubeMap[2].Sample(gsamLinearWrap, N);
+    FinalColor = ACESToneMapping(FinalColor, 1.f);
+    FinalColor = pow(FinalColor, 1 / 2.2);
     return float4(FinalColor, 1.f);
 }
+

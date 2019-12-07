@@ -5,21 +5,40 @@
 //#define Sakura_Full_Effects
 #define Sakura_Debug_PureColor
 
+#define Sakura_MotionVector
+
 #define Sakura_Defferred 
 #define Sakura_SSAO 
-#define Sakura_SSAO_DEBUG 
+
 #define Sakura_IBL
 #define Sakura_IBL_HDR_INPUT
+
+#define Sakura_TAA
+
+#define Sakura_GBUFFER_DEBUG 
+
+#ifndef Sakura_MotionVector
+#undef Sakura_TAA
+#endif
+#if defined(Sakura_TAA)
+#ifndef Sakura_MotionVector
+#define Sakura_MotionVector
+#endif
+#endif
+
 
 #include "Pipeline/SsaoPass.hpp"
 #include "Pipeline/GBufferPass.hpp"
 #include "Pipeline/IBL/SkySpherePass.hpp"
 #include "Pipeline/IBL/HDR2CubeMapPass.hpp"
+#include "Pipeline/ScreenSpaceEfx/TAAPass.hpp"
 #include "Pipeline/IBL/CubeMapConvolutionPass.hpp"
+#include "Pipeline/IBL/BRDFLutPass.hpp"
+#include "Pipeline/MotionVectorPass.hpp"
+
 
 #define TINYEXR_IMPLEMENTATION
 #include "Includes/tinyexr.h"
-#include "Pipeline/IBL/BRDFLutPass.hpp"
 
 namespace SGraphics
 {
@@ -27,7 +46,6 @@ namespace SGraphics
 	{
 		if (!SakuraD3D12GraphicsManager::Initialize())
 			return false;
-
 		// Reset the command list to prep for initialization commands.
 		ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
@@ -36,23 +54,28 @@ namespace SGraphics
 		mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		mCamera.SetPosition(0.0f, 0.0f, 0.0f);
 		BuildCubeFaceCamera(0.0f, 2.0f, 0.0f);
-		
+
 		LoadTextures();
-		BuildGeneratedMeshes();
 		BuildGeometry();
 		BuildMaterials();
 		BuildRenderItems();
 		BuildDescriptorHeaps();
-		
-		BuildShaderAndInputLayout();
-		BuildGBufferPassShaderAndInputLayout();
-		BuildDeferredShadingPassShaderAndInputLayout();
 
-#if defined(DEBUG) || defined(_DEBUG)
-		BuildGBufferDebugShaderAndInputLayout();
-#endif
+		BuildShaderAndInputLayout();
+
 		// ¡ü Do not have dependency on dx12 resources
 		{
+#if defined(Sakura_MotionVector)
+			SRTProperties vprop;
+			vprop.mRtvFormat = DXGI_FORMAT_R16G16_UNORM;
+			mMotionVectorRT = std::make_shared<SRenderTarget2D>(vprop, mClientWidth, mClientHeight, true);
+				CD3DX12_CPU_DESCRIPTOR_HANDLE();
+			mMotionVectorRT->BuildRTResource(md3dDevice.Get(),
+				mScreenEfxRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				GetScreenEfxSrvCPU(0),
+				GetScreenEfxSrvGPU(0));
+#endif
+			// Create resources depended by passes.
 #if defined(Sakura_Defferred)
 			GBufferRTs = new std::shared_ptr<SRenderTarget2D>[GBufferRTNum];
 			for (int i = 0; i < GBufferRTNum; i++)
@@ -62,12 +85,19 @@ namespace SGraphics
 				GBufferRTs[i] = std::make_shared<SRenderTarget2D>(prop, mClientWidth, mClientHeight, true);
 				// Init RT Resource with a CPU rtv handle.
 				GBufferRTs[i]->BuildRTResource(md3dDevice.Get(),
-					GetRtvCPU(SwapChainBufferCount + i), 
+					GetRtvCPU(SwapChainBufferCount + i),
 					GetDeferredSrvCPU(GBufferSrvStartAt + i),
 					GetDeferredSrvGPU(GBufferSrvStartAt + i));
 			}
 #endif
 #if defined(Sakura_IBL)		
+			SRTProperties prop;
+			prop.mRtvFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			mBrdfLutRT2D = std::make_shared<SRenderTarget2D>(prop, 4096, 4096, false);
+			mBrdfLutRT2D->BuildRTResource(md3dDevice.Get(),
+				mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+				mCaptureDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				mCaptureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 			UINT _sizeS = 2048;
 			for (int j = 0; j < SkyCubeMips; j++)
 			{
@@ -79,7 +109,7 @@ namespace SGraphics
 					convCubeRtvHandles[i] = GetRtvCPU(SwapChainBufferCount + GBufferRTNum + i + j * 6);
 				}
 				mSkyCubeRT[j]->BuildDescriptors(
-					CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDeferredSrvCPU(LUTNum+ j)),
+					CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDeferredSrvCPU(LUTNum + j)),
 					CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDeferredSrvGPU(LUTNum + j)),
 					convCubeRtvHandles);
 			}
@@ -108,63 +138,75 @@ namespace SGraphics
 					cubeRtvHandles);
 			}
 #endif
+			// Velocity and History
+#if defined(Sakura_TAA)
+			mTaaRTs = new std::shared_ptr<SRenderTarget2D>[TAARtvsNum];
+			auto taaRtvCPU = 
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(mScreenEfxRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			for (int i = 0; i < TAARtvsNum; i++)
+			{
+				taaRtvCPU.Offset(1, mRtvDescriptorSize);
+				//SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
+				SRTProperties prop;
+				prop.mRtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+				mTaaRTs[i] = std::make_shared<SRenderTarget2D>(prop, mClientWidth, mClientHeight, true);
+				// Init RT Resource with a CPU rtv handle.
+				mTaaRTs[i]->BuildRTResource(md3dDevice.Get(),
+					taaRtvCPU,
+					GetScreenEfxSrvCPU(1 + i),
+					GetScreenEfxSrvGPU(1 + i));
+			}
+#endif
 		}
 		//¡ý Do have dependency on dx12 resources
+
 		BindPassResources();
 		BuildGBufferPassDescriptorHeaps();
+
 #if defined(Sakura_Defferred)
 		BuildDeferredShadingPassDescriptorHeaps();
-		mGbufferPass = std::make_shared<SGBufferPass>(md3dDevice.Get());
+#if defined(Sakura_MotionVector)
+		mGbufferPass = std::make_shared<SGBufferPass>(md3dDevice.Get(), false);
+#else
+		mGbufferPass = std::make_shared<SGBufferPass>(md3dDevice.Get(), true);
+#endif
 		mGbufferPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		BuildDeferredPassRootSignature();
 #endif
 		BuildGBufferPassRootSignature();
-		
 
 		BuildFrameResources();
 		mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
 		BuildPSOs();
-		
-
-
+#if defined(Sakura_MotionVector)
+		mMotionVectorPass = std::make_shared<SMotionVectorPass>(md3dDevice.Get());
+		mMotionVectorPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
+		mMotionVectorPass->Initialize();
+#endif
+#if defined(Sakura_TAA)
+		mTaaPass = std::make_shared<STaaPass>(md3dDevice.Get());
+		mTaaPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
+#endif
 #if defined(Sakura_SSAO)
 		mSsaoPass = std::make_shared<SsaoPass>(md3dDevice.Get());
 		mSsaoPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 		mSsaoPass->StartUp(mCommandList.Get());
 #endif
-
 #if defined(Sakura_IBL)
+		std::shared_ptr<SBrdfLutPass> brdfPass = nullptr;
 		// Draw brdf Lut
-		mCaptureRT2D = std::make_shared<SRenderTarget2D>(1024, 1024, false);
-		std::shared_ptr<SBrdfLutPass> brdfPass = std::make_shared<SBrdfLutPass>(md3dDevice.Get());
+		brdfPass = std::make_shared<SBrdfLutPass>(md3dDevice.Get());
 		brdfPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
-		std::vector<ID3D12Resource*> nul;
-		brdfPass->Initialize(nul);
+		brdfPass->Initialize();
 		//Update the viewport transform to cover the client area
-		D3D12_VIEWPORT screenViewport;
-		D3D12_RECT scissorRect;
-		screenViewport.TopLeftX = 0;
-		screenViewport.TopLeftY = 0;
-		screenViewport.Width = static_cast<float>(2048);
-		screenViewport.Height = static_cast<float>(2048);
-		screenViewport.MinDepth = 0.0f;
-		screenViewport.MaxDepth = 1.0f;
-		scissorRect = { 0, 0, 2048, 2048 };
-		mCommandList->RSSetViewports(1, &screenViewport);
-		mCommandList->RSSetScissorRects(1, &scissorRect);
-		mCaptureRT2D->BuildRTResource(md3dDevice.Get(),
-			mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-			mCaptureDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-			mCaptureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-		brdfPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource,
-			&mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(), 1);
-
 
 		mDrawSkyPass = std::make_shared<SkySpherePass>(md3dDevice.Get());
 		mDrawSkyPass->PushRenderItems(mRenderLayers[SRenderLayers::E_SKY]);
 #endif
-
 #if defined(Sakura_IBL_HDR_INPUT)
+		std::shared_ptr<SHDR2CubeMapPass> mHDRUnpackPass = nullptr;
+		std::shared_ptr<SCubeMapConvPass> mCubeMapConvPass = nullptr;
+
 		mHDRUnpackPass = std::make_shared<SHDR2CubeMapPass>(md3dDevice.Get());
 		mCubeMapConvPass = std::make_shared<SCubeMapConvPass>(md3dDevice.Get());
 		mHDRUnpackPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Cube]);
@@ -177,56 +219,30 @@ namespace SGraphics
 		ThrowIfFailed(mCommandList->Close());
 		ID3D12CommandList* cmdsList[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsList), cmdsList);
-
 		// Wait until initialization is complete
 		FlushCommandQueue();
+		OnResize(mClientWidth, mClientHeight);
 
-		return true;
-	}
-
-	void SDxRendererGM::OnResize(UINT Width, UINT Height)
-	{
-		SakuraD3D12GraphicsManager::OnResize(Width, Height);
-		mCamera.SetLens(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
-
-#if defined(Sakura_Defferred)
-		for (int i = 0; i < GBufferRTNum; i++)
-			GBufferRTs[i]->OnResize(md3dDevice.Get(), Width, Height);
-		mGbufferPass->Initialize(mGBufferSrvResources);
-#endif
-
-#if defined(Sakura_SSAO)
-		mSsaoSrvResources[0] = GBufferRTs[1]->mResource.Get();
-		mSsaoSrvResources[1] = mDepthStencilBuffer.Get();
-		mSsaoPass->Initialize(mSsaoSrvResources);
-#endif
-
-#if defined(Sakura_IBL)
-		mDrawSkyPass->Initialize(mSkyCubeResource);
-#endif
-	}
-
-	void SDxRendererGM::Draw()
-	{
-		
+		// Pre-Compute RTs
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
-
 		// Reuse the memory associated with command recording.
 		// We can only reset when the associated command lists have finished execution on the GPU.
 		ThrowIfFailed(cmdListAlloc->Reset());
-
 		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 		// Reusing the command list reuses memory.
 		ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["ForwardShading"].Get()));
 
-		// Indicate a state transition on the resource usage.
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
+#if defined(Sakura_IBL)
+		mDrawSkyPass->Initialize(mSkyCubeResource);
+		Tick(1/60.f);
 #if defined(Sakura_IBL_HDR_INPUT)
 		static int Init = 0;
 		if (Init < 6)
 		{
+			mCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(mBrdfLutRT2D->mResource.Get(),
+					D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+			mBrdfLutRT2D->ClearRenderTarget(mCommandList.Get());
 			for (size_t i = 0; i < SkyCubeConvFilterNum; i++)
 			{
 				mCommandList->ResourceBarrier(1,
@@ -241,6 +257,24 @@ namespace SGraphics
 					D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 				mSkyCubeRT[i]->ClearRenderTarget(mCommandList.Get());
 			}
+
+			D3D12_VIEWPORT screenViewport0;
+			D3D12_RECT scissorRect0;
+			screenViewport0.TopLeftX = 0;
+			screenViewport0.TopLeftY = 0;
+			screenViewport0.Width = static_cast<float>(4096);
+			screenViewport0.Height = static_cast<float>(4096);
+			screenViewport0.MinDepth = 0.0f;
+			screenViewport0.MaxDepth = 1.0f;
+			scissorRect0 = { 0, 0, 4096, 4096 };
+			mCommandList->RSSetViewports(1, &screenViewport0);
+			mCommandList->RSSetScissorRects(1, &scissorRect0);
+			brdfPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource,
+				&mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(), 1);
+			mCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(mBrdfLutRT2D->mResource.Get(),
+					D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+
 			//Update the viewport transform to cover the client area
 			D3D12_VIEWPORT screenViewport;
 			D3D12_RECT scissorRect;
@@ -315,7 +349,7 @@ namespace SGraphics
 				screenViewport.Height = static_cast<float>(mConvAndPrefilterCubeRTs[i]->mHeight);
 				screenViewport.MinDepth = 0.0f;
 				screenViewport.MaxDepth = 1.0f;
-				scissorRect = { 0, 0, (LONG)mConvAndPrefilterCubeRTs[i]->mWidth, 
+				scissorRect = { 0, 0, (LONG)mConvAndPrefilterCubeRTs[i]->mWidth,
 					(LONG)mConvAndPrefilterCubeRTs[i]->mHeight };
 				mCommandList->RSSetViewports(1, &screenViewport);
 				mCommandList->RSSetScissorRects(1, &scissorRect);
@@ -341,9 +375,9 @@ namespace SGraphics
 					XMStoreFloat4x4(&convPassCB.ViewProj, XMMatrixTranspose(viewProj));
 					XMStoreFloat4x4(&convPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
 					convPassCB.EyePosW = mCubeMapCamera[Init].GetPosition3f();
-					convPassCB.RenderTargetSize = XMFLOAT2((float)screenViewport.Width, 
+					convPassCB.RenderTargetSize = XMFLOAT2((float)screenViewport.Width,
 						(float)screenViewport.Height);
-					convPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / screenViewport.Width, 
+					convPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / screenViewport.Width,
 						1.0f / screenViewport.Height);
 					auto currPassCB = mCurrFrameResource->PassCB.get();
 					// Cube map pass cbuffers are stored in elements 1-6.
@@ -357,9 +391,9 @@ namespace SGraphics
 			}
 			for (size_t i = 0; i < SkyCubeConvFilterNum; i++)
 			{
-				mCommandList->ResourceBarrier(1, 
+				mCommandList->ResourceBarrier(1,
 					&CD3DX12_RESOURCE_BARRIER::Transition(mConvAndPrefilterCubeRTs[i]->Resource(),
-					D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+						D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 				mConvAndPrefilterSkyCubeResource[i].resize(1);
 				mConvAndPrefilterSkyCubeResource[i][0] = mConvAndPrefilterCubeRTs[i]->Resource();
 			}
@@ -371,7 +405,7 @@ namespace SGraphics
 			srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-			md3dDevice->CreateShaderResourceView(mBRDF_LUT->Resource.Get(), &srvDesc, hDescriptor);
+			md3dDevice->CreateShaderResourceView(mBrdfLutRT2D->mResource.Get(), &srvDesc, hDescriptor);
 			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 			for (size_t i = 0; i < SkyCubeMips; i++)
 			{
@@ -388,10 +422,79 @@ namespace SGraphics
 			mDrawSkyPass->Initialize(mSkyCubeResource);
 		}
 #endif
+#endif
+		// Execute the initialization commands.
+		ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		// Wait until initialization is complete
+		FlushCommandQueue();
+		return true;
+	}
+
+	void SDxRendererGM::OnResize(UINT Width, UINT Height)
+	{
+		SakuraD3D12GraphicsManager::OnResize(Width, Height);
+		mCamera.SetLens(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+#if defined(Sakura_Defferred)
+		for (int i = 0; i < GBufferRTNum; i++)
+		{
+			GBufferRTs[i]->OnResize(md3dDevice.Get(), Width, Height);
+		}
+		mGbufferPass->Initialize(mGBufferSrvResources);
+#endif
+#if defined(Sakura_SSAO)
+		std::vector<ComPtr<ID3D12DescriptorHeap>> ssaoDescHeaps;
+		mSsaoSrvResources[0] = GBufferRTs[1]->mResource.Get();
+		mSsaoSrvResources[1] = mDepthStencilBuffer.Get();
+		mSsaoPass->Initialize(mSsaoSrvResources);
+#endif
+#if defined(Sakura_MotionVector)
+		mMotionVectorRT->OnResize(md3dDevice.Get(), Width, Height);
+#endif
+#if defined(Sakura_TAA)
+		for (int i = 0; i < TAARtvsNum; i++)
+		{
+			mTaaRTs[i]->OnResize(md3dDevice.Get(), Width, Height);
+		}
+		mTaaResources.resize(5);
+		mTaaResources[0] = mTaaRTs[1]->mResource.Get(); // History Texture
+		mTaaResources[1] = mTaaRTs[2]->mResource.Get();
+		mTaaResources[2] = mTaaRTs[0]->mResource.Get(); // Inputs
+		mTaaResources[3] = mMotionVectorRT->mResource.Get();  
+		mTaaResources[4] = mDepthStencilBuffer.Get();
+		mTaaPass->Initialize(mTaaResources);
+#endif
+	}
+
+	void SDxRendererGM::Draw()
+	{
+		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
+		// Reuse the memory associated with command recording.
+		// We can only reset when the associated command lists have finished execution on the GPU.
+		ThrowIfFailed(cmdListAlloc->Reset());
+		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+		// Reusing the command list reuses memory.
+		ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["ForwardShading"].Get()));
+		// Indicate a state transition on the resource usage.
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+
 		mCommandList->RSSetViewports(1, &mScreenViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
-		
 #if defined(Sakura_Defferred)
+		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0.f, 0.f, nullptr);
+		// Early-Z and Motion Vector
+#if defined(Sakura_MotionVector)
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		mMotionVectorRT->ClearRenderTarget(mCommandList.Get());
+		D3D12_CPU_DESCRIPTOR_HANDLE mvRtv[1] = { mMotionVectorRT->mRtvCpu };
+		mMotionVectorPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, mvRtv, 1);
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+#endif
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvs[GBufferRTNum];
 		for (int i = 0; i < GBufferRTNum; i++)
 		{
@@ -400,23 +503,18 @@ namespace SGraphics
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 			GBufferRTs[i]->ClearRenderTarget(mCommandList.Get());
 		}
-		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0.f, 0.f, nullptr);
 		mGbufferPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, rtvs, GBufferRTNum);
 		// Change back to GENERIC_READ so we can read the texture in a shader.
 		for (int i = 0; i < GBufferRTNum; i++)
 			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[i]->mResource.Get(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
-		
 	#if defined(Sakura_SSAO)
-		//	
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		mSsaoPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &GBufferRTs[1]->mRtvCpu, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
-		//
 	#endif
-		
 #else
 		mCommandList->SetPipelineState(mPSOs["ForwardShading"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignatures["GBufferPass"].Get());
@@ -427,10 +525,17 @@ namespace SGraphics
 		auto passCB = mCurrFrameResource->PassCB->Resource();
 		mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 #endif
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv_thisPhase = CurrentBackBufferView();
+#if defined(Sakura_TAA)
+		rtv_thisPhase = mTaaRTs[0]->mRtvCpu;
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[0]->mResource.Get(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		mCommandList->ClearRenderTargetView(mTaaRTs[0]->mRtvCpu, mTaaRTs[0]->mProperties.mClearColor, 0, nullptr);
+#endif
 #if defined(Sakura_Defferred)
 	{
-		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, nullptr);
+		mCommandList->OMSetRenderTargets(1, &rtv_thisPhase, true, nullptr);
 		// Deferred Pass
 		// Set Descriptor Heaps
 		ID3D12DescriptorHeap* descriptorHeaps[] = { mDeferredSrvDescriptorHeap.Get() };
@@ -481,14 +586,43 @@ namespace SGraphics
 #endif
 		
 #if defined(Sakura_IBL)
-		D3D12_CPU_DESCRIPTOR_HANDLE ibl_rtv;
-		ibl_rtv = CurrentBackBufferView();
-		mDrawSkyPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &ibl_rtv, 1);
+		mDrawSkyPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &rtv_thisPhase, 1);
 #endif
+
+
+		rtv_thisPhase = CurrentBackBufferView();
+#if defined(Sakura_TAA)
+		static int mTaaChain = 0;
+		mTaaPass->ResourceIndex = mTaaChain;
+		mTaaChain = (mTaaChain + 1) % 2;
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[mTaaChain + 1]->mResource.Get(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv_Taa[2];
+		rtv_Taa[0] = mTaaRTs[mTaaChain + 1]->mRtvCpu;
+		mTaaPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, rtv_Taa, 1);
+		rtv_Taa[0] = rtv_thisPhase;
+		mTaaPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, rtv_Taa, 1);
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[0]->mResource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[mTaaChain + 1]->mResource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+#endif
+
 		// Debug
-#if defined(Sakura_SSAO_DEBUG) 
+#if defined(Sakura_GBUFFER_DEBUG) 
+		ID3D12DescriptorHeap* descriptorHeaps[] = { mDeferredSrvDescriptorHeap.Get() };
+		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(mDeferredSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 		mCommandList->SetPipelineState(mPSOs["GBufferDebug"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignatures["DeferredShading"].Get());
+		tex.Offset(GBufferSrvStartAt, mCbvSrvDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(0, tex);
+		tex.Offset(1, mCbvSrvDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(1, tex);
+		tex.Offset(1, mCbvSrvDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(2, tex);
+		tex.Offset(1, mCbvSrvDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(3, tex);
 		for (auto ri : mRenderLayers[SRenderLayers::E_GBufferDebug])
 		{
 			mCommandList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
@@ -497,26 +631,21 @@ namespace SGraphics
 			mCommandList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		}
 #endif
-		/**/
 		// Indicate a state transition on the resource usage.
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
 		// Done recording commands.
 		ThrowIfFailed(mCommandList->Close());
-		
 		// Add the command list to the queue for execution.
 		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Advance the fence value to mark commands up to this fence point.
 		mCurrFrameResource->Fence = ++mCurrentFence;
-
 		// Add an instruction to the command queue to set a new fence point.
 		// Because we are on the GPU time line, the new fence point won't be 
 		// set until the GPU finishes processing all the commands prior to this Signal().
 		mCommandQueue->Signal(mFence.Get(), mCurrentFence);
-
 		// Swap the back and front buffers.
 		ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -545,7 +674,6 @@ namespace SGraphics
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
-
 		AnimateMaterials();
 		UpdateObjectCBs();
 		UpdateMaterialCBs();
@@ -602,11 +730,10 @@ namespace SGraphics
 		ID3D12Resource* resourceToRead, size_t outChannels /*= 4*/)
 	{
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
-
+		FlushCommandQueue();
 		// Reuse the memory associated with command recording.
 		// We can only reset when the associated command lists have finished execution on the GPU.
 		ThrowIfFailed(cmdListAlloc->Reset());
-
 		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 		// Reusing the command list reuses memory.
 		ThrowIfFailed(cmdList->Reset(cmdListAlloc.Get(), mPSOs["ForwardShading"].Get()));
@@ -683,13 +810,23 @@ namespace SGraphics
 		);
 		const char** err = nullptr;
 		SaveEXR(pReadbackBufferData, resourceToRead->GetDesc().Width, resourceToRead->GetDesc().Height,
-			3, 0, "Capture.exr", err);
+			4, 0, "Capture.exr", err);
 		D3D12_RANGE emptyRange{ 0, 0 };
 		readbackBuffer->Unmap
 		(
 			0,
 			&emptyRange
 		);
+		// Reuse the memory associated with command recording.
+		// We can only reset when the associated command lists have finished execution on the GPU.
+		ThrowIfFailed(cmdListAlloc->Reset());
+
+		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+		// Reusing the command list reuses memory.
+		ThrowIfFailed(cmdList->Reset(cmdListAlloc.Get(), mPSOs["ForwardShading"].Get()));
+		// Code goes here to close, execute (and optionally reset) the command list, and also
+		// to use a fence to wait for the command queue.
+		cmdList->Close();
 		return pReadbackBufferData;
 	}
 
@@ -712,10 +849,14 @@ namespace SGraphics
 		if (GetAsyncKeyState('F') & 0x8000)
 			mCamera.SetPosition(0.0f, 0.0f, 0.0f);
 
-		if (GetAsyncKeyState('P') & 0x8000)
+		static bool Cap = false;
+		if (GetAsyncKeyState('P') & 0x8000 && Cap)
 		{
-			float* hdrbuffer = CaputureBuffer(md3dDevice.Get(), mCommandList.Get(), mHDRTexture->Resource.Get(), 3);
-		}
+			//CaputureBuffer(md3dDevice.Get(), mCommandList.Get(),
+			//	mBrdfLutRT2D->mResource.Get(),
+			//	4);
+			Cap = false;
+		}else Cap = true;
 
 		mCamera.UpdateViewMatrix();
 	}
@@ -736,10 +877,12 @@ namespace SGraphics
 			{
 				XMMATRIX world = XMLoadFloat4x4(&e->World);
 				XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
+				XMMATRIX prevWorld = XMLoadFloat4x4(&e->World);
 
-				SRenderMeshConstants objConstants;
+				SRenderMeshConstants objConstants; 
 				XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
 				XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
+				XMStoreFloat4x4(&objConstants.PrevWorld, XMMatrixTranspose(prevWorld));
 
 				CurrObjectCB->CopyData(e->ObjCBIndex, objConstants);
 
@@ -772,11 +915,24 @@ namespace SGraphics
 	// 
 	void SDxRendererGM::UpdateMainPassCB()
 	{
-		XMMATRIX view = mCamera.GetView();
+		static int mFrameCount = 0;
+		mFrameCount = (mFrameCount + 1) % TAA_SAMPLE_COUNT;
 		XMMATRIX proj = mCamera.GetProj();
-
-		XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+		XMMATRIX view = mCamera.GetView();
+		mMainPassCB.PrevViewProj = mMainPassCB.UnjitteredViewProj;
 		XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
+		XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+#if defined(Sakura_TAA)
+		XMStoreFloat4x4(&mMainPassCB.UnjitteredViewProj, XMMatrixTranspose(viewProj));
+		double JitterX = SGraphics::Halton_2[mFrameCount] / (double)mClientWidth * (double)TAA_JITTER_DISTANCE;
+		double JitterY = SGraphics::Halton_3[mFrameCount] / (double)mClientHeight * (double)TAA_JITTER_DISTANCE;
+		proj.r[2].m128_f32[0] += (float)JitterX;
+		proj.r[2].m128_f32[1] += (float)JitterY;
+		mMainPassCB.AddOnMsg = mFrameCount;
+		mMainPassCB.Jitter.x = JitterX;
+		mMainPassCB.Jitter.y = -JitterY;
+#endif
+		viewProj = XMMatrixMultiply(view, proj);
 		XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
 		XMMATRIX invViewProj = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
 
@@ -793,6 +949,7 @@ namespace SGraphics
 		mMainPassCB.FarZ = 1000.0f;
 		mMainPassCB.TotalTime = 1;
 		mMainPassCB.DeltaTime = 1;
+
 		mMainPassCB.AmbientLight = { .25f, .25f, .35f, 1.f };
 		mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
 		mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
@@ -824,9 +981,6 @@ namespace SGraphics
 		mSsaoPass->GetOffsetVectors(mSsaoCB.OffsetVectors);
 
 		auto blurWeights = mSsaoPass->CalcGaussWeights(2.5f);
-		mSsaoCB.BlurWeights[0] = XMFLOAT4(&blurWeights[0]);
-		mSsaoCB.BlurWeights[1] = XMFLOAT4(&blurWeights[4]);
-		mSsaoCB.BlurWeights[2] = XMFLOAT4(&blurWeights[8]);
 
 		mSsaoCB.InvRenderTargetSize = XMFLOAT2(1.0f / (mClientWidth), 1.0f / (mClientHeight));
 
@@ -870,9 +1024,7 @@ namespace SGraphics
 			mTextures[texMap->Name] = std::move(texMap);
 		}
 
-		mHDRTexture = d3dUtil::LoadHDRTexture(md3dDevice.Get(), mCommandList.Get(), "HDRTexture", L"Textures/flower_road_4k.hdr");
-		mBRDF_LUT = d3dUtil::LoadHDRTexture(md3dDevice.Get(), mCommandList.Get(), "BRDFTexture", L"Textures/COMMON_LUT_PBR.hdr", 3);
-		//mBRDF_LUT = d3dUtil::LoadHDRTexture(md3dDevice.Get(), mCommandList.Get(), "BRDF_LUT", L"Textures/COMMON_LUT_PBR.png");
+		mHDRTexture = d3dUtil::LoadHDRTexture(md3dDevice.Get(), mCommandList.Get(), "HDRTexture", L"Textures/020.hdr");
 	}
 
 	// GBuffer Pass RootSig.
@@ -1001,6 +1153,9 @@ namespace SGraphics
 
 		srvHeapDesc.NumDescriptors = GBufferRTNum + GBufferSrvStartAt + LUTNum;
 		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mDeferredSrvDescriptorHeap)));
+	
+		srvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
+		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mScreenEfxSrvDescriptorHeap)));
 	}
 
 	void SDxRendererGM::BindPassResources()
@@ -1018,7 +1173,6 @@ namespace SGraphics
 		mGBufferSrvResources.push_back(RoughTex.Get());
 		mGBufferSrvResources.push_back(SpecTex.Get());
 		mGBufferSrvResources.push_back(NormTex.Get());
-
 
 		// Fill out the heap with actual descriptors:
 		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mGBufferSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -1106,9 +1260,9 @@ namespace SGraphics
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 		hDescriptor.Offset(GBufferSrvStartAt, mCbvSrvDescriptorSize);
-		srvDesc.Format = mBRDF_LUT->Resource->GetDesc().Format;
+		srvDesc.Format = mBrdfLutRT2D->mResource->GetDesc().Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		md3dDevice->CreateShaderResourceView(mBRDF_LUT->Resource.Get(), &srvDesc, hDescriptor);
+		md3dDevice->CreateShaderResourceView(mBrdfLutRT2D->mResource.Get(), &srvDesc, hDescriptor);
 
 		hDescriptor.Offset(1, mCbvSrvDescriptorSize);
 		srvDesc.Format = GBufferAlbedo->mProperties.mRtvFormat;
@@ -1147,6 +1301,11 @@ namespace SGraphics
 			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "Tangent", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
+		BuildGBufferPassShaderAndInputLayout();
+		BuildDeferredShadingPassShaderAndInputLayout();
+#if defined(DEBUG) || defined(_DEBUG)
+		BuildGBufferDebugShaderAndInputLayout();
+#endif
 	}
 
 
@@ -1238,7 +1397,7 @@ namespace SGraphics
 		geo->DrawArgs["ScreenQuad"] = quadSubmesh;
 		mGeometries["ScreenQuad"] = std::move(geo);
 		
-#if defined(Sakura_SSAO_DEBUG) 
+#if defined(Sakura_GBUFFER_DEBUG) 
 		{
 		quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
 		quadSubmesh.StartIndexLocation = 0;
@@ -1247,10 +1406,11 @@ namespace SGraphics
 		const UINT vbByteSize = (UINT)vertices.size() * sizeof(ScreenQuadDebugVertex);
 		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 6; j++)
 		{
 			auto geo = std::make_unique<MeshGeometry>();
-			mGeometries["DebugScreenQuad" + j] = std::move(geo);
+			std::string Name = "DebugScreenQuad" + std::to_string(j);
+			mGeometries[Name] = std::move(geo);
 
 			std::vector<ScreenQuadDebugVertex> vertices(quadSubmesh.IndexCount);
 			for (int i = 0; i < quad.Vertices.size(); ++i)
@@ -1263,27 +1423,27 @@ namespace SGraphics
 			indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
 
 			// Create Vertex Buffer Blob
-			ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeometries["DebugScreenQuad" + j]->VertexBufferCPU));
-			CopyMemory(mGeometries["DebugScreenQuad" + j]->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-			ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeometries["DebugScreenQuad" + j]->IndexBufferCPU));
-			CopyMemory(mGeometries["DebugScreenQuad" + j]->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+			ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeometries[Name]->VertexBufferCPU));
+			CopyMemory(mGeometries[Name]->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+			ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeometries[Name]->IndexBufferCPU));
+			CopyMemory(mGeometries[Name]->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-			mGeometries["DebugScreenQuad" + j]->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), vertices.data(), vbByteSize, mGeometries["DebugScreenQuad" + j]->VertexBufferUploader);
-			mGeometries["DebugScreenQuad" + j]->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), indices.data(), ibByteSize, mGeometries["DebugScreenQuad" + j]->IndexBufferUploader);
-			mGeometries["DebugScreenQuad" + j]->VertexByteStride = sizeof(ScreenQuadDebugVertex);
-			mGeometries["DebugScreenQuad" + j]->VertexBufferByteSize = vbByteSize;
-			mGeometries["DebugScreenQuad" + j]->IndexFormat = DXGI_FORMAT_R16_UINT;
-			mGeometries["DebugScreenQuad" + j]->IndexBufferByteSize = ibByteSize;
-			mGeometries["DebugScreenQuad" + j]->DrawArgs["DebugScreenQuad" + j] = quadSubmesh;
+			mGeometries[Name]->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+				mCommandList.Get(), vertices.data(), vbByteSize, mGeometries[Name]->VertexBufferUploader);
+			mGeometries[Name]->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+				mCommandList.Get(), indices.data(), ibByteSize, mGeometries[Name]->IndexBufferUploader);
+			mGeometries[Name]->VertexByteStride = sizeof(ScreenQuadDebugVertex);
+			mGeometries[Name]->VertexBufferByteSize = vbByteSize;
+			mGeometries[Name]->IndexFormat = DXGI_FORMAT_R16_UINT;
+			mGeometries[Name]->IndexBufferByteSize = ibByteSize;
+			mGeometries[Name]->DrawArgs[Name] = quadSubmesh;
 		}
 		}
 #endif
 		
 #if defined(Sakura_IBL)
 		{
-			auto sphere = geoGen.CreateSphere(0.5f, 20, 20);
+			auto sphere = geoGen.CreateSphere(0.5f, 120, 120);
 			SubmeshGeometry quadSubmesh;
 			quadSubmesh.IndexCount = (UINT)sphere.Indices32.size();
 			quadSubmesh.StartIndexLocation = 0;
@@ -1385,6 +1545,7 @@ namespace SGraphics
 		
 		// text
 		//mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/skull.txt"));
+		BuildGeneratedMeshes();
 	}
 
 	void SDxRendererGM::BuildPSOs()
@@ -1468,7 +1629,7 @@ namespace SGraphics
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&deferredPsoDesc, IID_PPV_ARGS(&mPSOs["DeferredShading"])));
 #endif
 
-#if defined(Sakura_SSAO_DEBUG) 
+#if defined(Sakura_GBUFFER_DEBUG) 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC debugPsoDesc = deferredPsoDesc;
 		debugPsoDesc.InputLayout = { mInputLayouts[SPasses::E_GBufferDebug].data(), (UINT)mInputLayouts[SPasses::E_GBufferDebug].size() };
 		debugPsoDesc.pRootSignature = mRootSignatures["DeferredShading"].Get();
@@ -1523,9 +1684,23 @@ namespace SGraphics
 				testM->MatConstants.RMOSrvHeapIndex = -1;
 				testM->MatConstants.SpecularSrvHeapIndex = -1;
 				testM->MatConstants.NormalSrvHeapIndex = -1;
-				testM->MatConstants.BaseColor = XMFLOAT3(Colors::White);
 				testM->MatConstants.Roughness = .1f * (float)i;
 				testM->MatConstants.Metallic = .1f * (float)j;
+				testM->MatConstants.Metallic = 1.f;
+				testM->MatConstants.BaseColor = XMFLOAT3(
+					j == 0 ? Colors::PaleVioletRed :
+					j == 1 ? Colors::Gold :
+					j == 2 ? Colors::Firebrick :
+					j == 3 ? Colors::Red :
+					j == 4 ? Colors::Green :
+					j == 5 ? Colors::LightBlue :
+					j == 6 ? Colors::BlueViolet :
+					j == 7 ? Colors::Blue :
+					j == 8 ? Colors::Purple :
+					j == 9 ? Colors::LightGray :
+					Colors::DarkGray
+				);
+				//testM->MatConstants.BaseColor = XMFLOAT3(Colors::MintCream);
 				mMaterials[testM->Name] = std::move(testM);
 			}
 		}
@@ -1555,8 +1730,8 @@ namespace SGraphics
 			for (int i = 0; i < 11; i++)
 			{
 				auto sphere = std::make_unique<SRenderItem>();
-				XMStoreFloat4x4(&sphere->World, XMMatrixScaling(1.8f, 1.8f, 1.8f) *
-					XMMatrixTranslation(2.5f * i, 0.f, 2.5f * j));
+				XMStoreFloat4x4(&sphere->World, XMMatrixScaling(2.5f, 2.5f, 2.5f) *
+					XMMatrixTranslation(2.7f * i, 2.7f * j, 0.f));
 				sphere->TexTransform = MathHelper::Identity4x4();
 				sphere->ObjCBIndex = CBIndex++;
 				std::string name = "test" + std::to_string(i) + std::to_string(j);
@@ -1620,10 +1795,10 @@ namespace SGraphics
 #endif
 
 
-#if defined(Sakura_SSAO_DEBUG) 
+#if defined(Sakura_GBUFFER_DEBUG) 
 		for (int i = 0; i < 6; i++)
 		{
-			std::string Name = "DebugScreenQuad" + i;
+			std::string Name = "DebugScreenQuad" + std::to_string(i);
 			screenQuad = std::make_unique<SRenderItem>();
 			screenQuad->World = MathHelper::Identity4x4();
 			screenQuad->TexTransform = MathHelper::Identity4x4();
@@ -1687,6 +1862,10 @@ namespace SGraphics
 		rtvHeapDesc.NumDescriptors = 1;
 		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
 			&rtvHeapDesc, IID_PPV_ARGS(mCaptureRtvHeap.GetAddressOf())));
+
+		rtvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
+		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+			&rtvHeapDesc, IID_PPV_ARGS(mScreenEfxRtvDescriptorHeap.GetAddressOf())));
 
 		//Create depth/stencil view descriptor 
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;

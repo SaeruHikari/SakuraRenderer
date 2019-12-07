@@ -12,7 +12,7 @@ struct VertexOut
 {
     float4 PosH : SV_Position;
     float2 TexC : TEXCOORD;
-    float3 PosV : POSITION;
+    //float3 PosV : POSITION;
 };
 
 #endif
