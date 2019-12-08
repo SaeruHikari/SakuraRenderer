@@ -25,8 +25,9 @@ namespace SGraphics
 	class SBrdfLutPass;
 	class STaaPass;
 	class SMotionVectorPass;
-
 	class SRenderTarget2D;
+
+	class SakuraScene;
 
 	namespace SRenderLayers
 	{
@@ -101,13 +102,13 @@ namespace SGraphics
 			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
 			return srvGPU;
 		}
-		
+
+
 	public:
 		virtual bool Initialize() override;
 		virtual void Draw() override;
 		virtual void Finalize() override;
 		virtual void Tick(double deltaTime) override;
-
 
 		virtual void OnMouseDown(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) override;
 		virtual void OnMouseMove(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) override;
@@ -119,7 +120,7 @@ namespace SGraphics
 			ID3D12GraphicsCommandList* cmdList,
 			ID3D12Resource* resourceToRead,
 			size_t outChannels = 4);
-
+	
 	protected:
 		virtual void OnResize(UINT Width, UINT Height) override;
 
@@ -155,8 +156,7 @@ namespace SGraphics
 
 		void BuildRenderItems();
 
-		void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<SRenderItem*>& ritems);
-
+		void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<SDxRenderItem*>& ritems);
 
 	private:
 		std::vector<std::unique_ptr<SFrameResource>> mFrameResources;
@@ -167,20 +167,19 @@ namespace SGraphics
 
 		std::unordered_map<std::string, ComPtr<ID3D12RootSignature>> mRootSignatures;
 
-		std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
+	public:
+		int CBIndex = 0;
+		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
 		std::unordered_map<std::string, std::unique_ptr<DisneyPBRMaterial>> mMaterials;
 		std::unordered_map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
 		std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
-
 		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayouts[SPasses::E_Count];
-
 		// List of all the render items
-		std::vector<std::unique_ptr<SRenderItem>> mAllRitems;
-
+		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
 		// Render items divided by PSO
-		std::vector<SRenderItem*> mRenderLayers[SRenderLayers::E_Count];
-
+		std::vector<SDxRenderItem*> mRenderLayers[SRenderLayers::E_Count];
+	private:
 		// loose, need refactoring
 		SPassConstants mMainPassCB;
 		SsaoConstants mSsaoCB;

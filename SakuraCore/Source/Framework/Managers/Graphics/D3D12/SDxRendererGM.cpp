@@ -1,9 +1,9 @@
 #include <minwindef.h>
 #include "SDxRendererGM.h"
-
+#include "../../../Core/Nodes/EngineNodes/SStaticMeshNode.hpp"
 // Passes
 //#define Sakura_Full_Effects
-#define Sakura_Debug_PureColor
+//#define Sakura_Debug_PureColor
 
 #define Sakura_MotionVector
 
@@ -35,7 +35,6 @@
 #include "Pipeline/IBL/CubeMapConvolutionPass.hpp"
 #include "Pipeline/IBL/BRDFLutPass.hpp"
 #include "Pipeline/MotionVectorPass.hpp"
-
 
 #define TINYEXR_IMPLEMENTATION
 #include "Includes/tinyexr.h"
@@ -491,6 +490,7 @@ namespace SGraphics
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		mMotionVectorRT->ClearRenderTarget(mCommandList.Get());
 		D3D12_CPU_DESCRIPTOR_HANDLE mvRtv[1] = { mMotionVectorRT->mRtvCpu };
+		mMotionVectorPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mMotionVectorPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, mvRtv, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
@@ -503,6 +503,7 @@ namespace SGraphics
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 			GBufferRTs[i]->ClearRenderTarget(mCommandList.Get());
 		}
+		mGbufferPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mGbufferPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, rtvs, GBufferRTNum);
 		// Change back to GENERIC_READ so we can read the texture in a shader.
 		for (int i = 0; i < GBufferRTNum; i++)
@@ -550,7 +551,7 @@ namespace SGraphics
 		auto objectCB = mCurrFrameResource->ObjectCB->Resource();
 		auto matCB = mCurrFrameResource->MaterialCB->Resource();
 
-		SRenderItem* ri = mRenderLayers[SRenderLayers::E_ScreenQuad][0];
+		SDxRenderItem* ri = mRenderLayers[SRenderLayers::E_ScreenQuad][0];
 
 		mCommandList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
 		mCommandList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
@@ -877,7 +878,7 @@ namespace SGraphics
 			{
 				XMMATRIX world = XMLoadFloat4x4(&e->World);
 				XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
-				XMMATRIX prevWorld = XMLoadFloat4x4(&e->World);
+				XMMATRIX prevWorld = XMLoadFloat4x4(&e->PrevWorld);
 
 				SRenderMeshConstants objConstants; 
 				XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
@@ -1373,13 +1374,13 @@ namespace SGraphics
 		std::vector<std::uint16_t> indices;
 		indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
 
-		auto geo = std::make_unique<MeshGeometry>();
+		auto geo = std::make_unique<Dx12MeshGeometry>();
 		geo->Name = "ScreenQuad";
 
 		const UINT vbByteSize = (UINT)vertices.size() * sizeof(ScreenQuadVertex);
 		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-		// Create Vertex Buffer Blob
+		// Create StandardVertex Buffer Blob
 		ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
 		CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 		ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
@@ -1408,7 +1409,7 @@ namespace SGraphics
 
 		for (int j = 0; j < 6; j++)
 		{
-			auto geo = std::make_unique<MeshGeometry>();
+			auto geo = std::make_unique<Dx12MeshGeometry>();
 			std::string Name = "DebugScreenQuad" + std::to_string(j);
 			mGeometries[Name] = std::move(geo);
 
@@ -1422,7 +1423,7 @@ namespace SGraphics
 			std::vector<std::uint16_t> indices;
 			indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
 
-			// Create Vertex Buffer Blob
+			// Create StandardVertex Buffer Blob
 			ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeometries[Name]->VertexBufferCPU));
 			CopyMemory(mGeometries[Name]->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 			ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeometries[Name]->IndexBufferCPU));
@@ -1449,7 +1450,7 @@ namespace SGraphics
 			quadSubmesh.StartIndexLocation = 0;
 			quadSubmesh.BaseVertexLocation = 0;
 
-			std::vector<Vertex> vertices(quadSubmesh.IndexCount);
+			std::vector<StandardVertex> vertices(quadSubmesh.IndexCount);
 			for (int i = 0; i < sphere.Vertices.size(); ++i)
 			{
 				vertices[i].Pos = sphere.Vertices[i].Position;
@@ -1461,13 +1462,13 @@ namespace SGraphics
 			std::vector<std::uint16_t> indices;
 			indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
 
-			auto geo = std::make_unique<MeshGeometry>();
+			auto geo = std::make_unique<Dx12MeshGeometry>();
 			geo->Name = "SkySphere";
 
-			const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+			const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
 			const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-			// Create Vertex Buffer Blob
+			// Create StandardVertex Buffer Blob
 			ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
 			CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 			ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
@@ -1477,7 +1478,7 @@ namespace SGraphics
 				mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
 			geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
 				mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-			geo->VertexByteStride = sizeof(Vertex);
+			geo->VertexByteStride = sizeof(StandardVertex);
 			geo->VertexBufferByteSize = vbByteSize;
 			geo->IndexFormat = DXGI_FORMAT_R16_UINT;
 			geo->IndexBufferByteSize = ibByteSize;
@@ -1494,7 +1495,7 @@ namespace SGraphics
 			quadSubmesh.StartIndexLocation = 0;
 			quadSubmesh.BaseVertexLocation = 0;
 
-			std::vector<Vertex> vertices(quadSubmesh.IndexCount);
+			std::vector<StandardVertex> vertices(quadSubmesh.IndexCount);
 			for (int i = 0; i < sphere.Vertices.size(); ++i)
 			{
 				vertices[i].Pos = sphere.Vertices[i].Position;
@@ -1506,13 +1507,13 @@ namespace SGraphics
 			std::vector<std::uint16_t> indices;
 			indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
 
-			auto geo = std::make_unique<MeshGeometry>();
+			auto geo = std::make_unique<Dx12MeshGeometry>();
 			geo->Name = "HDRCube";
 
-			const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+			const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
 			const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-			// Create Vertex Buffer Blob
+			// Create StandardVertex Buffer Blob
 			ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
 			CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 			ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
@@ -1522,7 +1523,7 @@ namespace SGraphics
 				mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
 			geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
 				mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-			geo->VertexByteStride = sizeof(Vertex);
+			geo->VertexByteStride = sizeof(StandardVertex);
 			geo->VertexBufferByteSize = vbByteSize;
 			geo->IndexFormat = DXGI_FORMAT_R16_UINT;
 			geo->IndexBufferByteSize = ibByteSize;
@@ -1539,12 +1540,6 @@ namespace SGraphics
 	{
 		// Link fbx
 		mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/Urn.fbx", ESupportFileForm::ASSIMP_SUPPORTFILE));
-		
-		// PLY
-		//mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/dragon_vrip.ply", ESupportFileForm::PLY));
-		
-		// text
-		//mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/skull.txt"));
 		BuildGeneratedMeshes();
 	}
 
@@ -1652,7 +1647,7 @@ namespace SGraphics
 		for (int i = 0; i < gNumFrameResources; i++)
 		{
 			mFrameResources.push_back(std::make_unique<SFrameResource>(md3dDevice.Get(),
-				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
+				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 2, (UINT)mMaterials.size()));
 		}
 	}
 
@@ -1705,11 +1700,22 @@ namespace SGraphics
 			}
 		}
 #endif
+		auto testMat = std::make_unique<DisneyPBRMaterial>();
+		testMat->Name = "test";
+		testMat->MatCBIndex = MatCBInd++;
+		testMat->MatConstants.DiffuseSrvHeapIndex = -1;
+		testMat->MatConstants.RMOSrvHeapIndex = -1;
+		testMat->MatConstants.SpecularSrvHeapIndex = -1;
+		testMat->MatConstants.NormalSrvHeapIndex = -1;
+		testMat->MatConstants.Roughness = .1f;
+		testMat->MatConstants.Metallic = 1.f;
+		testMat->MatConstants.BaseColor = XMFLOAT3(Colors::MintCream);
+		mMaterials[testMat->Name] = std::move(testMat);
 	}
 	
 	void SDxRendererGM::BuildRenderItems()
 	{
-		int CBIndex = 0;
+		
 #if defined(Sakura_Full_Effects)
 		auto opaqueRitem = std::make_unique<SRenderItem>();
 		XMStoreFloat4x4(&opaqueRitem->World, XMMatrixScaling(TestScaling[0], TestScaling[1], TestScaling[2]) * 
@@ -1729,7 +1735,7 @@ namespace SGraphics
 		{
 			for (int i = 0; i < 11; i++)
 			{
-				auto sphere = std::make_unique<SRenderItem>();
+				auto sphere = std::make_unique<SDxRenderItem>();
 				XMStoreFloat4x4(&sphere->World, XMMatrixScaling(2.5f, 2.5f, 2.5f) *
 					XMMatrixTranslation(2.7f * i, 2.7f * j, 0.f));
 				sphere->TexTransform = MathHelper::Identity4x4();
@@ -1747,8 +1753,7 @@ namespace SGraphics
 			}
 		}
 #endif
-
-		auto screenQuad = std::make_unique<SRenderItem>();
+		auto screenQuad = std::make_unique<SDxRenderItem>();
 		screenQuad->World = MathHelper::Identity4x4();
 		screenQuad->TexTransform = MathHelper::Identity4x4();
 		screenQuad->ObjCBIndex = CBIndex++;
@@ -1763,7 +1768,7 @@ namespace SGraphics
 		mAllRitems.push_back(std::move(screenQuad));
 
 #if defined(Sakura_IBL)
-		auto skyRitem = std::make_unique<SRenderItem>();
+		auto skyRitem = std::make_unique<SDxRenderItem>();
 		XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.f, 5000.f, 5000.f));
 		skyRitem->TexTransform = MathHelper::Identity4x4();
 		skyRitem->ObjCBIndex = CBIndex++;
@@ -1779,7 +1784,7 @@ namespace SGraphics
 #endif
 
 #if defined(Sakura_IBL_HDR_INPUT)
-		auto boxRitem = std::make_unique<SRenderItem>();
+		auto boxRitem = std::make_unique<SDxRenderItem>();
 		XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(1000.f, 1000.f, 1000.f));
 		boxRitem->TexTransform = MathHelper::Identity4x4();
 		boxRitem->ObjCBIndex = CBIndex++;
@@ -1799,7 +1804,7 @@ namespace SGraphics
 		for (int i = 0; i < 6; i++)
 		{
 			std::string Name = "DebugScreenQuad" + std::to_string(i);
-			screenQuad = std::make_unique<SRenderItem>();
+			screenQuad = std::make_unique<SDxRenderItem>();
 			screenQuad->World = MathHelper::Identity4x4();
 			screenQuad->TexTransform = MathHelper::Identity4x4();
 			screenQuad->ObjCBIndex = CBIndex++;
@@ -1816,7 +1821,7 @@ namespace SGraphics
 #endif
 	}
 
-	void SDxRendererGM::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<SRenderItem*>& ritems)
+	void SDxRendererGM::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<SDxRenderItem*>& ritems)
 	{
 		UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(SRenderMeshConstants));
 		UINT matCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));

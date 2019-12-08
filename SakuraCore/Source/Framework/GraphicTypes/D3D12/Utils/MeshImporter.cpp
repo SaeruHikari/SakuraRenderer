@@ -7,10 +7,10 @@ using namespace std;
 using namespace HikaD3DUtils;
 using namespace tinyply;
 
-std::unique_ptr<MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device, ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm /*= ESupportFileForm::TEXT*/)
+std::unique_ptr<Dx12MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device, ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm /*= ESupportFileForm::TEXT*/)
 {
-	auto geo = std::make_unique<MeshGeometry>();
-	std::vector<Vertex> vertices;
+	auto geo = std::make_unique<Dx12MeshGeometry>();
+	std::vector<StandardVertex> vertices;
 	std::vector<std::int32_t> indices;
 	UINT vcount = 0;
 	UINT tcount = 0;
@@ -78,12 +78,12 @@ std::unique_ptr<MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device, ID3
 		
 
 	// Pack the indices of all the meshes into on index buffer
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
 
 	// Pack the indices and vertices of all the meshes into buffer
 	{
-		const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+		const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
 		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
 
 
@@ -99,7 +99,7 @@ std::unique_ptr<MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device, ID3
 		geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device, CommandList,
 			indices.data(), ibByteSize, geo->IndexBufferUploader);
 
-		geo->VertexByteStride = sizeof(Vertex);
+		geo->VertexByteStride = sizeof(StandardVertex);
 		geo->VertexBufferByteSize = vbByteSize;
 		geo->IndexBufferByteSize = ibByteSize;
 		geo->IndexFormat = DXGI_FORMAT_R32_UINT;
@@ -118,7 +118,7 @@ std::unique_ptr<MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device, ID3
 
 
 void HikaD3DUtils::MeshImporter::processNode(aiNode* node, const aiScene* scene, 
-		std::vector<Vertex>& vertices, std::vector<std::int32_t>& indices)
+		std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices)
 {
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -136,12 +136,12 @@ void HikaD3DUtils::MeshImporter::processNode(aiNode* node, const aiScene* scene,
 }
 
 void HikaD3DUtils::MeshImporter::processMesh(aiMesh* mesh, const aiScene* scene, 
-		std::vector<Vertex>& vertices, std::vector<std::int32_t>& indices)
+		std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices)
 {
 	// Walk through each of the mesh's vertices
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
-		Vertex newVertex;
+		StandardVertex newVertex;
 		newVertex.Pos.x = mesh->mVertices[i].x;
 		newVertex.Pos.y = mesh->mVertices[i].y;
 		newVertex.Pos.z = mesh->mVertices[i].z;
@@ -178,7 +178,7 @@ void HikaD3DUtils::MeshImporter::processMesh(aiMesh* mesh, const aiScene* scene,
 
 }
 
-void HikaD3DUtils::MeshImporter::read_ply_file(const std::string& filepath, std::vector<Vertex>& InVertices, std::vector<std::int32_t>& InIndices)
+void HikaD3DUtils::MeshImporter::read_ply_file(const std::string& filepath, std::vector<StandardVertex>& InVertices, std::vector<std::int32_t>& InIndices)
 {
 	try
 	{

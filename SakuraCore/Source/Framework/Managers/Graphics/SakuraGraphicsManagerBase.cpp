@@ -1,8 +1,7 @@
 #include "SakuraGraphicsManagerBase.h"
 
-
-SGraphics::SakuraGraphicsManagerBase::SakuraGraphicsManagerBase()
+SakuraCore::SakuraGraphicsManagerBase::SakuraGraphicsManagerBase()
 	:IRuntimeModule()
 {
-	
-};
+	pGraphicsManager = this;
+}

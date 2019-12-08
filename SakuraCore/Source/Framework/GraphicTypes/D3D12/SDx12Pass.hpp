@@ -106,12 +106,12 @@ namespace SGraphics
 		// Called once per pass before drawing.
 		virtual void BindPerPassResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, size_t passSrvNum) = 0;
 		// Called once per render item before drawing.
-		virtual void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SRenderItem* ri) = 0;
+		virtual void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SDxRenderItem* ri) = 0;
 		// Bind RT for drawing
 
 	public:
 		// Current implementation would cause repeat drawing.
-		virtual void PushRenderItems(std::vector<SRenderItem*> renderItems)
+		virtual void PushRenderItems(std::vector<SDxRenderItem*> renderItems)
 		{
 			mRenderItems = renderItems;
 		}
@@ -160,6 +160,6 @@ namespace SGraphics
 			this->Draw(cmdList, dsv, frameRes, 0, rtvs, rtv_num);
 		}
 	protected:
-		std::vector<SRenderItem*> mRenderItems;
+		std::vector<SDxRenderItem*> mRenderItems;
 	};
 }

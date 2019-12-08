@@ -205,7 +205,7 @@ namespace SGraphics
 		}
 
 		// No object CB.
-		void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SRenderItem* ri)
+		void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SDxRenderItem* ri)
 		{
 			//...
 		}

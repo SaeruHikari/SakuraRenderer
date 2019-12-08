@@ -9,9 +9,10 @@
 SakuraCore::SCore* SakuraCore::SCore::mCore = nullptr;
 SakuraCore::SCore::SCore(CORE_GRAPHICS_API_CONF gAPI)
 {
+	CurrSceneMng = std::make_shared<SSceneManager>();
 	if (gAPI == CORE_GRAPHICS_API_CONF::SAKURA_DRAW_WITH_D3D12)
 	{
-		std::unique_ptr<SGraphics::SakuraGraphicsManagerBase> pD3DGraphicsManager = std::make_unique<ManagerClass>();
+		std::unique_ptr<SakuraGraphicsManagerBase> pD3DGraphicsManager = std::make_unique<ManagerClass>();
 		mGraphicsManager = std::move(pD3DGraphicsManager);
 	}
 	else if (gAPI == CORE_GRAPHICS_API_CONF::SAKURA_DRAW_WITH_VULKAN)
@@ -25,11 +26,22 @@ SakuraCore::SCore::SCore(CORE_GRAPHICS_API_CONF gAPI)
 };
 
 
+bool SakuraCore::SCore::SakuraInitScene()
+{
+	CurrScene = std::make_shared<SScene::SakuraScene>();
+	CurrScene->Initialize();
+	return true;
+}
+
 bool SakuraCore::SCore::SakuraInitializeGraphicsCore(HWND hwnd, UINT width, UINT height)
 {
+	// Debug
 	mGraphicsManager->SetHwnd(hwnd);
 	if (mGraphicsManager->Initialize())
+	{
 		mGraphicsManager->OnResize(width, height);
+		SakuraInitScene();
+	}
 	else return false;
 	return true;
 }
@@ -44,6 +56,7 @@ void SakuraCore::SCore::TickSakuraCore(double deltaTime, UINT mask)
 {
 	if ((mask & SAKURA_CORE_COMPONENT_MASK_GRAPHICS) != 0)
 	{
+		CurrScene->Tick(deltaTime);
 		mGraphicsManager->Tick(deltaTime);
 		// Current simply calls draw.
 		mGraphicsManager->Draw();

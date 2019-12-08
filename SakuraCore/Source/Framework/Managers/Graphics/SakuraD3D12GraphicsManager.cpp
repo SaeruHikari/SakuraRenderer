@@ -3,8 +3,6 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-const int gNumFrameResources = 3;
-
 void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 {
 	assert(md3dDevice);

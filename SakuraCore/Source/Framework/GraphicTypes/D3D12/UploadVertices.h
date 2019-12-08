@@ -16,7 +16,7 @@ struct ScreenQuadVertex
 	DirectX::XMFLOAT2 TexC = { 0, 0 };
 };
 
-struct Vertex
+struct StandardVertex
 {
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT4 Color;

@@ -5,26 +5,42 @@ Details:
 *******************************************************************************************/
 #pragma once
 #include "Interface.hpp"
+#include "ObjectCommonInclude.h"
 
-SInterface ISSlientObject
-{
-public:
-	virtual ~ISSlientObject() {};
-};
+typedef xg::Guid SGuid;
 
-SInterface ISDizzyObject : SImplements ISSlientObject
+namespace SakuraCore
 {
-public:
-	// Initialize function.
-	virtual bool Initialize() = 0;
-	// Finalize function.
-	virtual void Finalize() = 0;
-};
+	class SakuraGraphicsManagerBase;
+	class SSceneManager;
+	SInterface ISSlientObject
+	{
+	protected:
+		inline static SakuraGraphicsManagerBase* pGraphicsManager = nullptr;
+		inline static SSceneManager* pSceneManager = nullptr;
+	public:
+		ISSlientObject()
+		{
+			ID = xg::newGuid();
+		}
+		virtual ~ISSlientObject() {};
+		virtual SGuid GetID() { return ID; }
+		virtual void SetID(SGuid id) { ID = id; }
+	protected:
+		SGuid ID;
+	};
 
-SInterface ISTickObject : SImplements ISDizzyObject
-{
-public:
-	virtual ~ISTickObject() {};
-	// Tick function, be called per frame.
-	virtual void Tick(double deltaTime) = 0;
-};
+	SInterface ISTickObject : SImplements ISSlientObject
+	{
+	public:
+		ISTickObject() = default;
+		// Initialize function.
+		virtual bool Initialize() = 0;
+		// Finalize function.
+		virtual void Finalize() = 0;
+		// Tick function, be called per frame.
+		virtual void Tick(double deltaTime) = 0;
+	};
+}
+
+

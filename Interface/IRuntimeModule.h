@@ -8,14 +8,18 @@ Details:		Application manages the runtime module entities and batch them to call
 #include "ISObject.h"
 #include <cassert>
 
-SInterface IRuntimeModule : SImplements ISTickObject
+namespace SakuraCore
 {
-public:
-	virtual ~IRuntimeModule() {};
-	// Initialize function.
-	virtual bool Initialize() = 0;
-	// Finalize function.
-	virtual void Finalize() = 0;
-	// Tick function, be called per frame.
-	virtual void Tick(double deltaTime) = 0;
-};
+	SInterface IRuntimeModule : SImplements ISTickObject
+	{
+	public:
+		virtual ~IRuntimeModule() {};
+		// Initialize function.
+		virtual bool Initialize() = 0;
+		// Finalize function.
+		virtual void Finalize() = 0;
+		// Tick function, be called per frame.
+		virtual void Tick(double deltaTime) = 0;
+	};
+}
+

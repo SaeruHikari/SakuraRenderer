@@ -8,8 +8,8 @@ Details:		This entity pull graphic functions away from our application.
 #include <windows.h>
 #include "SakuraCoreUtils.h"
 
-namespace SGraphics
-{
+namespace SakuraCore
+{ 
 	class SakuraGraphicsManagerBase : SImplements IRuntimeModule
 	{
 	protected:

@@ -13,6 +13,8 @@ Details:
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+using namespace SakuraCore;
+
 namespace SGraphics
 {
 	class SakuraD3D12GraphicsManager : public SakuraGraphicsManagerBase
@@ -51,7 +53,11 @@ namespace SGraphics
 		virtual void OnMouseMove(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnKeyDown(double deltaTime) = 0;
-
+		auto GetDevice() { return md3dDevice.Get(); }
+		auto GetDirectCmdList() { return mCommandList.Get(); }
+		void FlushCommandQueue();
+		auto GetQueue() { return mCommandQueue.Get(); }
+		auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
 	protected:
 		// D3D12 methods. 
 		bool InitDirect3D12();
@@ -59,8 +65,6 @@ namespace SGraphics
 		virtual void CreateRtvAndDsvDescriptorHeaps();
 		void CreateCommandObjects();
 		void CreateSwapChain();
-
-		void FlushCommandQueue();
 
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -71,7 +75,6 @@ namespace SGraphics
 		void LogAdapters();
 		void LogAdapterOutputs(IDXGIAdapter* adapter);
 		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
-
 	protected:
 		// Set true to use 4xMSAA. THe default is false.
 		bool	m4xMsaaState = false;	// 4xMSAA enabled.

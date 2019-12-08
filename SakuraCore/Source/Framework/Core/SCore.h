@@ -9,9 +9,11 @@ Details:
 #include <memory>
 #include "../Managers/Graphics/SakuraGraphicsManagerBase.h"
 #include "SakuraCoreUtils.h"
+#include "../Managers/Scene/SSceneManager.h"
+
+using namespace SScene;
 
 namespace SakuraCore {
-
 	class SCore
 	{
 	private:
@@ -31,6 +33,7 @@ namespace SakuraCore {
 			return mCore;
 		}
 	public:
+		bool SakuraInitScene();
 		bool SakuraInitializeGraphicsCore(HWND hwnd, UINT weight, UINT height);
 		bool SakuraBindDbgHwnd(HWND hwnd, UINT weight, UINT height);
 		
@@ -43,7 +46,9 @@ namespace SakuraCore {
 
 	private:
 		static SCore* mCore;
-		std::unique_ptr<SGraphics::SakuraGraphicsManagerBase> mGraphicsManager;
+		std::shared_ptr<SScene::SakuraScene> CurrScene;
+		std::shared_ptr<SSceneManager> CurrSceneMng;
+		std::unique_ptr<SakuraGraphicsManagerBase> mGraphicsManager;
 	};
 }
 

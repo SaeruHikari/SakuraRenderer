@@ -14,7 +14,7 @@
 #pragma comment(lib, "assimp-vc142-mtd.lib")
 #pragma comment(lib, "tinyplyd.lib")
 
-struct Vertex;
+struct StandardVertex;
 
 using namespace std;
 namespace HikaD3DUtils
@@ -35,12 +35,12 @@ namespace HikaD3DUtils
 		/// Returns an unique pointer of Mesh Geometry
 		/// with only one submesh.
 		///</summary>
-		static std::unique_ptr<MeshGeometry> ImportMesh(ID3D12Device* device, ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm = ESupportFileForm::TEXT);
+		static std::unique_ptr<Dx12MeshGeometry> ImportMesh(ID3D12Device* device, ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm = ESupportFileForm::TEXT);
 	
 	private:
-		static void processNode(aiNode* node, const aiScene* scene, std::vector<Vertex>& vertices, std::vector<std::int32_t>& indices);
-		static void processMesh(aiMesh* mesh, const aiScene* scene, std::vector<Vertex>& vertices, std::vector<std::int32_t>& indices);
-		static void read_ply_file(const std::string& filepath, std::vector<Vertex>& vertices, std::vector<std::int32_t>& indices);
+		static void processNode(aiNode* node, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
+		static void processMesh(aiMesh* mesh, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
+		static void read_ply_file(const std::string& filepath, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
 
 	private:
 		class manual_timer

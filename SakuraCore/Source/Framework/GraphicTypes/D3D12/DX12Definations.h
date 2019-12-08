@@ -25,7 +25,8 @@
 /// Extern const int gNumFrameResources
 /// The num of frame resources
 ///</summary>
-extern const int gNumFrameResources;
+inline static const int gNumFrameResources = 3;
+
 
 class DxException
 {
@@ -41,7 +42,7 @@ public:
 	int LineNumber = -1;
 };
 
-//Defines a subrange of geometry in a MeshGeometry. This is for when multiple
+//Defines a subrange of geometry in a Dx12MeshGeometry. This is for when multiple
 //geometries are stored in one vertex and index buffer. It provides the offsets
 //and data needed to draw a subset if geometry stores in the vertex and index 
 //buffers so that we can implement the technique described by Figure 6.3.
@@ -56,7 +57,7 @@ struct SubmeshGeometry
 	DirectX::BoundingBox Bounds;
 };
 
-struct MeshGeometry
+struct Dx12MeshGeometry
 {
 	//Give it a name so we can look it up by name
 	std::string Name;
@@ -78,7 +79,7 @@ struct MeshGeometry
 	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
 	UINT IndexBufferByteSize = 0;
 
-	//A MeshGeometry may store multiple geometries in one vertex/index buffer.
+	//A Dx12MeshGeometry may store multiple geometries in one vertex/index buffer.
 	//Use this container to define the Submesh geometries so we can draw
 	//the Submeshes individually
 	std::unordered_map<std::string, SubmeshGeometry> DrawArgs;
@@ -224,9 +225,9 @@ struct SD3DTexture
 
 // Lightweight structure stores parameters to draw a shape. This will
 // vary from app-to-app
-struct SRenderItem
+struct SDxRenderItem
 {
-	SRenderItem() = default;
+	SDxRenderItem() = default;
 
 	// World matrix of the shape that describes the object's local space
 	// relative to the world space, which defines the position, orientation,
@@ -246,7 +247,7 @@ struct SRenderItem
 	UINT ObjCBIndex = -1;
 
 	DisneyPBRMaterial* Mat = nullptr;
-	MeshGeometry* Geo = nullptr;
+	Dx12MeshGeometry* Geo = nullptr;
 
 	//Primitive topology
 	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;

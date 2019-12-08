@@ -6,12 +6,11 @@ Details:
 *******************************************************************************************/
 #pragma once
 #include "Interface/ISObject.h"
-#include "SakuraSceneNode.hpp"
-#include "../Entities/SakuraEntity.h"
+#include "../Nodes/SakuraSceneNode.hpp"
 
-namespace SakuraCore
+namespace SScene
 {
-	class SakuraScene : SImplements ISTickObject
+	class SakuraScene : public SakuraSceneNode
 	{
 	public:
 		// Implements base ISTickObject interfaces.
@@ -20,12 +19,10 @@ namespace SakuraCore
 		virtual void Tick(double deltaTime) override;
 
 		// Add Entity to the entities root.
-		virtual bool AddEntity(std::shared_ptr<SakuraEntity> childNode);
+		virtual bool AddSceneNode(std::shared_ptr<SakuraSceneNode> childNode);
 		// Find scene node
-		virtual std::shared_ptr<SakuraEntity> FindEntity(SceneNodeID id);
-
+		virtual std::shared_ptr<SakuraSceneNode> FindSceneNode(SGuid id);
 	private:
-		// !
-		std::shared_ptr<SakuraEntity> EntitiesRoot;
+		std::shared_ptr<SakuraSceneNode> EntitiesRoot;
 	};
 }
