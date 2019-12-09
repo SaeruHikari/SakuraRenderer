@@ -6,7 +6,6 @@ Details:		  Do the Common works for all platforms(windows only) and modes(render
 ****************************************************************************************************************************/
 #pragma once
 #include <QtWidgets/QApplication>
-//
 #include "../UI/SakuraRenderer.h"
 #include <QTimer>
 #include <QTime>

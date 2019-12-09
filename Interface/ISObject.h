@@ -11,6 +11,8 @@ typedef xg::Guid SGuid;
 
 namespace SakuraCore
 {
+	typedef size_t SIndex;
+
 	class SakuraGraphicsManagerBase;
 	class SSceneManager;
 	SInterface ISSlientObject

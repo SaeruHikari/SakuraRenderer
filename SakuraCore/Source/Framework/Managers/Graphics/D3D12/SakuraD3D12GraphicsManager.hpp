@@ -5,7 +5,7 @@ Description:	          D3D12 version Graphics Manager.
 Details:		     
 *******************************************************************************************/
 #pragma once
-#include "SakuraGraphicsManagerBase.h"
+#include "../CommonInterface/SakuraGraphicsManagerBase.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 
 //Link necessary d3d12 libraries
@@ -21,7 +21,9 @@ namespace SGraphics
 	{
 	public:
 		SakuraD3D12GraphicsManager()
-			:SakuraGraphicsManagerBase() {};
+			:SakuraGraphicsManagerBase() 
+		{
+		};
 		SakuraD3D12GraphicsManager(const SakuraD3D12GraphicsManager& rhs) = delete;
 		SakuraD3D12GraphicsManager& operator=(const SakuraD3D12GraphicsManager& rhs) = delete;
 		~SakuraD3D12GraphicsManager();
@@ -29,7 +31,6 @@ namespace SGraphics
 		bool Get4xMsaaState() const;
 		void Set4xMsaaState(bool value);
 		float AspectRatio() const;
-
 	public:
 		inline auto GetRtvCPU(int offset)
 		{
@@ -53,11 +54,13 @@ namespace SGraphics
 		virtual void OnMouseMove(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnKeyDown(double deltaTime) = 0;
+
 		auto GetDevice() { return md3dDevice.Get(); }
 		auto GetDirectCmdList() { return mCommandList.Get(); }
 		void FlushCommandQueue();
 		auto GetQueue() { return mCommandQueue.Get(); }
 		auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
+
 	protected:
 		// D3D12 methods. 
 		bool InitDirect3D12();
@@ -73,8 +76,6 @@ namespace SGraphics
 		void CalculateFrameStats();
 
 		void LogAdapters();
-		void LogAdapterOutputs(IDXGIAdapter* adapter);
-		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 	protected:
 		// Set true to use 4xMSAA. THe default is false.
 		bool	m4xMsaaState = false;	// 4xMSAA enabled.

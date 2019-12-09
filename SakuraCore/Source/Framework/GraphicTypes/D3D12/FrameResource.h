@@ -80,7 +80,7 @@ public:
 			IID_PPV_ARGS(CmdListAlloc.GetAddressOf())));
 
 		PassCB = std::make_unique<UploadBuffer<SPassConstants>>(device, passCount, true);
-		MaterialCB = std::make_unique<UploadBuffer<DisneyMaterialConstants>>(device, materialCount, true);
+		MaterialCB = std::make_unique<UploadBuffer<PBRMaterialConstants>>(device, materialCount, true);
 		ObjectCB = std::make_unique<UploadBuffer<SRenderMeshConstants>>(device, objectCount, true);
 		SsaoCB = std::make_unique<UploadBuffer<SsaoConstants>>(device, passCount, true);
 	}
@@ -96,7 +96,7 @@ public:
 	// that reference it. So each frame needs their own cbuffers.
 	// std::unique_ptr<UploadBuffer<FrameConstants>> FrameCB = nullptr;
 	std::unique_ptr<UploadBuffer<SPassConstants>> PassCB = nullptr;
-	std::unique_ptr<UploadBuffer<DisneyMaterialConstants>> MaterialCB = nullptr;
+	std::unique_ptr<UploadBuffer<PBRMaterialConstants>> MaterialCB = nullptr;
 	std::unique_ptr<UploadBuffer<SRenderMeshConstants>> ObjectCB = nullptr;
 	std::unique_ptr<UploadBuffer<SsaoConstants>> SsaoCB = nullptr;
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Interface/ISObject.h"
 #include "Framework/GraphicTypes/D3D12/DX12Definations.h"
+#include "Framework/Core/Object/SMaterial.h"
 
 namespace SGraphics
 {
@@ -37,5 +38,6 @@ namespace SGraphics
 
 		}
 		std::vector<std::unique_ptr<SRenderItem>> OpaqueRItems;
+		std::vector<std::unique_ptr<SMaterial>> OpaqueMaterials;
 	};
 }

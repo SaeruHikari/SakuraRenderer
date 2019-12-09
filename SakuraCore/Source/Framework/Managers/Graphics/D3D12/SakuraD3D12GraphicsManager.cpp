@@ -176,7 +176,6 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateCommandObjects()
 {
 	// Create command queue.
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	//queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));

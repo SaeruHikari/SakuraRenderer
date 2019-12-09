@@ -9,7 +9,7 @@ SakuraCore::SSceneManager::SSceneManager()
 	renderScene->Initialize();
 }
 
-SRenderItem* SakuraCore::SSceneManager::AddOpaque(SStaticMesh* data)
+SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matname)
 {
 	auto gmng = (SDxRendererGM*)pGraphicsManager;
 	ID3D12Device* device = gmng->GetDevice();
@@ -72,13 +72,30 @@ SRenderItem* SakuraCore::SSceneManager::AddOpaque(SStaticMesh* data)
 	rItem->NumFramesDirty = 3;
 	gmng->mRenderLayers[SRenderLayers::E_Opaque].push_back(rItem);
 	gmng->mAllRitems.push_back(std::move(std::unique_ptr<SDxRenderItem>(rItem)));
-	auto ptr = srItem.get();
 	renderScene->OpaqueRItems.push_back(std::move(srItem));
 
 	ThrowIfFailed(cmdList->Close());
 	ID3D12CommandList* cmdsList0[] = { cmdList };
 	gmng->GetQueue()->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
 	gmng->FlushCommandQueue();
-	return ptr;
+	return renderScene->OpaqueRItems.size() - 1;
+}
+
+SIndex SakuraCore::SSceneManager::RegistOpaqueMat(SMaterial* material, std::string name)
+{
+	auto unique = std::unique_ptr<SMaterial>(material);
+	renderScene->OpaqueMaterials.push_back(std::move(unique));
+
+	return renderScene->OpaqueMaterials.size() - 1;
+}
+
+SGraphics::SRenderItem* SakuraCore::SSceneManager::GetRenderItem(SIndex index)
+{
+	return renderScene->OpaqueRItems[index].get();
+}
+
+SGraphics::SMaterial* SakuraCore::SSceneManager::GetMaterial(SIndex index)
+{
+	return renderScene->OpaqueMaterials[index].get();
 }
 

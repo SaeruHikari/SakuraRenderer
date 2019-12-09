@@ -7,7 +7,7 @@ Details:
 #pragma once
 #include "../../Interface/IRuntimeModule.h"
 #include <memory>
-#include "../Managers/Graphics/SakuraGraphicsManagerBase.h"
+#include "../Managers/Graphics/CommonInterface/SakuraGraphicsManagerBase.h"
 #include "SakuraCoreUtils.h"
 #include "../Managers/Scene/SSceneManager.h"
 

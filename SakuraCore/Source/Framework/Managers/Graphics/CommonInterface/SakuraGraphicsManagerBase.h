@@ -14,7 +14,10 @@ namespace SakuraCore
 	{
 	protected:
 		// Hide constructors to prevent unexpected instance for virtual class.
-		SakuraGraphicsManagerBase();
+		SakuraGraphicsManagerBase()
+		{
+			pGraphicsManager = this;
+		}
 		SakuraGraphicsManagerBase(const SakuraGraphicsManagerBase& rhs) = delete;
 		SakuraGraphicsManagerBase& operator=(const SakuraGraphicsManagerBase& rhs) = delete;
 

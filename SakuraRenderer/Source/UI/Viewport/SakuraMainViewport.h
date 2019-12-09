@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QFrame>
 #include "ui_SakuraMainViewport.h"
 #include "SakuraViewportBase.h"
@@ -12,9 +11,9 @@ public:
 	SakuraMainViewport(QWidget *parent = Q_NULLPTR);
 	~SakuraMainViewport();
 
-	virtual bool Initialize() override;
-	virtual void Tick(double deltaTime) override;
-	virtual void Finalize() override;
+	virtual bool Initialize() ;
+	virtual void Tick(double deltaTime) ;
+	virtual void Finalize() ;
 
 private:
 	Ui::SakuraMainViewport ui;

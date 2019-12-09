@@ -162,7 +162,7 @@ struct Material
 	DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 };
 
-struct DisneyMaterialConstants
+struct PBRMaterialConstants
 {
 	DirectX::XMFLOAT3 BaseColor = { 1.f, 1.f, 1.f };
 	float Opaque = 1.f;
@@ -196,7 +196,7 @@ struct DisneyMaterialConstants
 	int NormalSrvHeapIndex = -1;
 };
 
-struct DisneyPBRMaterial
+struct OpaqueMaterial
 {
 	// Unique material name for lookup.
 	std::string Name;
@@ -209,7 +209,7 @@ struct DisneyPBRMaterial
 	// Index into constant buffer corresponding to this material.
 	int MatCBIndex = -1;
 	// Material constant buffer data used for shading.
-	DisneyMaterialConstants MatConstants;
+	PBRMaterialConstants MatConstants;
 };
 
 struct SD3DTexture
@@ -246,7 +246,7 @@ struct SDxRenderItem
 	// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
 	UINT ObjCBIndex = -1;
 
-	DisneyPBRMaterial* Mat = nullptr;
+	OpaqueMaterial* Mat = nullptr;
 	Dx12MeshGeometry* Geo = nullptr;
 
 	//Primitive topology

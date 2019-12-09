@@ -36,7 +36,7 @@ namespace SCommon
 		DirectX::XMFLOAT2 TexC;
 	};
 
-	struct MeshData
+	struct StaticMeshData
 	{
 		std::vector<Vertex> Vertices;
 		std::vector<uint32> Indices32;

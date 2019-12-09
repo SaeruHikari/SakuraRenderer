@@ -12,16 +12,7 @@ namespace SEngine
 	{
 		
 	};
-	struct SStaticMeshData : public MeshData, SImplements ISSlientObject
-	{
-		SStaticMeshData() = default;
-		SStaticMeshData(MeshData&& meshdata)
-		{
-			Vertices = std::move(meshdata.Vertices);
-			Indices32 = std::move(meshdata.Indices32);
-			ISSlientObject::ISSlientObject();
-		}
-	};
+
 	class SStaticMesh : SImplements ISSlientObject
 	{
 	public:
@@ -30,13 +21,13 @@ namespace SEngine
 			ISSlientObject::ISSlientObject();
 			auto GeoGen = std::make_shared<GeometryGenerator>();
 			auto sp = GeoGen->CreateSphere(1.f, 50, 50);
-			meshData = std::make_shared<SStaticMeshData>(std::move(sp));
+			meshData = std::make_unique<StaticMeshData>(std::move(sp));
 		}
 		auto GetMeshData()
 		{
-			return meshData;
+			return meshData.get();
 		}
 	protected:
-		std::shared_ptr<SStaticMeshData> meshData;
+		std::unique_ptr<StaticMeshData> meshData;
 	};
 }

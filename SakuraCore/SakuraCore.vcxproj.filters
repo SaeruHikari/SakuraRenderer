@@ -69,12 +69,6 @@
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\D3DCommon.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -147,6 +141,21 @@
     <ClInclude Include="Source\Framework\GraphicTypes\RenderScene\SRenderScene.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\Core\Object\SMaterial.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\CommonInterface\SakuraGraphicsManagerBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\CommonInterface\Resource\SakuraGraphicsResourceManagerBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">
@@ -176,12 +185,6 @@
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -204,6 +207,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Framework\Managers\Scene\SSceneManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

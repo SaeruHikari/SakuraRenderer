@@ -2,9 +2,8 @@
 
 #include <QFrame>
 #include "ui_SakuraViewportBase.h"
-#include "../Interface/ISObject.h"
 
-class SakuraViewportBase : public QFrame, SImplements ISTickObject
+class SakuraViewportBase : public QFrame
 {
 	Q_OBJECT
 

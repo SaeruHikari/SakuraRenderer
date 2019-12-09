@@ -6,16 +6,16 @@
 #include "SakuraGBufferViewport.h"
 #include <unordered_map>
 
-class SakuraRenderer : public QMainWindow, SImplements ISTickObject
+class SakuraRenderer : public QMainWindow
 {
 	Q_OBJECT
 
 public:
 	SakuraRenderer(QWidget *parent = Q_NULLPTR);
 
-	virtual bool Initialize() override;
-	virtual void Tick(double deltaTime) override;
-	virtual void Finalize() override;
+	virtual bool Initialize();
+	virtual void Tick(double deltaTime);
+	virtual void Finalize();
 
 	WId GetMainViewportWinId() {
 		//assert(MainViewPort != nullptr);

@@ -12,9 +12,9 @@
 using namespace DirectX;
 
 
-MeshData GeometryGenerator::CreateBox(float width, float height, float depth, uint32 numSubdivisions)
+StaticMeshData GeometryGenerator::CreateBox(float width, float height, float depth, uint32 numSubdivisions)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	//
 	// Create the vertices.
@@ -105,9 +105,9 @@ MeshData GeometryGenerator::CreateBox(float width, float height, float depth, ui
 	return meshData;
 }
 
-MeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, uint32 stackCount)
+StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, uint32 stackCount)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	//
 	// Compute the vertices stating at the top pole and moving down the stacks.
@@ -216,10 +216,10 @@ MeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, uint32
 	return meshData;
 }
 
-void GeometryGenerator::Subdivide(MeshData& meshData)
+void GeometryGenerator::Subdivide(StaticMeshData& meshData)
 {
 	// Save a copy of the input geometry.
-	MeshData inputCopy = meshData;
+	StaticMeshData inputCopy = meshData;
 
 
 	meshData.Vertices.resize(0);
@@ -309,9 +309,9 @@ Vertex GeometryGenerator::MidPoint(const Vertex& v0, const Vertex& v1)
 	return v;
 }
 
-MeshData GeometryGenerator::CreateGeosphere(float radius, uint32 numSubdivisions)
+StaticMeshData GeometryGenerator::CreateGeosphere(float radius, uint32 numSubdivisions)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	// Put a cap on the number of subdivisions.
 	numSubdivisions = std::min<uint32>(numSubdivisions, 6u);
@@ -384,9 +384,9 @@ MeshData GeometryGenerator::CreateGeosphere(float radius, uint32 numSubdivisions
 	return meshData;
 }
 
-MeshData GeometryGenerator::CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount)
+StaticMeshData GeometryGenerator::CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	//
 	// Build Stacks.
@@ -479,7 +479,7 @@ MeshData GeometryGenerator::CreateCylinder(float bottomRadius, float topRadius, 
 }
 
 void GeometryGenerator::BuildCylinderTopCap(float bottomRadius, float topRadius, float height,
-	uint32 sliceCount, uint32 stackCount, MeshData& meshData)
+	uint32 sliceCount, uint32 stackCount, StaticMeshData& meshData)
 {
 	uint32 baseIndex = (uint32)meshData.Vertices.size();
 
@@ -515,7 +515,7 @@ void GeometryGenerator::BuildCylinderTopCap(float bottomRadius, float topRadius,
 }
 
 void GeometryGenerator::BuildCylinderBottomCap(float bottomRadius, float topRadius, float height,
-	uint32 sliceCount, uint32 stackCount, MeshData& meshData)
+	uint32 sliceCount, uint32 stackCount, StaticMeshData& meshData)
 {
 	// 
 	// Build bottom cap.
@@ -553,9 +553,9 @@ void GeometryGenerator::BuildCylinderBottomCap(float bottomRadius, float topRadi
 	}
 }
 
-MeshData GeometryGenerator::CreateGrid(float width, float depth, uint32 m, uint32 n)
+StaticMeshData GeometryGenerator::CreateGrid(float width, float depth, uint32 m, uint32 n)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	uint32 vertexCount = m * n;
 	uint32 faceCount = (m - 1) * (n - 1) * 2;
@@ -618,9 +618,9 @@ MeshData GeometryGenerator::CreateGrid(float width, float depth, uint32 m, uint3
 	return meshData;
 }
 
-MeshData GeometryGenerator::CreateQuad(float x, float y, float w, float h, float depth)
+StaticMeshData GeometryGenerator::CreateQuad(float x, float y, float w, float h, float depth)
 {
-	MeshData meshData;
+	StaticMeshData meshData;
 
 	meshData.Vertices.resize(4);
 	meshData.Indices32.resize(6);

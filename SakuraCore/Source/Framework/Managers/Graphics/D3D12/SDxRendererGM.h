@@ -5,7 +5,7 @@ Description:	          D3D12 Renderer Graphics Manager version v0.
 Details:
 *******************************************************************************************/
 #pragma once
-#include "../SakuraD3D12GraphicsManager.hpp"
+#include "SakuraD3D12GraphicsManager.hpp"
 #include <memory>
 #include "../../../GraphicTypes/D3D12/SD3DCamera.h"
 #include "Framework/GraphicTypes/D3D12/SRenderTarget.hpp"
@@ -170,7 +170,7 @@ namespace SGraphics
 	public:
 		int CBIndex = 0;
 		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
-		std::unordered_map<std::string, std::unique_ptr<DisneyPBRMaterial>> mMaterials;
+		std::unordered_map<std::string, std::unique_ptr<OpaqueMaterial>> mMaterials;
 		std::unordered_map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
 		std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
@@ -251,7 +251,6 @@ namespace SGraphics
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;
 		inline static const float TAA_JITTER_DISTANCE = 1.f;
-
 	};
 
 }

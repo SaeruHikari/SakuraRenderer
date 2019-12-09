@@ -1,5 +1,4 @@
 #pragma once
-
 #include "SakuraViewportBase.h"
 #include "ui_SakuraGBufferViewport.h"
 
@@ -12,9 +11,9 @@ public:
 	~SakuraGBufferViewport();
 
 
-	virtual bool Initialize() override;
-	virtual void Tick(double deltaTime) override;
-	virtual void Finalize() override;
+	virtual bool Initialize() ;
+	virtual void Tick(double deltaTime) ;
+	virtual void Finalize() ;
 
 private:
 	Ui::SakuraGBufferViewport ui;

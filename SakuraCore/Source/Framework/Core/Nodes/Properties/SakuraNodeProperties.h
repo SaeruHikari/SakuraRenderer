@@ -10,19 +10,24 @@ Details:				Includes transform(loc, rot, scale) etc...
 
 using namespace DirectX;
 
+namespace SakuraMath
+{
+	typedef DirectX::XMFLOAT3 SVector;
+}
+
 namespace SakuraCore
 {
 	struct STransform : public ISSlientObject
 	{
 	public:
 		STransform() = default;
-		STransform(const XMFLOAT3&& _Loc, const XMFLOAT3&& _Rot, const XMFLOAT3&& _Scale)
+		STransform(const SakuraMath::SVector&& _Loc, const SakuraMath::SVector&& _Rot, const SakuraMath::SVector&& _Scale)
 			:Location(_Loc), Rotation(_Rot), Scale(_Scale)
 		{
 			
 		}
-		XMFLOAT3 Location = { 0, 0, 0 };
-		XMFLOAT3 Rotation = { 0, 0, 0 };
-		XMFLOAT3 Scale = { 1, 1, 1 };
+		SakuraMath::SVector Location = { 0, 0, 0 };
+		SakuraMath::SVector Rotation = { 0, 0, 0 };
+		SakuraMath::SVector Scale = { 1, 1, 1 };
 	};
 }

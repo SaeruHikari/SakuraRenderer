@@ -900,10 +900,10 @@ namespace SGraphics
 		{
 			// Only update the cbuffer data if the constants have changed. If the cbuffer
 			// data changes, it needs to be updated for each FrameResource.
-			DisneyPBRMaterial* mat = e.second.get();
+			OpaqueMaterial* mat = e.second.get();
 			if (mat->NumFramesDirty > 0)
 			{
-				DisneyMaterialConstants matConstants;
+				PBRMaterialConstants matConstants;
 				matConstants = mat->MatConstants;
 
 				currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
@@ -1647,14 +1647,14 @@ namespace SGraphics
 		for (int i = 0; i < gNumFrameResources; i++)
 		{
 			mFrameResources.push_back(std::make_unique<SFrameResource>(md3dDevice.Get(),
-				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 2, (UINT)mMaterials.size()));
+				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 50, (UINT)mMaterials.size()));
 		}
 	}
 
 	void SDxRendererGM::BuildMaterials()
 	{
 		int MatCBInd = 0;
-		auto bricks0 = std::make_unique<DisneyPBRMaterial>();
+		auto bricks0 = std::make_unique<OpaqueMaterial>();
 		bricks0->Name = "bricks0";
 		bricks0->MatCBIndex = MatCBInd++;
 		bricks0->MatConstants.DiffuseSrvHeapIndex = 0;
@@ -1672,7 +1672,7 @@ namespace SGraphics
 		{
 			for (int i = 0; i < 11; i++)
 			{
-				auto testM = std::make_unique<DisneyPBRMaterial>();
+				auto testM = std::make_unique<OpaqueMaterial>();
 				testM->Name = "test" + std::to_string(i) + std::to_string(j);
 				testM->MatCBIndex = MatCBInd++;
 				testM->MatConstants.DiffuseSrvHeapIndex = -1;
@@ -1700,16 +1700,16 @@ namespace SGraphics
 			}
 		}
 #endif
-		auto testMat = std::make_unique<DisneyPBRMaterial>();
+		auto testMat = std::make_unique<OpaqueMaterial>();
 		testMat->Name = "test";
 		testMat->MatCBIndex = MatCBInd++;
 		testMat->MatConstants.DiffuseSrvHeapIndex = -1;
 		testMat->MatConstants.RMOSrvHeapIndex = -1;
 		testMat->MatConstants.SpecularSrvHeapIndex = -1;
 		testMat->MatConstants.NormalSrvHeapIndex = -1;
-		testMat->MatConstants.Roughness = .1f;
-		testMat->MatConstants.Metallic = 1.f;
-		testMat->MatConstants.BaseColor = XMFLOAT3(Colors::MintCream);
+		testMat->MatConstants.Roughness = .5f;
+		testMat->MatConstants.Metallic = .8f;
+		testMat->MatConstants.BaseColor = XMFLOAT3(Colors::BlueViolet);
 		mMaterials[testMat->Name] = std::move(testMat);
 	}
 	
