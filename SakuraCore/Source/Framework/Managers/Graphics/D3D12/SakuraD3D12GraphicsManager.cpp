@@ -1,4 +1,6 @@
 #include "SakuraD3D12GraphicsManager.hpp"
+#include "Resource\SDxResourceManager.h"
+
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -9,8 +11,8 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	assert(mSwapChain);
 	assert(mDirectCmdListAlloc);
 
-	mClientWidth = Width;
-	mClientHeight = Height;
+	mGraphicsConfs->clientWidth = Width;
+	mGraphicsConfs->clientHeight = Height;
 
 	//Flush before changing any resources
 	FlushCommandQueue();
@@ -26,8 +28,8 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	//Resize the swap chain
 	ThrowIfFailed(mSwapChain->ResizeBuffers(
 		SwapChainBufferCount,
-		mClientWidth, mClientHeight,
-		mBackBufferFormat,
+		mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight,
+		mGraphicsConfs->backBufferFormat,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
 	mCurrBackBuffer = 0;
@@ -38,15 +40,15 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	{
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
 		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
-		rtvHeapHandle.Offset(1, mRtvDescriptorSize);
+		rtvHeapHandle.Offset(1, RtvDescriptorSize());
 	}
 
 	//Create the depth/stencil buffer and view
 	D3D12_RESOURCE_DESC depthStencilDesc;
 	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Alignment = 0;
-	depthStencilDesc.Width = mClientWidth;
-	depthStencilDesc.Height = mClientHeight;
+	depthStencilDesc.Width = mGraphicsConfs->clientWidth;
+	depthStencilDesc.Height = mGraphicsConfs->clientHeight;
 	depthStencilDesc.DepthOrArraySize = 1;
 	depthStencilDesc.MipLevels = 1;
 
@@ -63,7 +65,7 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 	D3D12_CLEAR_VALUE optClear;
-	optClear.Format = mDepthStencilFormat;
+	optClear.Format = mGraphicsConfs->depthStencilFormat;
 	optClear.DepthStencil.Depth = 1.f;
 	optClear.DepthStencil.Stencil = 0.f;
 	ThrowIfFailed(md3dDevice->CreateCommittedResource(
@@ -80,7 +82,7 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Format = mDepthStencilFormat;
+	dsvDesc.Format = mGraphicsConfs->depthStencilFormat;
 	dsvDesc.Texture2D.MipSlice = 0;
 	md3dDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
 
@@ -99,16 +101,21 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	//Update the viewport transform to cover the client area
 	mScreenViewport.TopLeftX = 0;
 	mScreenViewport.TopLeftY = 0;
-	mScreenViewport.Width = static_cast<float>(mClientWidth);
-	mScreenViewport.Height = static_cast<float>(mClientHeight);
+	mScreenViewport.Width = static_cast<float>(mGraphicsConfs->clientWidth);
+	mScreenViewport.Height = static_cast<float>(mGraphicsConfs->clientHeight);
 	mScreenViewport.MinDepth = 0.0f;
 	mScreenViewport.MaxDepth = 1.0f;
 
-	mScissorRect = { 0, 0, mClientWidth, mClientHeight };
+	mScissorRect = { 0, 0, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight };
 }
 
 bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 {
+	// Create S Wrappers
+	mFence = std::make_shared<SFence>();
+	mDeviceInformation = std::make_shared<SDx12DeviceInformation>();
+	mGraphicsConfs = std::make_shared<SDx12GraphicsStates>();
+
 #if defined(DEBUG) || defined(_DEBUG)
 	// Enable the D3D12 debug layer
 	{
@@ -140,18 +147,21 @@ bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 
 	// Create Fence
 	ThrowIfFailed(md3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
-		IID_PPV_ARGS(&mFence)));
+		IID_PPV_ARGS(&(mFence->fence))));
 
 	// Cache descriptor sizes for after usage.
-	mRtvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	mDsvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	mCbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	mDeviceInformation->rtvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	mDeviceInformation->dsvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	mDeviceInformation->cbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// Create Resource Manager
+	CreateResourceManager();
 
 	// Check 4x MSAA quality for our back buffer point.
 	// All Direct3D 11 capable devices support 4x MSAA for all render formats.
 	// So we only need to check quality support.
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-	msQualityLevels.Format = mBackBufferFormat;
+	msQualityLevels.Format = mGraphicsConfs->backBufferFormat;
 	msQualityLevels.SampleCount = 8;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	msQualityLevels.NumQualityLevels = 0;
@@ -161,11 +171,9 @@ bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 		sizeof(msQualityLevels)));
 	m4xMsaaQuality = msQualityLevels.NumQualityLevels;
 	assert(m4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
-
 #if defined(_DEBUG) | defined(DEBUG)
 	LogAdapters();
 #endif
-
 	CreateCommandObjects();
 	CreateSwapChain();
 	CreateRtvAndDsvDescriptorHeaps();
@@ -205,11 +213,11 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateSwapChain()
 	mSwapChain.Reset();
 
 	DXGI_SWAP_CHAIN_DESC sd;
-	sd.BufferDesc.Width = mClientWidth;
-	sd.BufferDesc.Height = mClientHeight;
+	sd.BufferDesc.Width = mGraphicsConfs->clientWidth;
+	sd.BufferDesc.Height = mGraphicsConfs->clientHeight;
 	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
-	sd.BufferDesc.Format = mBackBufferFormat;
+	sd.BufferDesc.Format = mGraphicsConfs->backBufferFormat;
 	sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	sd.SampleDesc.Count = m4xMsaaState ? 4 : 1;
@@ -240,23 +248,30 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateSwapChain()
 #endif
 }
 
+bool SGraphics::SakuraD3D12GraphicsManager::CreateResourceManager()
+{
+	pGraphicsResourceManager = std::make_unique<SDxResourceManager>(mdxgiFactory, md3dDevice, mFence, mDeviceInformation, mGraphicsConfs);
+	pGraphicsResourceManager->Initialize();
+	return pGraphicsResourceManager != nullptr;
+}
+
 void SGraphics::SakuraD3D12GraphicsManager::FlushCommandQueue()
 {
 	// Advance the fence value to mark commands up to this fence point.
-	mCurrentFence++;
+	mFence->currentFence++;
 
 	// Add an instruction to the command queue to set a new fence point. Because we 
 	// are on the GPU time line, the new fence point won't be set until the GPU finishes
 	// processing all the commands prior to this Signare()
-	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
+	ThrowIfFailed(mCommandQueue->Signal(mFence->fence.Get(), mFence->currentFence));
 
 	// Wait until the GPU has completed commands up to this fence point.
-	if (mFence->GetCompletedValue() < mCurrentFence)
+	if (mFence->fence->GetCompletedValue() < mFence->currentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
 		// Fire event when GPU hits current Fence.
-		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
+		ThrowIfFailed(mFence->fence->SetEventOnCompletion(mFence->currentFence, eventHandle));
 
 		// Wait until the GPU hits current fence event is fired.
 		WaitForSingleObject(eventHandle, INFINITE);
@@ -274,7 +289,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE SGraphics::SakuraD3D12GraphicsManager::CurrentBackBu
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
 		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
 		mCurrBackBuffer,
-		mRtvDescriptorSize);
+		mDeviceInformation->rtvDescriptorSize);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE SGraphics::SakuraD3D12GraphicsManager::DepthStencilView() const
@@ -338,6 +353,6 @@ void SGraphics::SakuraD3D12GraphicsManager::Set4xMsaaState(bool value)
 
 float SGraphics::SakuraD3D12GraphicsManager::AspectRatio() const
 {
-	return static_cast<float>(mClientWidth) / mClientHeight;
+	return static_cast<float>(mGraphicsConfs->clientWidth) / mGraphicsConfs->clientHeight;
 }
 

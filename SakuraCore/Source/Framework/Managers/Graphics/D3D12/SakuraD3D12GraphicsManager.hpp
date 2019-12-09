@@ -35,17 +35,18 @@ namespace SGraphics
 		inline auto GetRtvCPU(int offset)
 		{
 			auto rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
-			rtvCPU.Offset(offset, mRtvDescriptorSize);
+			rtvCPU.Offset(offset, RtvDescriptorSize());
 			return rtvCPU;
 		}
-
-
 	public:
 		// Graphics manager interfaces
 		virtual void Clear() {};
 		virtual void Draw() {};
 		virtual void Present() {};
-		virtual bool Initialize() { return InitDirect3D12(); };
+		virtual bool Initialize() 
+		{ 
+			return InitDirect3D12();
+		};
 		virtual void Finalize() {};
 		virtual void Tick(double deltaTime) = 0;
 		virtual void OnResize(UINT Width, UINT Height) override;
@@ -55,11 +56,14 @@ namespace SGraphics
 		virtual void OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnKeyDown(double deltaTime) = 0;
 
-		auto GetDevice() { return md3dDevice.Get(); }
-		auto GetDirectCmdList() { return mCommandList.Get(); }
-		void FlushCommandQueue();
-		auto GetQueue() { return mCommandQueue.Get(); }
-		auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
+		UINT RtvDescriptorSize() { return mDeviceInformation->rtvDescriptorSize; }
+		inline auto DsvDescriptorSize() { return mDeviceInformation->dsvDescriptorSize; }
+		inline auto CbvSrvUavDescriptorSize() { return mDeviceInformation->cbvSrvUavDescriptorSize; }
+		inline auto GetDevice() { return md3dDevice.Get(); }
+		inline auto GetDirectCmdList() { return mCommandList.Get(); }
+		inline void FlushCommandQueue();
+		inline auto GetQueue() { return mCommandQueue.Get(); }
+		inline auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
 
 	protected:
 		// D3D12 methods. 
@@ -68,7 +72,7 @@ namespace SGraphics
 		virtual void CreateRtvAndDsvDescriptorHeaps();
 		void CreateCommandObjects();
 		void CreateSwapChain();
-
+		virtual bool CreateResourceManager();
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
@@ -86,9 +90,6 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
 		Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
 
-		Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
-		UINT64 mCurrentFence;
-
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
@@ -105,18 +106,9 @@ namespace SGraphics
 		D3D12_VIEWPORT mScreenViewport;
 		D3D12_RECT mScissorRect;
 
-		UINT mRtvDescriptorSize = 0;
-		UINT mDsvDescriptorSize = 0;
-		UINT mCbvSrvUavDescriptorSize = 0;
-
-		// Derived class should set these in derived constructor to customize starting values.
-		D3D_DRIVER_TYPE md3dDriverType = D3D_DRIVER_TYPE_HARDWARE;
-		//HDR
-		DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		//DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
-		DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		int mClientWidth = 800;
-		int mClientHeight = 600;
+		std::shared_ptr<SFence> mFence;
+		std::shared_ptr<SDx12DeviceInformation> mDeviceInformation;
+		std::shared_ptr<SDx12GraphicsStates> mGraphicsConfs;
 
 #if defined(DEBUG) || defined(_DEBUG)
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mDbgSwapChain;

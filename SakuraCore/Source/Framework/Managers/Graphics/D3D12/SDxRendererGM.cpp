@@ -67,10 +67,10 @@ namespace SGraphics
 #if defined(Sakura_MotionVector)
 			SRTProperties vprop;
 			vprop.mRtvFormat = DXGI_FORMAT_R16G16_UNORM;
-			mMotionVectorRT = std::make_shared<SRenderTarget2D>(vprop, mClientWidth, mClientHeight, true);
+			mMotionVectorRT = std::make_shared<SRenderTarget2D>(vprop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
 				CD3DX12_CPU_DESCRIPTOR_HANDLE();
 			mMotionVectorRT->BuildRTResource(md3dDevice.Get(),
-				mScreenEfxRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxRtvName)->GetCPUtDescriptorHandle(0),
 				GetScreenEfxSrvCPU(0),
 				GetScreenEfxSrvGPU(0));
 #endif
@@ -81,7 +81,7 @@ namespace SGraphics
 			{
 				//SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
 				SRTProperties prop(0.f, 0.f, (i == 3) ? 1.f : 0.f, 0.f);
-				GBufferRTs[i] = std::make_shared<SRenderTarget2D>(prop, mClientWidth, mClientHeight, true);
+				GBufferRTs[i] = std::make_shared<SRenderTarget2D>(prop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
 				// Init RT Resource with a CPU rtv handle.
 				GBufferRTs[i]->BuildRTResource(md3dDevice.Get(),
 					GetRtvCPU(SwapChainBufferCount + i),
@@ -94,9 +94,9 @@ namespace SGraphics
 			prop.mRtvFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			mBrdfLutRT2D = std::make_shared<SRenderTarget2D>(prop, 4096, 4096, false);
 			mBrdfLutRT2D->BuildRTResource(md3dDevice.Get(),
-				mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-				mCaptureDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-				mCaptureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureRtvName)->GetCPUtDescriptorHandle(0),
+				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureSrvName)->GetCPUtDescriptorHandle(0),
+				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureSrvName)->GetGPUtDescriptorHandle(0));
 			UINT _sizeS = 2048;
 			for (int j = 0; j < SkyCubeMips; j++)
 			{
@@ -141,14 +141,14 @@ namespace SGraphics
 #if defined(Sakura_TAA)
 			mTaaRTs = new std::shared_ptr<SRenderTarget2D>[TAARtvsNum];
 			auto taaRtvCPU = 
-				CD3DX12_CPU_DESCRIPTOR_HANDLE(mScreenEfxRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxRtvName)->GetCPUtDescriptorHandle(0));
 			for (int i = 0; i < TAARtvsNum; i++)
 			{
-				taaRtvCPU.Offset(1, mRtvDescriptorSize);
+				taaRtvCPU.Offset(1, RtvDescriptorSize());
 				//SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
 				SRTProperties prop;
 				prop.mRtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-				mTaaRTs[i] = std::make_shared<SRenderTarget2D>(prop, mClientWidth, mClientHeight, true);
+				mTaaRTs[i] = std::make_shared<SRenderTarget2D>(prop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
 				// Init RT Resource with a CPU rtv handle.
 				mTaaRTs[i]->BuildRTResource(md3dDevice.Get(),
 					taaRtvCPU,
@@ -220,7 +220,7 @@ namespace SGraphics
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsList), cmdsList);
 		// Wait until initialization is complete
 		FlushCommandQueue();
-		OnResize(mClientWidth, mClientHeight);
+		OnResize(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight);
 
 		// Pre-Compute RTs
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
@@ -269,7 +269,7 @@ namespace SGraphics
 			mCommandList->RSSetViewports(1, &screenViewport0);
 			mCommandList->RSSetScissorRects(1, &scissorRect0);
 			brdfPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource,
-				&mCaptureRtvHeap->GetCPUDescriptorHandleForHeapStart(), 1);
+				&GetResourceManager()->GetOrAllocDescriptorHeap(CaptureRtvName)->GetCPUtDescriptorHandle(0), 1);
 			mCommandList->ResourceBarrier(1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(mBrdfLutRT2D->mResource.Get(),
 					D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
@@ -397,7 +397,7 @@ namespace SGraphics
 				mConvAndPrefilterSkyCubeResource[i][0] = mConvAndPrefilterCubeRTs[i]->Resource();
 			}
 
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mDeferredSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Texture2D.MostDetailedMip = 0;
 			srvDesc.Texture2D.MipLevels = 1;
@@ -539,7 +539,7 @@ namespace SGraphics
 		mCommandList->OMSetRenderTargets(1, &rtv_thisPhase, true, nullptr);
 		// Deferred Pass
 		// Set Descriptor Heaps
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mDeferredSrvDescriptorHeap.Get() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->DescriptorHeap() };
 		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		// Deferred shading:
 		mCommandList->SetPipelineState(mPSOs["DeferredShading"].Get());
@@ -557,7 +557,7 @@ namespace SGraphics
 		mCommandList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
 		mCommandList->IASetPrimitiveTopology(ri->PrimitiveType);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(mDeferredSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0));
 		mCommandList->SetGraphicsRootDescriptorTable(8, tex);
 		tex.Offset(SkyCubeMips + LUTNum, mCbvSrvDescriptorSize);
 		mCommandList->SetGraphicsRootDescriptorTable(7, tex);
@@ -611,9 +611,9 @@ namespace SGraphics
 
 		// Debug
 #if defined(Sakura_GBUFFER_DEBUG) 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mDeferredSrvDescriptorHeap.Get() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->DescriptorHeap()};
 		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(mDeferredSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		CD3DX12_GPU_DESCRIPTOR_HANDLE tex( GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0) );
 		mCommandList->SetPipelineState(mPSOs["GBufferDebug"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignatures["DeferredShading"].Get());
 		tex.Offset(GBufferSrvStartAt, mCbvSrvDescriptorSize);
@@ -642,11 +642,11 @@ namespace SGraphics
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Advance the fence value to mark commands up to this fence point.
-		mCurrFrameResource->Fence = ++mCurrentFence;
+		mCurrFrameResource->Fence = ++mFence->currentFence;
 		// Add an instruction to the command queue to set a new fence point.
 		// Because we are on the GPU time line, the new fence point won't be 
 		// set until the GPU finishes processing all the commands prior to this Signal().
-		mCommandQueue->Signal(mFence.Get(), mCurrentFence);
+		mCommandQueue->Signal(mFence->fence.Get(), mFence->currentFence);
 		// Swap the back and front buffers.
 		ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -668,10 +668,10 @@ namespace SGraphics
 
 		// Has the GPU finished processing the commands of the current frame resource? 
 		// If not, wait until the GPU has completed commands up to this fence point
-		if (mCurrFrameResource->Fence != 0 && mFence->GetCompletedValue() < mCurrFrameResource->Fence)
+		if (mCurrFrameResource->Fence != 0 && mFence->fence->GetCompletedValue() < mCurrFrameResource->Fence)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			ThrowIfFailed(mFence->SetEventOnCompletion(mCurrFrameResource->Fence, eventHandle));
+			ThrowIfFailed(mFence->fence->SetEventOnCompletion(mCurrFrameResource->Fence, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
@@ -925,8 +925,8 @@ namespace SGraphics
 		XMMATRIX viewProj = XMMatrixMultiply(view, proj);
 #if defined(Sakura_TAA)
 		XMStoreFloat4x4(&mMainPassCB.UnjitteredViewProj, XMMatrixTranspose(viewProj));
-		double JitterX = SGraphics::Halton_2[mFrameCount] / (double)mClientWidth * (double)TAA_JITTER_DISTANCE;
-		double JitterY = SGraphics::Halton_3[mFrameCount] / (double)mClientHeight * (double)TAA_JITTER_DISTANCE;
+		double JitterX = SGraphics::Halton_2[mFrameCount] / (double)mGraphicsConfs->clientWidth * (double)TAA_JITTER_DISTANCE;
+		double JitterY = SGraphics::Halton_3[mFrameCount] / (double)mGraphicsConfs->clientHeight * (double)TAA_JITTER_DISTANCE;
 		proj.r[2].m128_f32[0] += (float)JitterX;
 		proj.r[2].m128_f32[1] += (float)JitterY;
 		mMainPassCB.AddOnMsg = mFrameCount;
@@ -944,8 +944,8 @@ namespace SGraphics
 		XMStoreFloat4x4(&mMainPassCB.ViewProj, XMMatrixTranspose(viewProj));
 		XMStoreFloat4x4(&mMainPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
 		mMainPassCB.EyePosW = mCamera.GetPosition3f();
-		mMainPassCB.RenderTargetSize = XMFLOAT2((float)mClientWidth, (float)mClientHeight);
-		mMainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / mClientWidth, 1.0f / mClientHeight);
+		mMainPassCB.RenderTargetSize = XMFLOAT2((float)mGraphicsConfs->clientWidth, (float)mGraphicsConfs->clientHeight);
+		mMainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / mGraphicsConfs->clientWidth, 1.0f / mGraphicsConfs->clientHeight);
 		mMainPassCB.NearZ = 1.0f;
 		mMainPassCB.FarZ = 1000.0f;
 		mMainPassCB.TotalTime = 1;
@@ -983,7 +983,7 @@ namespace SGraphics
 
 		auto blurWeights = mSsaoPass->CalcGaussWeights(2.5f);
 
-		mSsaoCB.InvRenderTargetSize = XMFLOAT2(1.0f / (mClientWidth), 1.0f / (mClientHeight));
+		mSsaoCB.InvRenderTargetSize = XMFLOAT2(1.0f / (mGraphicsConfs->clientWidth), 1.0f / (mGraphicsConfs->clientHeight));
 
 		// Coordinates given in view space.
 		mSsaoCB.OcclusionRadius = 0.5f;
@@ -1146,17 +1146,20 @@ namespace SGraphics
 		srvHeapDesc.NumDescriptors = GBufferResourceSrv;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mGBufferSrvDescriptorHeap)));
-		
-		srvHeapDesc.NumDescriptors = 1;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mCaptureDescriptorHeap)));
+		((SDxResourceManager*)pGraphicsResourceManager.get())
+			->GetOrAllocDescriptorHeap(GBufferSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
+		srvHeapDesc.NumDescriptors = 1;
+		((SDxResourceManager*)pGraphicsResourceManager.get())
+			->GetOrAllocDescriptorHeap(CaptureSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
 		srvHeapDesc.NumDescriptors = GBufferRTNum + GBufferSrvStartAt + LUTNum;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mDeferredSrvDescriptorHeap)));
-	
+		((SDxResourceManager*)pGraphicsResourceManager.get())
+			->GetOrAllocDescriptorHeap(DeferredSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
+
 		srvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mScreenEfxSrvDescriptorHeap)));
+		((SDxResourceManager*)pGraphicsResourceManager.get())
+			->GetOrAllocDescriptorHeap(ScreenEfxSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 	}
 
 	void SDxRendererGM::BindPassResources()
@@ -1176,7 +1179,8 @@ namespace SGraphics
 		mGBufferSrvResources.push_back(NormTex.Get());
 
 		// Fill out the heap with actual descriptors:
-		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mGBufferSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(((SDxResourceManager*)(pGraphicsResourceManager.get()))
+			->GetOrAllocDescriptorHeap(GBufferSrvName)->GetCPUtDescriptorHandle(0));
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -1246,7 +1250,7 @@ namespace SGraphics
 		//
 		// Fill out the heap with actual descriptors.
 		//
-		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mDeferredSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
 		
 		auto GBufferAlbedo = GBufferRTs[0].get();
 		auto GBufferNormal = GBufferRTs[1].get();
@@ -1568,10 +1572,10 @@ namespace SGraphics
 		opaquePsoDesc.SampleMask = UINT_MAX;
 		opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		opaquePsoDesc.NumRenderTargets = 1;
-		opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
+		opaquePsoDesc.RTVFormats[0] = mGraphicsConfs->backBufferFormat;
 		opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 		opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
-		opaquePsoDesc.DSVFormat = mDepthStencilFormat;
+		opaquePsoDesc.DSVFormat = mGraphicsConfs->depthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["ForwardShading"])));
 
 
@@ -1596,7 +1600,7 @@ namespace SGraphics
 		}
 		gbufferPsoDesc.SampleDesc.Count = 1;
 		gbufferPsoDesc.SampleDesc.Quality = 0;
-		gbufferPsoDesc.DSVFormat = mDepthStencilFormat;
+		gbufferPsoDesc.DSVFormat = mGraphicsConfs->depthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&gbufferPsoDesc, IID_PPV_ARGS(&mPSOs["GBufferPass"])));
 
 		// Deferred Shading Pass
@@ -1617,10 +1621,10 @@ namespace SGraphics
 			reinterpret_cast<BYTE*>(mShaders["DeferredShading"]->GetBufferPointer()),
 			mShaders["DeferredShading"]->GetBufferSize()
 		};
-		deferredPsoDesc.RTVFormats[0] = mBackBufferFormat;
+		deferredPsoDesc.RTVFormats[0] = mGraphicsConfs->backBufferFormat;
 		deferredPsoDesc.SampleDesc.Count = 1;
 		deferredPsoDesc.SampleDesc.Quality = 0;
-		deferredPsoDesc.DSVFormat = mDepthStencilFormat;
+		deferredPsoDesc.DSVFormat = mGraphicsConfs->depthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&deferredPsoDesc, IID_PPV_ARGS(&mPSOs["DeferredShading"])));
 #endif
 
@@ -1717,9 +1721,10 @@ namespace SGraphics
 	{
 		
 #if defined(Sakura_Full_Effects)
-		auto opaqueRitem = std::make_unique<SRenderItem>();
+		auto opaqueRitem = std::make_unique<SDxRenderItem>();
 		XMStoreFloat4x4(&opaqueRitem->World, XMMatrixScaling(TestScaling[0], TestScaling[1], TestScaling[2]) * 
 		XMMatrixTranslation(0.f, -6.f, 0.f) * XMMatrixRotationY(155));
+		opaqueRitem->PrevWorld = opaqueRitem->World;
 		opaqueRitem->TexTransform = MathHelper::Identity4x4();
 		opaqueRitem->ObjCBIndex = CBIndex++;
 		opaqueRitem->Mat = mMaterials["bricks0"].get();
@@ -1865,12 +1870,13 @@ namespace SGraphics
 			&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
 
 		rtvHeapDesc.NumDescriptors = 1;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-			&rtvHeapDesc, IID_PPV_ARGS(mCaptureRtvHeap.GetAddressOf())));
+		((SDxResourceManager*)(pGraphicsResourceManager.get()))
+			->GetOrAllocDescriptorHeap(CaptureRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
 
 		rtvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
-		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-			&rtvHeapDesc, IID_PPV_ARGS(mScreenEfxRtvDescriptorHeap.GetAddressOf())));
+		((SDxResourceManager*)(pGraphicsResourceManager.get()))
+			->GetOrAllocDescriptorHeap(ScreenEfxRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
+
 
 		//Create depth/stencil view descriptor 
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;

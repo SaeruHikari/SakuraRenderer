@@ -181,6 +181,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\Core\Object\SMaterial.h" />
     <ClInclude Include="Source\Framework\Core\Object\SStaticMesh.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.h" />
     <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\DX12Definations.h" />

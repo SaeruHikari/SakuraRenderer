@@ -16,9 +16,13 @@ namespace SGraphics
 		SakuraGraphicsResourceManagerBase& operator=(const SakuraGraphicsResourceManagerBase& rhs) = delete;
 	public:
 		~SakuraGraphicsResourceManagerBase() {};
-		// Create GPU resource for material.
-		virtual void CreateMaterial() = 0;
-		// Release GPU Resource of Material.
-		virtual void ReleaseMaterial() = 0;
+		// Initialize function.
+		virtual bool Initialize() = 0;
+		// Finalize function.
+		virtual void Finalize() = 0;
+		// Tick function, be called per frame.
+		virtual void Tick(double deltaTime) = 0;
+		//
+		
 	};
 }

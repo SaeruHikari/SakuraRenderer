@@ -7,6 +7,7 @@ Details:		This entity pull graphic functions away from our application.
 #include "Interface/IRuntimeModule.h"
 #include <windows.h>
 #include "SakuraCoreUtils.h"
+#include "Resource/SakuraGraphicsResourceManagerBase.h"
 
 namespace SakuraCore
 { 
@@ -41,6 +42,7 @@ namespace SakuraCore
 		virtual void OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y) = 0;
 		virtual void OnKeyDown(double deltaTime) = 0;
 	protected:
+		std::unique_ptr<SGraphics::SakuraGraphicsResourceManagerBase> pGraphicsResourceManager;
 		// HWND
 		HWND	  mhMainWnd = nullptr;
 #if defined(DEBUG) || defined(_DEBUG)

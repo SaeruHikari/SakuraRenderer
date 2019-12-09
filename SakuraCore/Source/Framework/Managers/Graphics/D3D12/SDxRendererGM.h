@@ -9,6 +9,7 @@ Details:
 #include <memory>
 #include "../../../GraphicTypes/D3D12/SD3DCamera.h"
 #include "Framework/GraphicTypes/D3D12/SRenderTarget.hpp"
+#include "Resource/SDxResourceManager.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -66,40 +67,44 @@ namespace SGraphics
 		}
 
 	public:
+		inline auto GetResourceManager()
+		{
+			return (SDxResourceManager*)(pGraphicsResourceManager.get());
+		}
 		inline auto GetGBufferSrvCPU(int offset)
 		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mGBufferSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			srvCPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(((SDxResourceManager*)(pGraphicsResourceManager.get()))
+				->GetOrAllocDescriptorHeap(GBufferSrvName)->GetCPUtDescriptorHandle(offset));
 			return srvCPU;
 		}
 		inline auto GetGBufferSrvGPU(int offset)
 		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(mGBufferSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(((SDxResourceManager*)(pGraphicsResourceManager.get()))
+				->GetOrAllocDescriptorHeap(GBufferSrvName)->GetGPUtDescriptorHandle(offset));
 			return srvGPU;
 		}
 		inline auto GetDeferredSrvCPU(int offset)
 		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDeferredSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			srvCPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
+			srvCPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvCPU;
 		}
 		inline auto GetDeferredSrvGPU(int offset)
 		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDeferredSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0));
+			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvGPU;
 		}
 		inline auto GetScreenEfxSrvCPU(int offset)
 		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mScreenEfxSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			srvCPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxSrvName)->GetCPUtDescriptorHandle(0));
+			srvCPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvCPU;
 		}
 		inline auto GetScreenEfxSrvGPU(int offset)
 		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(mScreenEfxSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-			srvGPU.Offset(offset, mCbvSrvUavDescriptorSize);
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxSrvName)->GetGPUtDescriptorHandle(0));
+			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvGPU;
 		}
 
@@ -162,9 +167,7 @@ namespace SGraphics
 		std::vector<std::unique_ptr<SFrameResource>> mFrameResources;
 		SFrameResource* mCurrFrameResource = nullptr;
 		int mCurrFrameResourceIndex = 0;
-
 		UINT mCbvSrvDescriptorSize = 0;
-
 		std::unordered_map<std::string, ComPtr<ID3D12RootSignature>> mRootSignatures;
 
 	public:
@@ -186,10 +189,6 @@ namespace SGraphics
 
 		SD3DCamera mCamera;
 		SD3DCamera mCubeMapCamera[6];
-
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCaptureRtvHeap = nullptr;
-		ComPtr<ID3D12DescriptorHeap> mCaptureDescriptorHeap = nullptr;
-
 		POINT mLastMousePos;
 
 	protected:
@@ -226,13 +225,13 @@ namespace SGraphics
 		std::shared_ptr<STaaPass> mTaaPass = nullptr;
 		std::shared_ptr<SMotionVectorPass> mMotionVectorPass = nullptr;
 
-		// GBuffer phase.
-		ComPtr<ID3D12DescriptorHeap> mGBufferSrvDescriptorHeap = nullptr;
-		// Deferred phase.
-		ComPtr<ID3D12DescriptorHeap> mDeferredSrvDescriptorHeap = nullptr;
+		std::string GBufferSrvName = "GBufferSrv";
+		std::string CaptureSrvName = "CaptureSrv";
+		std::string CaptureRtvName = "CaptureRtv";
+		std::string DeferredSrvName = "DeferredSrv";
+		std::string ScreenEfxSrvName = "ScreenEfxSrv";
+		std::string ScreenEfxRtvName = "ScreenEfxRtv";
 		// Screen Space Efx phase.
-		ComPtr<ID3D12DescriptorHeap> mScreenEfxSrvDescriptorHeap = nullptr;
-		ComPtr<ID3D12DescriptorHeap> mScreenEfxRtvDescriptorHeap = nullptr;
 
 		std::vector<ID3D12Resource*> mGBufferSrvResources;
 		std::vector<ID3D12Resource*> mSsaoSrvResources;

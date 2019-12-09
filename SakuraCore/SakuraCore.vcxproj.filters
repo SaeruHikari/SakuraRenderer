@@ -156,6 +156,9 @@
     <ClInclude Include="Source\Framework\Managers\Graphics\CommonInterface\Resource\SakuraGraphicsResourceManagerBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">
