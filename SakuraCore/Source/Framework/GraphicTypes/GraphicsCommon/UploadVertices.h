@@ -1,6 +1,4 @@
 #pragma once
-
-#include "Utils/d3dUtil.h"
 #include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
 
 struct ScreenQuadDebugVertex

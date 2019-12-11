@@ -1,5 +1,7 @@
 #pragma once
 #include "Interface/IRuntimeModule.h"
+#include "Framework/GraphicTypes/GraphicsInterface/ISRenderTarget.h"
+#include "Framework/GraphicTypes/GraphicsInterface/ISTexture.h"
 
 namespace SGraphics
 {
@@ -23,6 +25,11 @@ namespace SGraphics
 		// Tick function, be called per frame.
 		virtual void Tick(double deltaTime) = 0;
 		//
-		
+		virtual bool LoadTextures(std::wstring Filename, std::string registName) = 0;
+		//
+		virtual ISTexture* GetTexture(std::string registName) = 0;
+		virtual int RegistNamedRenderTarget(std::string resgistName, 
+			ISRenderTargetProperties rtProp, std::string targetSrvHeap = "NULL", std::string targetRtvHeap = "NULL") = 0;
+		virtual ISRenderTarget* GetRenderTarget(std::string registName) = 0;
 	};
 }

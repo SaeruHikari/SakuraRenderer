@@ -8,7 +8,7 @@ Details:
 #include "SakuraD3D12GraphicsManager.hpp"
 #include <memory>
 #include "../../../GraphicTypes/D3D12/SD3DCamera.h"
-#include "Framework/GraphicTypes/D3D12/SRenderTarget.hpp"
+#include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
 #include "Resource/SDxResourceManager.h"
 
 using Microsoft::WRL::ComPtr;
@@ -26,7 +26,8 @@ namespace SGraphics
 	class SBrdfLutPass;
 	class STaaPass;
 	class SMotionVectorPass;
-	class SRenderTarget2D;
+	class SDx12RenderTarget2D;
+
 
 	class SakuraScene;
 
@@ -71,44 +72,30 @@ namespace SGraphics
 		{
 			return (SDxResourceManager*)(pGraphicsResourceManager.get());
 		}
-		inline auto GetGBufferSrvCPU(int offset)
-		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(((SDxResourceManager*)(pGraphicsResourceManager.get()))
-				->GetOrAllocDescriptorHeap(GBufferSrvName)->GetCPUtDescriptorHandle(offset));
-			return srvCPU;
-		}
-		inline auto GetGBufferSrvGPU(int offset)
-		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(((SDxResourceManager*)(pGraphicsResourceManager.get()))
-				->GetOrAllocDescriptorHeap(GBufferSrvName)->GetGPUtDescriptorHandle(offset));
-			return srvGPU;
-		}
 		inline auto GetDeferredSrvCPU(int offset)
 		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetCPUtDescriptorHandle(0));
 			srvCPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvCPU;
 		}
 		inline auto GetDeferredSrvGPU(int offset)
 		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0));
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetGPUtDescriptorHandle(0));
 			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvGPU;
 		}
 		inline auto GetScreenEfxSrvCPU(int offset)
 		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxSrvName)->GetCPUtDescriptorHandle(0));
+			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName)->GetCPUtDescriptorHandle(0));
 			srvCPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvCPU;
 		}
 		inline auto GetScreenEfxSrvGPU(int offset)
 		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxSrvName)->GetGPUtDescriptorHandle(0));
+			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName)->GetGPUtDescriptorHandle(0));
 			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvGPU;
 		}
-
-
 	public:
 		virtual bool Initialize() override;
 		virtual void Draw() override;
@@ -173,11 +160,11 @@ namespace SGraphics
 	public:
 		int CBIndex = 0;
 		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
-		std::unordered_map<std::string, std::unique_ptr<OpaqueMaterial>> mMaterials;
-		std::unordered_map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
+		std::unordered_map<std::string, OpaqueMaterial*> mMaterials;
 		std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayouts[SPasses::E_Count];
+
 		// List of all the render items
 		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
 		// Render items divided by PSO
@@ -195,7 +182,7 @@ namespace SGraphics
 		void BuildCubeFaceCamera(float x, float y, float z);
 
 	protected:
-		// Rtvs
+		// Rtv indices
 		int GBufferResourceSrv = 0;
 		int GBufferMaterials = 0;
 		inline static const int GBufferRTNum = 4;// 1 : SSAO
@@ -205,7 +192,6 @@ namespace SGraphics
 		inline static const int SkyCubeConvNum = 1;
 		inline static const int SkyCubeConvFilterNum = SkyCubePrefilters + SkyCubeConvNum;
 		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + SkyCubeConvNum + LUTNum;
-
 		// Screen Efx phase Rtvs
 		#define MotionVectorRtvStart 0
 		inline static const int MotionVectorRtvNum = 1;
@@ -214,10 +200,10 @@ namespace SGraphics
 		#define ScreenEfxRtvsCount TAARtvsStart + TAARtvsNum
 
 	protected:
-		std::shared_ptr<SRenderTarget2D> mMotionVectorRT;
-		std::shared_ptr<SRenderTarget2D>* GBufferRTs;
-		std::shared_ptr<SRenderTarget2D> mBrdfLutRT2D;
-		std::shared_ptr<SRenderTarget2D>* mTaaRTs;
+		SDx12RenderTarget2D* mMotionVectorRT;
+		std::shared_ptr<SDx12RenderTarget2D>* GBufferRTs;
+		std::shared_ptr<SDx12RenderTarget2D> mBrdfLutRT2D;
+		std::shared_ptr<SDx12RenderTarget2D>* mTaaRTs;
 
 		std::shared_ptr<SGBufferPass> mGbufferPass = nullptr;
 		std::shared_ptr<SsaoPass> mSsaoPass = nullptr;
@@ -225,27 +211,58 @@ namespace SGraphics
 		std::shared_ptr<STaaPass> mTaaPass = nullptr;
 		std::shared_ptr<SMotionVectorPass> mMotionVectorPass = nullptr;
 
-		std::string GBufferSrvName = "GBufferSrv";
-		std::string CaptureSrvName = "CaptureSrv";
-		std::string CaptureRtvName = "CaptureRtv";
-		std::string DeferredSrvName = "DeferredSrv";
-		std::string ScreenEfxSrvName = "ScreenEfxSrv";
-		std::string ScreenEfxRtvName = "ScreenEfxRtv";
-		// Screen Space Efx phase.
+		struct SRVs
+		{
+			inline static const std::string GBufferSrvName = "GBufferSrv";
+			inline static const std::string CaptureSrvName = "CaptureSrv";
+			inline static const std::string DeferredSrvName = "DeferredSrv";
+			inline static const std::string ScreenEfxSrvName = "ScreenEfxSrv";
+		};
+		struct RTVs
+		{
+			inline static const std::string CaptureRtvName = "CaptureRtv";
+			inline static const std::string ScreenEfxRtvName = "ScreenEfxRtv";
+		};
+		struct Textures
+		{
+			inline static const std::vector<std::string> texNames =
+			{
+				"DiffTex",
+				"RoughTex",
+				"SpecTex",
+				"NormalTex",
+				"SkyCubeMap",
+				"HDRTexture"
+			};
+			inline static const std::vector<std::wstring> texFilenames =
+			{
+				L"Textures/Urn_ALB.dds",
+				L"Textures/Urn_RMA.dds",
+				L"Textures/Urn_RMA.dds",
+				L"Textures/Urn_NRM.dds",
+				L"Textures/grasscube1024.dds",
+				L"Textures/020.hdr"
+			};
+		};
+		struct RT2Ds
+		{
+			inline static const std::string MotionVectorRTName = "MotionVectorRT";
+		};
+		struct RT3Ds
+		{
 
+		};
+
+		// Helper Containers
 		std::vector<ID3D12Resource*> mGBufferSrvResources;
 		std::vector<ID3D12Resource*> mSsaoSrvResources;
 		std::vector<ID3D12Resource*> mTaaResources;
-
-		// HDRI & IBL
-		std::shared_ptr<SD3DTexture> mHDRTexture;
-		std::shared_ptr<SD3DTexture> mBRDF_LUT;
-
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
+
 		// SRenderTargetCubeMultiLevels<5>
-		std::shared_ptr<SRenderTargetCube> mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
-		std::shared_ptr<SRenderTargetCube> mSkyCubeRT[SkyCubeMips];
+		std::shared_ptr<SDx12RenderTargetCube> mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
+		std::shared_ptr<SDx12RenderTargetCube> mSkyCubeRT[SkyCubeMips];
 
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;

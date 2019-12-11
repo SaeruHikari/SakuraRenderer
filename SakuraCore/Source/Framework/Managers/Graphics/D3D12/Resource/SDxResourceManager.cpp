@@ -25,6 +25,7 @@ SGraphics::SDxResourceManager::~SDxResourceManager()
 bool SGraphics::SDxResourceManager::Initialize()
 {
 	InitD3D12Device();
+	CreateCommandObjects();
 	return true;
 }
 
@@ -50,6 +51,87 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 		mDescriptorHeaps[name] = std::make_unique<SDescriptorHeap>(md3dDevice.Get(), descriptorSize, desc);
 		return mDescriptorHeaps[name].get();
 	}
+}
+
+bool SGraphics::SDxResourceManager::LoadTextures(std::wstring Filename, std::string registName)
+{
+	// Reset the command list to prep for initialization commands.
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	if (Filename.find(L".dds") != std::string::npos)
+	{
+		auto texMap = std::make_unique<SD3DTexture>();
+		texMap->Name = registName;
+		texMap->Filename = Filename;
+		ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+			mCommandList.Get(), texMap->Filename.c_str(),
+			texMap->Resource, texMap->UploadHeap));
+		mTextures[texMap->Name] = std::move(texMap);
+		// Execute the initialization commands.
+		ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		return true;
+	}
+	else if (Filename.find(L".hdr") != std::string::npos)
+	{
+		auto texMap = std::unique_ptr<SD3DTexture>(d3dUtil::LoadHDRTexture(md3dDevice.Get(),
+				mCommandList.Get(), registName, Filename));
+		mTextures[registName] = std::move(texMap);
+		// Execute the initialization commands.
+		ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		return true;
+	}
+	return false;
+}
+
+SGraphics::ISTexture* SGraphics::SDxResourceManager::GetTexture(std::string registName)
+{
+	if (mTextures.find(registName) != mTextures.end())
+		return mTextures[registName].get();
+	else return false;
+}
+
+int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registName,
+	ISRenderTargetProperties rtProp, 
+	std::string targetSrvHeap, std::string targetRtvHeap)
+{
+	if (mRenderTargets.find(registName) != mRenderTargets.end())
+		return false;
+	switch (rtProp.rtType)
+	{
+	case ERenderTargetTypes::E_RT2D:
+	{
+		auto rt2d = std::make_unique<SDx12RenderTarget2D>(rtProp.mWidth, rtProp.mHeight,
+			rtProp, rtProp.bScaleWithViewport);
+		mRenderTargets[registName] = std::move(rt2d);
+		// Bind handles
+		//std::string srvName = registName + std::string("Srv");
+		//std::string rtvName = registName + std::string("Rtv");
+		//auto srvHeap = GetOrAllocDescriptorHeap(srvName, 1);
+		//rt2d->BuildDescriptors(md3dDevice, )
+	}
+		return 1;
+	case ERenderTargetTypes::E_RT3D:
+	{
+		auto rt3d = std::make_unique<SDx12RenderTargetCube>(
+			rtProp.mWidth, rtProp.mHeight, rtProp.mRtvFormat);
+		mRenderTargets[registName] = std::move(rt3d);
+	}
+		return 1;
+	default:
+		return -1;
+	}
+	return false;
+}
+
+SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::GetRenderTarget(std::string registName)
+{
+	if (mRenderTargets.find(registName) == mRenderTargets.end())
+		return nullptr;
+	else
+		return mRenderTargets[registName].get();
 }
 
 bool SGraphics::SDxResourceManager::InitD3D12Device()

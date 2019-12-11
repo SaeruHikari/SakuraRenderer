@@ -13,12 +13,13 @@ namespace SEngine
 	class SStaticMeshNode : public SakuraSceneNode
 	{
 	public:
-		SStaticMeshNode(SakuraMath::SVector location = { 0.f, 0.f, 0.f })
+		SStaticMeshNode(SakuraMath::SVector location = { 0.f, 0.f, 0.f }, std::string matName = "NULL")
+			:i_material(matName)
 		{
 			std::shared_ptr<SStaticMesh> Mesh = std::make_shared<SStaticMesh>();
 			SetLocation(location);
 			// Upload
-			i_renderItem = pSceneManager->RegistMesh(Mesh.get());
+			i_renderItem = pSceneManager->RegistMesh(Mesh.get(), matName);
 		}
 
 		virtual void Tick(double deltaTime) override
@@ -48,6 +49,6 @@ namespace SEngine
 	protected:
 		// properties are unique refed in scene manager class.
 		SIndex i_renderItem;
-		SIndex i_material;
+		std::string i_material;
 	};
 }

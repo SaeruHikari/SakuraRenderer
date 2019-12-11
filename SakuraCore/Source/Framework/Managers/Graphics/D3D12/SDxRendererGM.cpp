@@ -65,49 +65,59 @@ namespace SGraphics
 		// ¡ü Do not have dependency on dx12 resources
 		{
 #if defined(Sakura_MotionVector)
-			SRTProperties vprop;
+			ISRenderTargetProperties vprop;
 			vprop.mRtvFormat = DXGI_FORMAT_R16G16_UNORM;
-			mMotionVectorRT = std::make_shared<SRenderTarget2D>(vprop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
-				CD3DX12_CPU_DESCRIPTOR_HANDLE();
-			mMotionVectorRT->BuildRTResource(md3dDevice.Get(),
-				GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxRtvName)->GetCPUtDescriptorHandle(0),
-				GetScreenEfxSrvCPU(0),
-				GetScreenEfxSrvGPU(0));
+			vprop.bScaleWithViewport = true;
+			vprop.rtType = ERenderTargetTypes::E_RT2D;
+			vprop.mWidth = mGraphicsConfs->clientWidth;
+			vprop.mHeight = mGraphicsConfs->clientHeight;
+			if (GetResourceManager()->RegistNamedRenderTarget(RT2Ds::MotionVectorRTName, vprop) != -1)
+			{
+				mMotionVectorRT = (SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget(RT2Ds::MotionVectorRTName);
+				//mMotionVectorRT->BuildDescriptors(md3dDevice.Get(),
+				//	GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName)->GetCPUtDescriptorHandle(0),
+				//	GetScreenEfxSrvCPU(0),
+				//	GetScreenEfxSrvGPU(0));
+				mMotionVectorRT->BuildDescriptors(md3dDevice.Get(),
+					*GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName),
+					*GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName));
+			}
 #endif
 			// Create resources depended by passes.
 #if defined(Sakura_Defferred)
-			GBufferRTs = new std::shared_ptr<SRenderTarget2D>[GBufferRTNum];
+			GBufferRTs = new std::shared_ptr<SDx12RenderTarget2D>[GBufferRTNum];
 			for (int i = 0; i < GBufferRTNum; i++)
 			{
-				//SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
-				SRTProperties prop(0.f, 0.f, (i == 3) ? 1.f : 0.f, 0.f);
-				GBufferRTs[i] = std::make_shared<SRenderTarget2D>(prop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
+				//ISRenderTargetProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
+				ISRenderTargetProperties prop(0.f, 0.f, (i == 3) ? 1.f : 0.f, 0.f);
+				GBufferRTs[i] = std::make_shared<SDx12RenderTarget2D>(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, prop, true);
 				// Init RT Resource with a CPU rtv handle.
-				GBufferRTs[i]->BuildRTResource(md3dDevice.Get(),
+				GBufferRTs[i]->BuildDescriptors(md3dDevice.Get(),
 					GetRtvCPU(SwapChainBufferCount + i),
 					GetDeferredSrvCPU(GBufferSrvStartAt + i),
 					GetDeferredSrvGPU(GBufferSrvStartAt + i));
 			}
 #endif
 #if defined(Sakura_IBL)		
-			SRTProperties prop;
+			ISRenderTargetProperties prop;
 			prop.mRtvFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			mBrdfLutRT2D = std::make_shared<SRenderTarget2D>(prop, 4096, 4096, false);
-			mBrdfLutRT2D->BuildRTResource(md3dDevice.Get(),
-				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureRtvName)->GetCPUtDescriptorHandle(0),
-				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureSrvName)->GetCPUtDescriptorHandle(0),
-				GetResourceManager()->GetOrAllocDescriptorHeap(CaptureSrvName)->GetGPUtDescriptorHandle(0));
+			mBrdfLutRT2D = std::make_shared<SDx12RenderTarget2D>(4096, 4096, prop, false);
+			mBrdfLutRT2D->BuildDescriptors(md3dDevice.Get(),
+				GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::CaptureRtvName)->GetCPUtDescriptorHandle(0),
+				GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::CaptureSrvName)->GetCPUtDescriptorHandle(0),
+				GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::CaptureSrvName)->GetGPUtDescriptorHandle(0));
 			UINT _sizeS = 2048;
 			for (int j = 0; j < SkyCubeMips; j++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE convCubeRtvHandles[6];
-				mSkyCubeRT[j] = std::make_shared<SRenderTargetCube>(md3dDevice.Get(), _sizeS, _sizeS, DXGI_FORMAT_R16G16B16A16_FLOAT);
+				mSkyCubeRT[j] = std::make_shared<SDx12RenderTargetCube>(_sizeS, _sizeS, DXGI_FORMAT_R16G16B16A16_FLOAT);
 				_sizeS /= 2;
 				for (int i = 0; i < 6; i++)
 				{
 					convCubeRtvHandles[i] = GetRtvCPU(SwapChainBufferCount + GBufferRTNum + i + j * 6);
 				}
 				mSkyCubeRT[j]->BuildDescriptors(
+					md3dDevice.Get(),
 					CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDeferredSrvCPU(LUTNum + j)),
 					CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDeferredSrvGPU(LUTNum + j)),
 					convCubeRtvHandles);
@@ -119,19 +129,20 @@ namespace SGraphics
 				if (i != 0)
 				{
 					mConvAndPrefilterCubeRTs[i] =
-						std::make_shared<SRenderTargetCube>(md3dDevice.Get(), size, size, DXGI_FORMAT_R16G16B16A16_FLOAT);
+						std::make_shared<SDx12RenderTargetCube>(size, size, DXGI_FORMAT_R16G16B16A16_FLOAT);
 					size = size / 2;
 				}
 				else
 				{
 					mConvAndPrefilterCubeRTs[i] =
-						std::make_shared<SRenderTargetCube>(md3dDevice.Get(), 64, 64, DXGI_FORMAT_R16G16B16A16_FLOAT);
+						std::make_shared<SDx12RenderTargetCube>(64, 64, DXGI_FORMAT_R16G16B16A16_FLOAT);
 				}
 				for (int j = 0; j < 6; j++)
 				{
 					cubeRtvHandles[j] = GetRtvCPU(SwapChainBufferCount + GBufferRTNum + SkyCubeMips * 6 + j + i * 6);
 				}
 				mConvAndPrefilterCubeRTs[i]->BuildDescriptors(
+					md3dDevice.Get(),
 					GetDeferredSrvCPU(LUTNum + SkyCubeMips + i),
 					GetDeferredSrvGPU(LUTNum + SkyCubeMips + i),
 					cubeRtvHandles);
@@ -139,18 +150,18 @@ namespace SGraphics
 #endif
 			// Velocity and History
 #if defined(Sakura_TAA)
-			mTaaRTs = new std::shared_ptr<SRenderTarget2D>[TAARtvsNum];
+			mTaaRTs = new std::shared_ptr<SDx12RenderTarget2D>[TAARtvsNum];
 			auto taaRtvCPU = 
-				CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(ScreenEfxRtvName)->GetCPUtDescriptorHandle(0));
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName)->GetCPUtDescriptorHandle(0));
 			for (int i = 0; i < TAARtvsNum; i++)
 			{
 				taaRtvCPU.Offset(1, RtvDescriptorSize());
-				//SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
-				SRTProperties prop;
+				//ISRenderTargetProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
+				ISRenderTargetProperties prop;
 				prop.mRtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-				mTaaRTs[i] = std::make_shared<SRenderTarget2D>(prop, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, true);
+				mTaaRTs[i] = std::make_shared<SDx12RenderTarget2D>(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, prop, true);
 				// Init RT Resource with a CPU rtv handle.
-				mTaaRTs[i]->BuildRTResource(md3dDevice.Get(),
+				mTaaRTs[i]->BuildDescriptors(md3dDevice.Get(),
 					taaRtvCPU,
 					GetScreenEfxSrvCPU(1 + i),
 					GetScreenEfxSrvGPU(1 + i));
@@ -211,7 +222,7 @@ namespace SGraphics
 		mHDRUnpackPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Cube]);
 		mCubeMapConvPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Cube]);
 		std::vector<ID3D12Resource*> mHDRResource;
-		mHDRResource.push_back(mHDRTexture->Resource.Get());
+		mHDRResource.push_back(((SD3DTexture*)GetResourceManager()->GetTexture(Textures::texNames[5]))->Resource.Get());
 		mHDRUnpackPass->Initialize(mHDRResource);
 #endif
 		// Execute the initialization commands.
@@ -269,7 +280,7 @@ namespace SGraphics
 			mCommandList->RSSetViewports(1, &screenViewport0);
 			mCommandList->RSSetScissorRects(1, &scissorRect0);
 			brdfPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource,
-				&GetResourceManager()->GetOrAllocDescriptorHeap(CaptureRtvName)->GetCPUtDescriptorHandle(0), 1);
+				&GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::CaptureRtvName)->GetCPUtDescriptorHandle(0), 1);
 			mCommandList->ResourceBarrier(1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(mBrdfLutRT2D->mResource.Get(),
 					D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
@@ -290,13 +301,13 @@ namespace SGraphics
 			{
 				SPassConstants cubeFacePassCB = mMainPassCB;
 				cubeFacePassCB.RenderTargetSize =
-					XMFLOAT2(mSkyCubeRT[i]->mWidth,
-						mSkyCubeRT[i]->mHeight);
+					XMFLOAT2(mSkyCubeRT[i]->mProperties.mWidth,
+						mSkyCubeRT[i]->mProperties.mHeight);
 				cubeFacePassCB.InvRenderTargetSize =
-					XMFLOAT2(1.0f / mSkyCubeRT[i]->mWidth,
-						1.0f / mSkyCubeRT[i]->mHeight);
-				screenViewport.Width = static_cast<float>(mSkyCubeRT[i]->mWidth);
-				screenViewport.Height = static_cast<float>(mSkyCubeRT[i]->mHeight);
+					XMFLOAT2(1.0f / mSkyCubeRT[i]->mProperties.mWidth,
+						1.0f / mSkyCubeRT[i]->mProperties.mHeight);
+				screenViewport.Width = static_cast<float>(mSkyCubeRT[i]->mProperties.mWidth);
+				screenViewport.Height = static_cast<float>(mSkyCubeRT[i]->mProperties.mHeight);
 				screenViewport.MinDepth = 0.0f;
 				screenViewport.MaxDepth = 1.0f;
 				scissorRect = { 0, 0, (LONG)screenViewport.Width, (LONG)screenViewport.Height };
@@ -344,12 +355,12 @@ namespace SGraphics
 				Init = 0;
 				screenViewport.TopLeftX = 0;
 				screenViewport.TopLeftY = 0;
-				screenViewport.Width = static_cast<float>(mConvAndPrefilterCubeRTs[i]->mWidth);
-				screenViewport.Height = static_cast<float>(mConvAndPrefilterCubeRTs[i]->mHeight);
+				screenViewport.Width = static_cast<float>(mConvAndPrefilterCubeRTs[i]->mProperties.mWidth);
+				screenViewport.Height = static_cast<float>(mConvAndPrefilterCubeRTs[i]->mProperties.mHeight);
 				screenViewport.MinDepth = 0.0f;
 				screenViewport.MaxDepth = 1.0f;
-				scissorRect = { 0, 0, (LONG)mConvAndPrefilterCubeRTs[i]->mWidth,
-					(LONG)mConvAndPrefilterCubeRTs[i]->mHeight };
+				scissorRect = { 0, 0, (LONG)mConvAndPrefilterCubeRTs[i]->mProperties.mWidth,
+					(LONG)mConvAndPrefilterCubeRTs[i]->mProperties.mHeight };
 				mCommandList->RSSetViewports(1, &screenViewport);
 				mCommandList->RSSetScissorRects(1, &scissorRect);
 				// Prepare to draw convoluted cube map.
@@ -397,7 +408,7 @@ namespace SGraphics
 				mConvAndPrefilterSkyCubeResource[i][0] = mConvAndPrefilterCubeRTs[i]->Resource();
 			}
 
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
+			CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetCPUtDescriptorHandle(0));
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Texture2D.MostDetailedMip = 0;
 			srvDesc.Texture2D.MipLevels = 1;
@@ -539,7 +550,7 @@ namespace SGraphics
 		mCommandList->OMSetRenderTargets(1, &rtv_thisPhase, true, nullptr);
 		// Deferred Pass
 		// Set Descriptor Heaps
-		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->DescriptorHeap() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->DescriptorHeap() };
 		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		// Deferred shading:
 		mCommandList->SetPipelineState(mPSOs["DeferredShading"].Get());
@@ -557,7 +568,7 @@ namespace SGraphics
 		mCommandList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
 		mCommandList->IASetPrimitiveTopology(ri->PrimitiveType);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0));
+		CD3DX12_GPU_DESCRIPTOR_HANDLE tex(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetGPUtDescriptorHandle(0));
 		mCommandList->SetGraphicsRootDescriptorTable(8, tex);
 		tex.Offset(SkyCubeMips + LUTNum, mCbvSrvDescriptorSize);
 		mCommandList->SetGraphicsRootDescriptorTable(7, tex);
@@ -611,9 +622,9 @@ namespace SGraphics
 
 		// Debug
 #if defined(Sakura_GBUFFER_DEBUG) 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->DescriptorHeap()};
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->DescriptorHeap()};
 		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE tex( GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetGPUtDescriptorHandle(0) );
+		CD3DX12_GPU_DESCRIPTOR_HANDLE tex( GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetGPUtDescriptorHandle(0) );
 		mCommandList->SetPipelineState(mPSOs["GBufferDebug"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignatures["DeferredShading"].Get());
 		tex.Offset(GBufferSrvStartAt, mCbvSrvDescriptorSize);
@@ -900,7 +911,7 @@ namespace SGraphics
 		{
 			// Only update the cbuffer data if the constants have changed. If the cbuffer
 			// data changes, it needs to be updated for each FrameResource.
-			OpaqueMaterial* mat = e.second.get();
+			OpaqueMaterial* mat = e.second;
 			if (mat->NumFramesDirty > 0)
 			{
 				PBRMaterialConstants matConstants;
@@ -997,35 +1008,10 @@ namespace SGraphics
 
 	void SDxRendererGM::LoadTextures()
 	{
-		std::vector<std::string> texNames =
+		for (int i = 0; i < Textures::texNames.size(); ++i)
 		{
-			"DiffTex",
-			"RoughTex",
-			"SpecTex",
-			"NormalTex",
-			"SkyCubeMap"
-		};
-		std::vector<std::wstring> texFilenames =
-		{
-			L"Textures/Urn_ALB.dds",
-			L"Textures/Urn_RMA.dds",
-			L"Textures/Urn_RMA.dds",
-			L"Textures/Urn_NRM.dds",
-			L"Textures/grasscube1024.dds"
-		};
-		for (int i = 0; i < (int)texNames.size(); ++i)
-		{
-			auto texMap = std::make_unique<SD3DTexture>();
-			texMap->Name = texNames[i];
-			texMap->Filename = texFilenames[i];
-			ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-				mCommandList.Get(), texMap->Filename.c_str(),
-				texMap->Resource, texMap->UploadHeap));
-
-			mTextures[texMap->Name] = std::move(texMap);
+			pGraphicsResourceManager->LoadTextures(Textures::texFilenames[i], Textures::texNames[i]);
 		}
-
-		mHDRTexture = d3dUtil::LoadHDRTexture(md3dDevice.Get(), mCommandList.Get(), "HDRTexture", L"Textures/020.hdr");
 	}
 
 	// GBuffer Pass RootSig.
@@ -1147,32 +1133,30 @@ namespace SGraphics
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		((SDxResourceManager*)pGraphicsResourceManager.get())
-			->GetOrAllocDescriptorHeap(GBufferSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
+			->GetOrAllocDescriptorHeap(SRVs::GBufferSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
 		srvHeapDesc.NumDescriptors = 1;
 		((SDxResourceManager*)pGraphicsResourceManager.get())
-			->GetOrAllocDescriptorHeap(CaptureSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
+			->GetOrAllocDescriptorHeap(SRVs::CaptureSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
 		srvHeapDesc.NumDescriptors = GBufferRTNum + GBufferSrvStartAt + LUTNum;
 		((SDxResourceManager*)pGraphicsResourceManager.get())
-			->GetOrAllocDescriptorHeap(DeferredSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
+			->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
 		srvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
 		((SDxResourceManager*)pGraphicsResourceManager.get())
-			->GetOrAllocDescriptorHeap(ScreenEfxSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
+			->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 	}
 
 	void SDxRendererGM::BindPassResources()
 	{
-		auto DiffTex = mTextures["DiffTex"]->Resource;
-		auto RoughTex = mTextures["RoughTex"]->Resource;
-		auto SpecTex = mTextures["SpecTex"]->Resource;
-		auto NormTex = mTextures["NormalTex"]->Resource;
-		auto SkyTex = mTextures["SkyCubeMap"]->Resource;
+		auto DiffTex = ((SD3DTexture*)(GetResourceManager()->GetTexture("DiffTex")))->Resource;
+		auto RoughTex = ((SD3DTexture*)(GetResourceManager()->GetTexture("RoughTex")))->Resource;
+		auto SpecTex = ((SD3DTexture*)(GetResourceManager()->GetTexture("SpecTex")))->Resource;
+		auto NormTex = ((SD3DTexture*)(GetResourceManager()->GetTexture("NormalTex")))->Resource;
+		auto SkyTex = ((SD3DTexture*)(GetResourceManager()->GetTexture("SkyCubeMap")))->Resource;
 		
-
 		mSkyCubeResource.push_back(SkyTex.Get());
-
 		mGBufferSrvResources.push_back(DiffTex.Get());
 		mGBufferSrvResources.push_back(RoughTex.Get());
 		mGBufferSrvResources.push_back(SpecTex.Get());
@@ -1180,7 +1164,7 @@ namespace SGraphics
 
 		// Fill out the heap with actual descriptors:
 		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(((SDxResourceManager*)(pGraphicsResourceManager.get()))
-			->GetOrAllocDescriptorHeap(GBufferSrvName)->GetCPUtDescriptorHandle(0));
+			->GetOrAllocDescriptorHeap(SRVs::GBufferSrvName)->GetCPUtDescriptorHandle(0));
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -1250,7 +1234,7 @@ namespace SGraphics
 		//
 		// Fill out the heap with actual descriptors.
 		//
-		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(DeferredSrvName)->GetCPUtDescriptorHandle(0));
+		CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetCPUtDescriptorHandle(0));
 		
 		auto GBufferAlbedo = GBufferRTs[0].get();
 		auto GBufferNormal = GBufferRTs[1].get();
@@ -1542,7 +1526,6 @@ namespace SGraphics
 	float TestScaling[3] = { 1.f, 1.f, 1.f };
 	void SDxRendererGM::BuildGeometry()
 	{
-		// Link fbx
 		mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/Urn.fbx", ESupportFileForm::ASSIMP_SUPPORTFILE));
 		BuildGeneratedMeshes();
 	}
@@ -1578,37 +1561,13 @@ namespace SGraphics
 		opaquePsoDesc.DSVFormat = mGraphicsConfs->depthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["ForwardShading"])));
 
-
 #if defined(Sakura_Defferred)
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC gbufferPsoDesc = opaquePsoDesc;
-		gbufferPsoDesc.InputLayout = { mInputLayouts[SPasses::E_GBuffer].data(), (UINT)mInputLayouts[SPasses::E_GBuffer].size() };
-		gbufferPsoDesc.pRootSignature = mRootSignatures["GBufferPass"].Get();
-		gbufferPsoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["standardVS"]->GetBufferPointer()),
-			mShaders["standardVS"]->GetBufferSize()
-		};
-		gbufferPsoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["GBufferPS"]->GetBufferPointer()),
-			mShaders["GBufferPS"]->GetBufferSize()
-		};
-		gbufferPsoDesc.NumRenderTargets = GBufferRTNum;
-		for (int i = 0; i < GBufferRTNum; i++)
-		{
-			gbufferPsoDesc.RTVFormats[i] = GBufferRTs[i]->mProperties.mRtvFormat;
-		}
-		gbufferPsoDesc.SampleDesc.Count = 1;
-		gbufferPsoDesc.SampleDesc.Quality = 0;
-		gbufferPsoDesc.DSVFormat = mGraphicsConfs->depthStencilFormat;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&gbufferPsoDesc, IID_PPV_ARGS(&mPSOs["GBufferPass"])));
-
 		// Deferred Shading Pass
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC deferredPsoDesc = opaquePsoDesc;
 		deferredPsoDesc.DepthStencilState.DepthEnable = false;
 		deferredPsoDesc.pRootSignature = mRootSignatures["DeferredShading"].Get();
 		deferredPsoDesc.InputLayout = { mInputLayouts[SPasses::E_Deferred].data(), (UINT)mInputLayouts[SPasses::E_Deferred].size() };
-		gbufferPsoDesc.NumRenderTargets = 1;
+		deferredPsoDesc.NumRenderTargets = 1;
 		deferredPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 		deferredPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 		deferredPsoDesc.VS =
@@ -1651,14 +1610,14 @@ namespace SGraphics
 		for (int i = 0; i < gNumFrameResources; i++)
 		{
 			mFrameResources.push_back(std::make_unique<SFrameResource>(md3dDevice.Get(),
-				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 50, (UINT)mMaterials.size()));
+				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 50, (UINT)mMaterials.size() + 200));
 		}
 	}
 
 	void SDxRendererGM::BuildMaterials()
 	{
 		int MatCBInd = 0;
-		auto bricks0 = std::make_unique<OpaqueMaterial>();
+		auto bricks0 = new OpaqueMaterial();
 		bricks0->Name = "bricks0";
 		bricks0->MatCBIndex = MatCBInd++;
 		bricks0->MatConstants.DiffuseSrvHeapIndex = 0;
@@ -1669,52 +1628,7 @@ namespace SGraphics
 		bricks0->MatConstants.Roughness = 1.f;
 		GBufferResourceSrv += 4;
 		GBufferMaterials += 1;
-		mMaterials["bricks0"] = std::move(bricks0);
-
-#if defined(Sakura_Debug_PureColor)
-		for (int j = 0; j < 11; j++)
-		{
-			for (int i = 0; i < 11; i++)
-			{
-				auto testM = std::make_unique<OpaqueMaterial>();
-				testM->Name = "test" + std::to_string(i) + std::to_string(j);
-				testM->MatCBIndex = MatCBInd++;
-				testM->MatConstants.DiffuseSrvHeapIndex = -1;
-				testM->MatConstants.RMOSrvHeapIndex = -1;
-				testM->MatConstants.SpecularSrvHeapIndex = -1;
-				testM->MatConstants.NormalSrvHeapIndex = -1;
-				testM->MatConstants.Roughness = .1f * (float)i;
-				testM->MatConstants.Metallic = .1f * (float)j;
-				testM->MatConstants.Metallic = 1.f;
-				testM->MatConstants.BaseColor = XMFLOAT3(
-					j == 0 ? Colors::PaleVioletRed :
-					j == 1 ? Colors::Gold :
-					j == 2 ? Colors::Firebrick :
-					j == 3 ? Colors::Red :
-					j == 4 ? Colors::Green :
-					j == 5 ? Colors::LightBlue :
-					j == 6 ? Colors::BlueViolet :
-					j == 7 ? Colors::Blue :
-					j == 8 ? Colors::Purple :
-					j == 9 ? Colors::LightGray :
-					Colors::DarkGray
-				);
-				//testM->MatConstants.BaseColor = XMFLOAT3(Colors::MintCream);
-				mMaterials[testM->Name] = std::move(testM);
-			}
-		}
-#endif
-		auto testMat = std::make_unique<OpaqueMaterial>();
-		testMat->Name = "test";
-		testMat->MatCBIndex = MatCBInd++;
-		testMat->MatConstants.DiffuseSrvHeapIndex = -1;
-		testMat->MatConstants.RMOSrvHeapIndex = -1;
-		testMat->MatConstants.SpecularSrvHeapIndex = -1;
-		testMat->MatConstants.NormalSrvHeapIndex = -1;
-		testMat->MatConstants.Roughness = .5f;
-		testMat->MatConstants.Metallic = .8f;
-		testMat->MatConstants.BaseColor = XMFLOAT3(Colors::BlueViolet);
-		mMaterials[testMat->Name] = std::move(testMat);
+		mMaterials["bricks0"] = bricks0;
 	}
 	
 	void SDxRendererGM::BuildRenderItems()
@@ -1762,7 +1676,7 @@ namespace SGraphics
 		screenQuad->World = MathHelper::Identity4x4();
 		screenQuad->TexTransform = MathHelper::Identity4x4();
 		screenQuad->ObjCBIndex = CBIndex++;
-		screenQuad->Mat = mMaterials["bricks0"].get();
+		screenQuad->Mat = mMaterials["bricks0"];
 		screenQuad->Geo = mGeometries["ScreenQuad"].get();
 		screenQuad->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		screenQuad->IndexCount = screenQuad->Geo->DrawArgs["ScreenQuad"].IndexCount;
@@ -1777,7 +1691,7 @@ namespace SGraphics
 		XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.f, 5000.f, 5000.f));
 		skyRitem->TexTransform = MathHelper::Identity4x4();
 		skyRitem->ObjCBIndex = CBIndex++;
-		skyRitem->Mat = mMaterials["bricks0"].get();
+		skyRitem->Mat = mMaterials["bricks0"];
 		skyRitem->Geo = mGeometries["SkySphere"].get();
 		skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		skyRitem->IndexCount = skyRitem->Geo->DrawArgs["SkySphere"].IndexCount;
@@ -1793,7 +1707,7 @@ namespace SGraphics
 		XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(1000.f, 1000.f, 1000.f));
 		boxRitem->TexTransform = MathHelper::Identity4x4();
 		boxRitem->ObjCBIndex = CBIndex++;
-		boxRitem->Mat = mMaterials["bricks0"].get();
+		boxRitem->Mat = mMaterials["bricks0"];
 		boxRitem->Geo = mGeometries["HDRCube"].get();
 		boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		boxRitem->IndexCount = boxRitem->Geo->DrawArgs["HDRCube"].IndexCount;
@@ -1804,7 +1718,6 @@ namespace SGraphics
 		mAllRitems.push_back(std::move(boxRitem));
 #endif
 
-
 #if defined(Sakura_GBUFFER_DEBUG) 
 		for (int i = 0; i < 6; i++)
 		{
@@ -1813,7 +1726,7 @@ namespace SGraphics
 			screenQuad->World = MathHelper::Identity4x4();
 			screenQuad->TexTransform = MathHelper::Identity4x4();
 			screenQuad->ObjCBIndex = CBIndex++;
-			screenQuad->Mat = mMaterials["bricks0"].get();
+			screenQuad->Mat = mMaterials["bricks0"];
 			screenQuad->Geo = mGeometries[Name].get();
 			screenQuad->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 			screenQuad->IndexCount = screenQuad->Geo->DrawArgs[Name].IndexCount;
@@ -1871,11 +1784,11 @@ namespace SGraphics
 
 		rtvHeapDesc.NumDescriptors = 1;
 		((SDxResourceManager*)(pGraphicsResourceManager.get()))
-			->GetOrAllocDescriptorHeap(CaptureRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
+			->GetOrAllocDescriptorHeap(RTVs::CaptureRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
 
 		rtvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
 		((SDxResourceManager*)(pGraphicsResourceManager.get()))
-			->GetOrAllocDescriptorHeap(ScreenEfxRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
+			->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName, mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
 
 
 		//Create depth/stencil view descriptor 

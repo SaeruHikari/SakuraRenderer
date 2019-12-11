@@ -3,7 +3,7 @@
 #include "Utils/d3dUtil.h"
 #include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
 #include "UploadBuffer.h"
-#include "UploadVertices.h"
+#include "../GraphicsCommon/UploadVertices.h"
 
 struct SRenderMeshConstants
 {

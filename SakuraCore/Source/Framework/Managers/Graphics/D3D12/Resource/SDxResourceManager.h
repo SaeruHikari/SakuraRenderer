@@ -1,8 +1,8 @@
 #pragma once
 #include "../../CommonInterface/Resource/SakuraGraphicsResourceManagerBase.h"
-#include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 #include "Framework/GraphicTypes/D3D12/FrameResource.h"
 #include "Framework/GraphicTypes/D3D12/SDescriptorHeap.hpp"
+#include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
 
 namespace SGraphics
 {
@@ -29,6 +29,13 @@ namespace SGraphics
 		virtual void Tick(double deltaTime);
 		// DO NOT Keep the returned ptr of Descriptor Heap.
 		virtual SDescriptorHeap* GetOrAllocDescriptorHeap(std::string name, UINT descriptorSize = 100, D3D12_DESCRIPTOR_HEAP_DESC desc = {});
+		// Load Textures
+		virtual bool LoadTextures(std::wstring Filename, std::string registName) override;
+		// Get Textures
+		virtual SGraphics::ISTexture* GetTexture(std::string registName) override;
+		virtual int RegistNamedRenderTarget(std::string resgistName, ISRenderTargetProperties rtProp,
+			std::string targetSrvHeap = "NULL", std::string targetRtvHeap = "NULL") override;
+		virtual ISRenderTarget* GetRenderTarget(std::string registName) override;
 	protected:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 		Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
@@ -41,6 +48,8 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
 		std::map<std::string, std::unique_ptr<SDescriptorHeap>> mDescriptorHeaps;
+		std::map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
+		std::map<std::string, std::unique_ptr<ISDx12RenderTarget>> mRenderTargets;
 
 		bool InitD3D12Device();
 		void CreateCommandObjects();

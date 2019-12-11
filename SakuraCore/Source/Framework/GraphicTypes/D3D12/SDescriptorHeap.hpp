@@ -44,7 +44,6 @@ namespace SGraphics
 			couple.hCpu.Offset(filledNum, heapDescriptorSize);
 			couple.hGpu = CD3DX12_GPU_DESCRIPTOR_HANDLE(descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 			couple.hGpu.Offset(filledNum, heapDescriptorSize);
-			filledNum = filledNum + 1;
 			return couple;
 		}
 		inline D3D12_GPU_DESCRIPTOR_HANDLE GetHandleGPUFromCPU(D3D12_CPU_DESCRIPTOR_HANDLE handle) const 

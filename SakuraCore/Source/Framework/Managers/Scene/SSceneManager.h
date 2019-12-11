@@ -17,7 +17,7 @@ namespace SakuraCore
 		SIndex RegistOpaqueMat(SMaterial* material, std::string name);
 
 		SRenderItem* GetRenderItem(SIndex index);
-		SMaterial* GetMaterial(SIndex index);
+		SMaterial* GetMaterial(std::string Name);
 		virtual bool Initialize()
 		{
 			return true;

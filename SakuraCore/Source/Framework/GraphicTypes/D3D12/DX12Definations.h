@@ -20,6 +20,7 @@
 #include <cassert>
 #include "Common/Microsoft/d3dx12.h"
 #include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
+#include "../GraphicsInterface/ISTexture.h"
 
 ///<summary>
 /// Extern const int gNumFrameResources
@@ -212,7 +213,7 @@ struct OpaqueMaterial
 	PBRMaterialConstants MatConstants;
 };
 
-struct SD3DTexture
+struct SD3DTexture : public SGraphics::ISTexture
 {
 	// Unique texture name for lookup
 	std::string Name;

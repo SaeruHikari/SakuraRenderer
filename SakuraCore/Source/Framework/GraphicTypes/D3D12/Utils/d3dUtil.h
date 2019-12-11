@@ -72,7 +72,7 @@ public:
 		const std::string& entrypoint,
 		const std::string& target);
 
-	static std::shared_ptr<SD3DTexture> LoadHDRTexture(
+	static SD3DTexture* LoadHDRTexture(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
 		const std::string& _name,

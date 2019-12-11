@@ -75,9 +75,6 @@
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Pass.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SRenderTarget.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -88,9 +85,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadBuffer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.h">
@@ -159,6 +153,24 @@
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderTarget.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12RenderTarget.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISTexture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\UploadVertices.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISGPUResource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">
@@ -201,9 +213,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Framework\Core\Object\SStaticMesh.cpp">

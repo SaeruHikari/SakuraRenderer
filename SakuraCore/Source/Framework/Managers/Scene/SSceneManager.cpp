@@ -1,5 +1,5 @@
 #include "SSceneManager.h"
-#include "..\..\GraphicTypes\D3D12\UploadVertices.h"
+#include "..\..\GraphicTypes\GraphicsCommon\UploadVertices.h"
 #include "..\Graphics\D3D12\SDxRendererGM.h"
 
 SakuraCore::SSceneManager::SSceneManager()
@@ -63,7 +63,6 @@ SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matn
 	rItem->World = MathHelper::Identity4x4();
 	rItem->TexTransform = MathHelper::Identity4x4();
 	rItem->ObjCBIndex = gmng->CBIndex++;
-	rItem->Mat = gmng->mMaterials["test"].get();
 	rItem->Geo = geo;
 	rItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rItem->IndexCount = rItem->Geo->DrawArgs[geo->Name].IndexCount;
@@ -73,6 +72,8 @@ SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matn
 	gmng->mRenderLayers[SRenderLayers::E_Opaque].push_back(rItem);
 	gmng->mAllRitems.push_back(std::move(std::unique_ptr<SDxRenderItem>(rItem)));
 	renderScene->OpaqueRItems.push_back(std::move(srItem));
+	gmng->mMaterials[matname] = &GetMaterial(matname)->data;
+	rItem->Mat = gmng->mMaterials[matname];
 
 	ThrowIfFailed(cmdList->Close());
 	ID3D12CommandList* cmdsList0[] = { cmdList };
@@ -84,7 +85,7 @@ SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matn
 SIndex SakuraCore::SSceneManager::RegistOpaqueMat(SMaterial* material, std::string name)
 {
 	auto unique = std::unique_ptr<SMaterial>(material);
-	renderScene->OpaqueMaterials.push_back(std::move(unique));
+	renderScene->OpaqueMaterials[name] = std::move(unique);
 
 	return renderScene->OpaqueMaterials.size() - 1;
 }
@@ -94,8 +95,8 @@ SGraphics::SRenderItem* SakuraCore::SSceneManager::GetRenderItem(SIndex index)
 	return renderScene->OpaqueRItems[index].get();
 }
 
-SGraphics::SMaterial* SakuraCore::SSceneManager::GetMaterial(SIndex index)
+SGraphics::SMaterial* SakuraCore::SSceneManager::GetMaterial(std::string Name)
 {
-	return renderScene->OpaqueMaterials[index].get();
+	return renderScene->OpaqueMaterials[Name].get();
 }
 

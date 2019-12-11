@@ -38,6 +38,6 @@ namespace SGraphics
 
 		}
 		std::vector<std::unique_ptr<SRenderItem>> OpaqueRItems;
-		std::vector<std::unique_ptr<SMaterial>> OpaqueMaterials;
+		std::unordered_map<std::string, std::unique_ptr<SMaterial>> OpaqueMaterials;
 	};
 }

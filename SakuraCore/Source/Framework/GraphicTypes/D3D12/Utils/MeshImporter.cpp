@@ -1,5 +1,5 @@
 #include "MeshImporter.h"
-#include "../UploadVertices.h"
+#include "../../GraphicsCommon/UploadVertices.h"
 #include <iostream>
 #include "Common/HikaUtils/HikaCommonUtils/HikaCommonUtil.h"
 #include <DirectXMath.h>

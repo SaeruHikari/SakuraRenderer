@@ -1,7 +1,6 @@
 #pragma once
 #include "D3DCommon.h"
-#include "SRenderTarget.hpp"
-
+#include "SDx12RenderTarget.hpp"
 
 namespace SGraphics
 {
@@ -87,7 +86,7 @@ namespace SGraphics
 	};
 
 
-	class SDx12Pass : public __dx12Pass
+	class SDx12Pass : public SGraphics::__dx12Pass
 	{
 	public:
 		SDx12Pass()

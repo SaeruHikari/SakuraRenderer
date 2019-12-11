@@ -1,82 +1,60 @@
 #pragma once
 #include "D3DCommon.h"
 #include <d3d12.h>
+#include "..\GraphicsInterface\ISRenderTarget.h"
 
 namespace SGraphics
 {
-	struct SRTProperties
+	class ISDx12RenderTarget : public ISRenderTarget
 	{
-		SRTProperties() {}
-		SRTProperties(float r, float g, float b, float a)
-		{
-			mClearColor[0] = r;
-			mClearColor[1] = g;
-			mClearColor[2] = b;
-			mClearColor[3] = a;
-		}
-		DXGI_FORMAT mRtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-
-		// RtvWidth = viewportWidth * mWidthPercentage
-		float mWidthPercentage = 1;
-		float mHeightPercentage = 1;
-	
-		FLOAT mClearColor[4] = { 0,0,0,0 };
+	protected:
+	public:
+		~ISDx12RenderTarget() {};
+		virtual void OnResize(ID3D12Device* device, UINT ClientWidth, UINT ClientHeight) = 0;
+		virtual ID3D12Resource* Resource() = 0;
 	};
 
-	class SRenderTarget2D 
+	class SDx12RenderTarget2D : public ISDx12RenderTarget
 	{
 	public:
-		SRenderTarget2D(SRTProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true)
+		SDx12RenderTarget2D(UINT ClientWidth, UINT ClientHeight, ISRenderTargetProperties prop = {}, bool ScaledByViewport = true)
 		{
 			mProperties = prop;
 
-			mClientWidth = ClientWidth;
-			mClientHeight = ClientHeight;
+			mProperties.mWidth = ClientWidth;
+			mProperties.mHeight = ClientHeight;
 
 			bScaledByViewport = ScaledByViewport;
 
 			if (bScaledByViewport)
-			{
 				SetViewportAndScissorRect((UINT)(ClientWidth * mProperties.mWidthPercentage), (UINT)(ClientHeight * mProperties.mHeightPercentage));
-			}
 			else
-			{
 				SetViewportAndScissorRect(ClientWidth, ClientHeight);
-			}
 		}
-		SRenderTarget2D(UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true)
+		virtual ID3D12Resource* Resource()
 		{
-			mClientWidth = ClientWidth;
-			mClientHeight = ClientHeight;
-
-			bScaledByViewport = ScaledByViewport;
-
-			if (bScaledByViewport)
-			{
-				SetViewportAndScissorRect((UINT)(ClientWidth * mProperties.mWidthPercentage), (UINT)(ClientHeight * mProperties.mHeightPercentage));
-			}
-			else
-			{
-				SetViewportAndScissorRect(ClientWidth, ClientHeight);
-			}
+			return mResource.Get();
 		}
-		~SRenderTarget2D() {};
+
+		~SDx12RenderTarget2D() {};
 	
-		void OnResize(ID3D12Device* md3dDevice, UINT ClientWidth, UINT ClientHeight)
+		virtual void OnResize(ID3D12Device* md3dDevice, UINT ClientWidth, UINT ClientHeight) 
 		{
 			if (bScaledByViewport)
 			{
-				mClientWidth = ClientWidth;
-				mClientHeight = ClientHeight;
+				mProperties.mWidth = ClientWidth;
+			    mProperties.mHeight = ClientHeight;
 				SetViewportAndScissorRect((UINT)(ClientWidth * mProperties.mWidthPercentage), (UINT)(ClientHeight * mProperties.mHeightPercentage));
 				
-				BuildRTResource(md3dDevice, mRtvCpu, mSrvCpu, mSrvGpu);
+				BuildDescriptors(md3dDevice, mRtvCpu, mSrvCpu, mSrvGpu);
 			}
 
 		}
 
-		void BuildRTResource(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
+			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU,
+			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU) 
 		{
 			// Init RT
 			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
@@ -104,15 +82,46 @@ namespace SGraphics
 			mSrvGpu = srvGPU;
 		}
 
-		void BuildRTResource(ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
+			SDescriptorHeap rtv,
+			SDescriptorHeap srv)
+		{
+			// Init RT
+			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
+			ThrowIfFailed(md3dDevice->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				&optClear,
+				IID_PPV_ARGS(&mResource)));
+
+			// Create Cpu Rtv
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+			rtvDesc.Format = mProperties.mRtvFormat;
+			rtvDesc.Texture2D.MipSlice = 0;
+			rtvDesc.Texture2D.PlaneSlice = 0;
+			mRtvCpu = rtv.GetAvailableHandle().hCpu;
+			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, mRtvCpu);
+
+			mSrvCpu = srv.GetAvailableHandle().hCpu;
+			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
+
+			mSrvGpu = srv.GetAvailableHandle().hGpu;
+		}
+
+		void BuildDescriptors(ID3D12Device* md3dDevice,
+			SDescriptorHeap rtv,
+			SDescriptorHeap srv)
 		{
 			D3D12_RESOURCE_DESC texDesc;
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
 			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			texDesc.Alignment = 0;
-			texDesc.Width = mClientWidth;
-			texDesc.Height = mClientHeight;
+			texDesc.Width = mProperties.mWidth;
+			texDesc.Height = mProperties.mHeight;
 			texDesc.DepthOrArraySize = 1;
 			texDesc.MipLevels = 1;
 			texDesc.Format = mProperties.mRtvFormat;
@@ -120,7 +129,28 @@ namespace SGraphics
 			texDesc.SampleDesc.Quality = 0;
 			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-			BuildRTResource(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
+			BuildDescriptors(texDesc, md3dDevice, rtv, srv);
+		}
+
+		void BuildDescriptors(ID3D12Device* md3dDevice,
+			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU,
+			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		{
+			D3D12_RESOURCE_DESC texDesc;
+			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
+			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			texDesc.Alignment = 0;
+			texDesc.Width = mProperties.mWidth;
+			texDesc.Height = mProperties.mHeight;
+			texDesc.DepthOrArraySize = 1;
+			texDesc.MipLevels = 1;
+			texDesc.Format = mProperties.mRtvFormat;
+			texDesc.SampleDesc.Count = 1;
+			texDesc.SampleDesc.Quality = 0;
+			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			BuildDescriptors(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
 		}
 	public:
 		void ClearRenderTarget(ID3D12GraphicsCommandList* cmdList)
@@ -140,7 +170,6 @@ namespace SGraphics
 			srvDesc.Texture2D.MipLevels = 1;
 			md3dDevice->CreateShaderResourceView(mResource.Get(), &srvDesc, mSrvCpu);
 		}
-
 		void SetViewportAndScissorRect(UINT Width, UINT Height)
 		{
 			mViewport.TopLeftX = 0.0f;
@@ -153,16 +182,14 @@ namespace SGraphics
 			mScissorRect = { 0, 0, (int)(mViewport.Width), (int)(mViewport.Height) };
 		}
 	public:
-		SRTProperties mProperties;
 		//ID3D12Resource* mRtvResource;
 		Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
 
+		SDescriptorHeap mSRtv;
+		SDescriptorHeap mSSrv;
 		D3D12_CPU_DESCRIPTOR_HANDLE mRtvCpu;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE mSrvCpu;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE mSrvGpu;
-
-		UINT mClientWidth = 0;
-		UINT mClientHeight = 0;
 
 		D3D12_VIEWPORT mViewport;
 		D3D12_RECT mScissorRect;
@@ -170,32 +197,27 @@ namespace SGraphics
 		bool bScaledByViewport = true;
 	};
 
-
-
-	class SRenderTargetCube
+	class SDx12RenderTargetCube : public ISDx12RenderTarget
 	{
 	public:
-		SRenderTargetCube(ID3D12Device* device,
+		SDx12RenderTargetCube(
 			UINT width, UINT height,
 			DXGI_FORMAT format)
 		{
-			md3dDevice = device;
-
-			mWidth = width;
-			mHeight = height;
+			mProperties.mWidth = width;
+			mProperties.mHeight = height;
 			mFormat = format;
 
 			mViewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
 			mScissorRect = { 0, 0, (int)width, (int)height };
 
-			BuildResource();
 		}
 
-		SRenderTargetCube(const SRenderTargetCube& rhs) = delete;
-		SRenderTargetCube& operator=(const SRenderTargetCube& rhs) = delete;
-		~SRenderTargetCube() = default;
+		SDx12RenderTargetCube(const SDx12RenderTargetCube& rhs) = delete;
+		SDx12RenderTargetCube& operator=(const SDx12RenderTargetCube& rhs) = delete;
+		~SDx12RenderTargetCube() = default;
 
-		ID3D12Resource* Resource()
+		virtual ID3D12Resource* Resource()
 		{
 			return mCubeMap.Get();
 		}
@@ -212,9 +234,10 @@ namespace SGraphics
 		D3D12_RECT ScissorRect()const { return mScissorRect; }
 
 		void BuildDescriptors(
+			ID3D12Device* device,
 			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuSrv,
 			CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuSrv,
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuRtv[6])
+			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuRtv[6]) 
 		{
 			// Save references to the descriptors. 
 			mhCpuSrv = hCpuSrv;
@@ -224,25 +247,21 @@ namespace SGraphics
 				mhCpuRtv[i] = hCpuRtv[i];
 
 			//  Create the descriptors
-			BuildDescriptors();
+			BuildDescriptors(device);
 		}
 
-		void OnResize(UINT newWidth, UINT newHeight)
+		void OnResize(ID3D12Device* device, UINT newWidth, UINT newHeight)
 		{
-			if ((mWidth != newWidth) || (mHeight != newHeight))
+			if ((mProperties.mWidth != newWidth) || (mProperties.mHeight != newHeight))
 			{
-				mWidth = newWidth;
-				mHeight = newHeight;
-
-				BuildResource();
+				mProperties.mWidth = newWidth;
+				mProperties.mHeight = newHeight;
 
 				// New resource, so we need new descriptors to that resource.
-				BuildDescriptors();
+				BuildDescriptors(device);
 			}
 		}
 	public:
-		UINT mWidth = 0;
-		UINT mHeight = 0;	
 		void ClearRenderTarget(ID3D12GraphicsCommandList* cmdList)
 		{
 			cmdList->RSSetViewports(1, &mViewport);
@@ -253,8 +272,10 @@ namespace SGraphics
 		}
 
 	private:
-		void BuildDescriptors()
+		void BuildDescriptors(ID3D12Device* device)
 		{
+			BuildResource(device);
+
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvDesc.Format = mFormat;
@@ -264,7 +285,7 @@ namespace SGraphics
 			srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
 			// Create SRV to the entire cubemap resource.
-			md3dDevice->CreateShaderResourceView(mCubeMap.Get(), &srvDesc, mhCpuSrv);
+			device->CreateShaderResourceView(mCubeMap.Get(), &srvDesc, mhCpuSrv);
 
 			// Create RTV to each cube face.
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
@@ -281,10 +302,10 @@ namespace SGraphics
 				rtvDesc.Texture2DArray.FirstArraySlice = i;
 
 				// Create RTV to ith cubemap face.
-				md3dDevice->CreateRenderTargetView(mCubeMap.Get(), &rtvDesc, mhCpuRtv[i]);
+				device->CreateRenderTargetView(mCubeMap.Get(), &rtvDesc, mhCpuRtv[i]);
 			}
 		}
-		void BuildResource()
+		void BuildResource(ID3D12Device* device)
 		{
 			// Note, compressed formats cannot be used for UAV.  We get error like:
 			// ERROR: ID3D11Device::CreateTexture2D: The format (0x4d, BC3_UNORM) 
@@ -295,8 +316,8 @@ namespace SGraphics
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
 			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			texDesc.Alignment = 0;
-			texDesc.Width = mWidth;
-			texDesc.Height = mHeight;
+			texDesc.Width = mProperties.mWidth;
+			texDesc.Height = mProperties.mHeight;
 			texDesc.DepthOrArraySize = 6;
 			texDesc.MipLevels = 1;
 			texDesc.Format = mFormat;
@@ -307,7 +328,7 @@ namespace SGraphics
 			
 			CD3DX12_CLEAR_VALUE optClear(mFormat, mClearColor);
 			
-			ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			ThrowIfFailed(device->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
 				&texDesc,
@@ -318,7 +339,6 @@ namespace SGraphics
 
 	private:
 		FLOAT mClearColor[4] = { 1,0,0,0 };
-		ID3D12Device* md3dDevice = nullptr;
 
 		D3D12_VIEWPORT mViewport;
 		D3D12_RECT mScissorRect;

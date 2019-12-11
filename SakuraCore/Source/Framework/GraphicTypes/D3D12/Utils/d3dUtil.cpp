@@ -114,7 +114,7 @@ Microsoft::WRL::ComPtr<ID3DBlob> d3dUtil::CompileShader(
 }
 
 
-std::shared_ptr<SD3DTexture> d3dUtil::LoadHDRTexture(ID3D12Device* device,
+SD3DTexture* d3dUtil::LoadHDRTexture(ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList, 
 	const std::string& _name,
 	const std::wstring& _path, int channels)
@@ -136,7 +136,7 @@ std::shared_ptr<SD3DTexture> d3dUtil::LoadHDRTexture(ID3D12Device* device,
 	hdrDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	hdrDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	std::shared_ptr<SD3DTexture> texMap = std::make_shared<SD3DTexture>();
+	auto texMap = new SD3DTexture();
 	texMap->Name = _name;
 	texMap->Filename = _path;
 

@@ -14,10 +14,7 @@ namespace SGraphics
 			ISSlientObject::ISSlientObject();
 		}
 		~SMaterial() {}
-		union 
-		{
-			OpaqueMaterial data;
-		};
+		OpaqueMaterial data;
 		SIndex indexInScene = 0;
 	};
 }
