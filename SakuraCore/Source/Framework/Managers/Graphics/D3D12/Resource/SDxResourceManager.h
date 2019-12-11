@@ -28,13 +28,15 @@ namespace SGraphics
 		// Tick function, be called per frame.
 		virtual void Tick(double deltaTime);
 		// DO NOT Keep the returned ptr of Descriptor Heap.
-		virtual SDescriptorHeap* GetOrAllocDescriptorHeap(std::string name, UINT descriptorSize = 100, D3D12_DESCRIPTOR_HEAP_DESC desc = {});
+		virtual SDescriptorHeap* GetOrAllocDescriptorHeap(std::string name,
+			UINT descriptorSize = 0, 
+			D3D12_DESCRIPTOR_HEAP_DESC desc = {});
 		// Load Textures
 		virtual bool LoadTextures(std::wstring Filename, std::string registName) override;
 		// Get Textures
 		virtual SGraphics::ISTexture* GetTexture(std::string registName) override;
 		virtual int RegistNamedRenderTarget(std::string resgistName, ISRenderTargetProperties rtProp,
-			std::string targetSrvHeap = "NULL", std::string targetRtvHeap = "NULL") override;
+			std::string targetSrvHeap, std::string targetRtvHeap) override;
 		virtual ISRenderTarget* GetRenderTarget(std::string registName) override;
 	protected:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;

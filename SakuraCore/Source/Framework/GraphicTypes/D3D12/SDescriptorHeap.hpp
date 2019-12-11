@@ -10,14 +10,17 @@ Details:
 
 namespace SGraphics
 {
+	struct SDescriptorHeap;
 	extern const size_t gPoolPageSize;
+	struct DescriptorHandleCouple
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE hCpu;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpu;
+		int indexOnHeap = -1;
+		SDescriptorHeap* fromHeap = nullptr;
+	};
 	struct SDescriptorHeap
 	{
-		struct DescriptorHandleCouple
-		{
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpu;
-			CD3DX12_GPU_DESCRIPTOR_HANDLE hGpu;
-		};
 	public:
 		SDescriptorHeap() = default;
 		SDescriptorHeap(ID3D12Device* m_device, size_t descriptorSize, D3D12_DESCRIPTOR_HEAP_DESC desc)
@@ -44,6 +47,9 @@ namespace SGraphics
 			couple.hCpu.Offset(filledNum, heapDescriptorSize);
 			couple.hGpu = CD3DX12_GPU_DESCRIPTOR_HANDLE(descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 			couple.hGpu.Offset(filledNum, heapDescriptorSize);
+			couple.indexOnHeap = filledNum;
+			couple.fromHeap = this;
+			filledNum = filledNum + 1;
 			return couple;
 		}
 		inline D3D12_GPU_DESCRIPTOR_HANDLE GetHandleGPUFromCPU(D3D12_CPU_DESCRIPTOR_HANDLE handle) const 

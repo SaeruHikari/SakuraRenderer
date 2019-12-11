@@ -2,6 +2,7 @@
 #include "D3DCommon.h"
 #include <d3d12.h>
 #include "..\GraphicsInterface\ISRenderTarget.h"
+#include "SDescriptorHeap.hpp"
 
 namespace SGraphics
 {
@@ -37,84 +38,88 @@ namespace SGraphics
 		}
 
 		~SDx12RenderTarget2D() {};
-	
-		virtual void OnResize(ID3D12Device* md3dDevice, UINT ClientWidth, UINT ClientHeight) 
+		/*
+		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
 		{
-			if (bScaledByViewport)
+			// Init RT
+			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
+			ThrowIfFailed(md3dDevice->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				&optClear,
+				IID_PPV_ARGS(&mResource)));
+
+			// Create Cpu Rtv
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+			rtvDesc.Format = mProperties.mRtvFormat;
+			rtvDesc.Texture2D.MipSlice = 0;
+			rtvDesc.Texture2D.PlaneSlice = 0;
+			mSRtv.hCpu = rtvCPU;
+			mSSrv.hCpu = srvCPU;
+			mSSrv.hGpu = srvGPU;
+			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, rtvCPU);
+
+			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
+		}
+
+		void BuildDescriptors(ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		{
+			D3D12_RESOURCE_DESC texDesc;
+			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
+			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			texDesc.Alignment = 0;
+			texDesc.Width = mProperties.mWidth;
+			texDesc.Height = mProperties.mHeight;
+			texDesc.DepthOrArraySize = 1;
+			texDesc.MipLevels = 1;
+			texDesc.Format = mProperties.mRtvFormat;
+			texDesc.SampleDesc.Count = 1;
+			texDesc.SampleDesc.Quality = 0;
+			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			BuildDescriptors(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
+		}
+		*/
+		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
+			SDescriptorHeap* rtv,
+			SDescriptorHeap* srv)
+		{
+			// Init RT
+			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
+			ThrowIfFailed(md3dDevice->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				&optClear,
+				IID_PPV_ARGS(&mResource)));
+
+			// Create Cpu Rtv
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+			rtvDesc.Format = mProperties.mRtvFormat;
+			rtvDesc.Texture2D.MipSlice = 0;
+			rtvDesc.Texture2D.PlaneSlice = 0;
+			if (!Initialized)
 			{
-				mProperties.mWidth = ClientWidth;
-			    mProperties.mHeight = ClientHeight;
-				SetViewportAndScissorRect((UINT)(ClientWidth * mProperties.mWidthPercentage), (UINT)(ClientHeight * mProperties.mHeightPercentage));
-				
-				BuildDescriptors(md3dDevice, mRtvCpu, mSrvCpu, mSrvGpu);
+				mSRtv = rtv->GetAvailableHandle();
+				mSSrv = srv->GetAvailableHandle();
+				Initialized = true;
 			}
-
-		}
-
-		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU,
-			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU) 
-		{
-			// Init RT
-			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
-			ThrowIfFailed(md3dDevice->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				&optClear,
-				IID_PPV_ARGS(&mResource)));
-
-			// Create Cpu Rtv
-			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-			rtvDesc.Format = mProperties.mRtvFormat;
-			rtvDesc.Texture2D.MipSlice = 0;
-			rtvDesc.Texture2D.PlaneSlice = 0;
-			mRtvCpu = rtvCPU;
-			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, mRtvCpu);
-
-			mSrvCpu = srvCPU;
+			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, mSRtv.hCpu);
 			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
-
-			mSrvGpu = srvGPU;
-		}
-
-		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
-			SDescriptorHeap rtv,
-			SDescriptorHeap srv)
-		{
-			// Init RT
-			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
-			ThrowIfFailed(md3dDevice->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				&optClear,
-				IID_PPV_ARGS(&mResource)));
-
-			// Create Cpu Rtv
-			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-			rtvDesc.Format = mProperties.mRtvFormat;
-			rtvDesc.Texture2D.MipSlice = 0;
-			rtvDesc.Texture2D.PlaneSlice = 0;
-			mRtvCpu = rtv.GetAvailableHandle().hCpu;
-			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, mRtvCpu);
-
-			mSrvCpu = srv.GetAvailableHandle().hCpu;
-			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
-
-			mSrvGpu = srv.GetAvailableHandle().hGpu;
 		}
 
 		void BuildDescriptors(ID3D12Device* md3dDevice,
-			SDescriptorHeap rtv,
-			SDescriptorHeap srv)
+			SDescriptorHeap* rtv,
+			SDescriptorHeap* srv)
 		{
 			D3D12_RESOURCE_DESC texDesc;
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
@@ -132,12 +137,27 @@ namespace SGraphics
 			BuildDescriptors(texDesc, md3dDevice, rtv, srv);
 		}
 
-		void BuildDescriptors(ID3D12Device* md3dDevice,
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU,
-			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		virtual void OnResize(ID3D12Device* md3dDevice, UINT ClientWidth, UINT ClientHeight)
 		{
-			D3D12_RESOURCE_DESC texDesc;
+			if (bScaledByViewport)
+			{
+				mProperties.mWidth = ClientWidth;
+				mProperties.mHeight = ClientHeight;
+				SetViewportAndScissorRect((UINT)(ClientWidth * mProperties.mWidthPercentage), (UINT)(ClientHeight * mProperties.mHeightPercentage));
+				BuildDescriptors(md3dDevice);
+			}
+		}
+	public:
+		void ClearRenderTarget(ID3D12GraphicsCommandList* cmdList)
+		{
+			cmdList->RSSetViewports(1, &mViewport);
+			cmdList->RSSetScissorRects(1, &mScissorRect);
+			cmdList->ClearRenderTargetView(mSRtv.hCpu, mProperties.mClearColor, 0, nullptr);
+		}
+	private:
+		void BuildDescriptors(ID3D12Device* md3dDevice)
+		{
+			D3D12_RESOURCE_DESC texDesc;//
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
 			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			texDesc.Alignment = 0;
@@ -150,16 +170,28 @@ namespace SGraphics
 			texDesc.SampleDesc.Quality = 0;
 			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-			BuildDescriptors(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
+			// Init RT
+			CD3DX12_CLEAR_VALUE optClear(texDesc.Format, mProperties.mClearColor);
+			ThrowIfFailed(md3dDevice->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&texDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				&optClear,
+				IID_PPV_ARGS(&mResource)));
+
+			// Create Cpu Rtv
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+			rtvDesc.Format = mProperties.mRtvFormat;
+			rtvDesc.Texture2D.MipSlice = 0;
+			rtvDesc.Texture2D.PlaneSlice = 0;
+			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, mSRtv.hCpu);
+			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
 		}
-	public:
-		void ClearRenderTarget(ID3D12GraphicsCommandList* cmdList)
-		{
-			cmdList->RSSetViewports(1, &mViewport);
-			cmdList->RSSetScissorRects(1, &mScissorRect);
-			cmdList->ClearRenderTargetView(mRtvCpu, mProperties.mClearColor, 0, nullptr);
-		}
-	private:
+
+		bool Initialized = false;
 		void CreateShaderResourceView(ID3D12Device* md3dDevice, DXGI_FORMAT format)
 		{
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -168,7 +200,7 @@ namespace SGraphics
 			srvDesc.Format = format;
 			srvDesc.Texture2D.MostDetailedMip = 0;
 			srvDesc.Texture2D.MipLevels = 1;
-			md3dDevice->CreateShaderResourceView(mResource.Get(), &srvDesc, mSrvCpu);
+			md3dDevice->CreateShaderResourceView(mResource.Get(), &srvDesc, mSSrv.hCpu);
 		}
 		void SetViewportAndScissorRect(UINT Width, UINT Height)
 		{
@@ -182,14 +214,10 @@ namespace SGraphics
 			mScissorRect = { 0, 0, (int)(mViewport.Width), (int)(mViewport.Height) };
 		}
 	public:
-		//ID3D12Resource* mRtvResource;
 		Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
 
-		SDescriptorHeap mSRtv;
-		SDescriptorHeap mSSrv;
-		D3D12_CPU_DESCRIPTOR_HANDLE mRtvCpu;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mSrvCpu;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE mSrvGpu;
+		DescriptorHandleCouple mSRtv;
+		DescriptorHandleCouple mSSrv;
 
 		D3D12_VIEWPORT mViewport;
 		D3D12_RECT mScissorRect;

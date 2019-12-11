@@ -203,7 +203,7 @@ namespace SGraphics
 		SDx12RenderTarget2D* mMotionVectorRT;
 		std::shared_ptr<SDx12RenderTarget2D>* GBufferRTs;
 		std::shared_ptr<SDx12RenderTarget2D> mBrdfLutRT2D;
-		std::shared_ptr<SDx12RenderTarget2D>* mTaaRTs;
+		SDx12RenderTarget2D** mTaaRTs;
 
 		std::shared_ptr<SGBufferPass> mGbufferPass = nullptr;
 		std::shared_ptr<SsaoPass> mSsaoPass = nullptr;
@@ -244,10 +244,21 @@ namespace SGraphics
 				L"Textures/020.hdr"
 			};
 		};
-		struct RT2Ds
+		static struct RT2Ds
 		{
 			inline static const std::string MotionVectorRTName = "MotionVectorRT";
+			inline static std::vector<std::string> TAARTNames;
+			RT2Ds()
+			{
+				TAARTNames.resize(TAARtvsNum);
+				for (size_t i = 0; i < TAARtvsNum; i++)
+				{
+					std::string NameI = "TAARTName" + std::to_string(i);
+					TAARTNames[i] = (NameI);
+				}
+			}
 		};
+		inline static RT2Ds rt2ds{};
 		struct RT3Ds
 		{
 

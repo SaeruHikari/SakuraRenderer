@@ -70,17 +70,11 @@ namespace SGraphics
 			vprop.bScaleWithViewport = true;
 			vprop.rtType = ERenderTargetTypes::E_RT2D;
 			vprop.mWidth = mGraphicsConfs->clientWidth;
-			vprop.mHeight = mGraphicsConfs->clientHeight;
-			if (GetResourceManager()->RegistNamedRenderTarget(RT2Ds::MotionVectorRTName, vprop) != -1)
+			vprop.mHeight = mGraphicsConfs->clientHeight; 
+			if (GetResourceManager()->
+				RegistNamedRenderTarget(RT2Ds::MotionVectorRTName, vprop, RTVs::ScreenEfxRtvName, SRVs::ScreenEfxSrvName) != -1)
 			{
 				mMotionVectorRT = (SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget(RT2Ds::MotionVectorRTName);
-				//mMotionVectorRT->BuildDescriptors(md3dDevice.Get(),
-				//	GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName)->GetCPUtDescriptorHandle(0),
-				//	GetScreenEfxSrvCPU(0),
-				//	GetScreenEfxSrvGPU(0));
-				mMotionVectorRT->BuildDescriptors(md3dDevice.Get(),
-					*GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName),
-					*GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName));
 			}
 #endif
 			// Create resources depended by passes.
@@ -88,7 +82,6 @@ namespace SGraphics
 			GBufferRTs = new std::shared_ptr<SDx12RenderTarget2D>[GBufferRTNum];
 			for (int i = 0; i < GBufferRTNum; i++)
 			{
-				//ISRenderTargetProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
 				ISRenderTargetProperties prop(0.f, 0.f, (i == 3) ? 1.f : 0.f, 0.f);
 				GBufferRTs[i] = std::make_shared<SDx12RenderTarget2D>(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, prop, true);
 				// Init RT Resource with a CPU rtv handle.
@@ -96,6 +89,7 @@ namespace SGraphics
 					GetRtvCPU(SwapChainBufferCount + i),
 					GetDeferredSrvCPU(GBufferSrvStartAt + i),
 					GetDeferredSrvGPU(GBufferSrvStartAt + i));
+
 			}
 #endif
 #if defined(Sakura_IBL)		
@@ -150,21 +144,24 @@ namespace SGraphics
 #endif
 			// Velocity and History
 #if defined(Sakura_TAA)
-			mTaaRTs = new std::shared_ptr<SDx12RenderTarget2D>[TAARtvsNum];
+			mTaaRTs = new SDx12RenderTarget2D*[TAARtvsNum];
 			auto taaRtvCPU = 
-				CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName)->GetCPUtDescriptorHandle(0));
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName)
+					->GetCPUtDescriptorHandle(0));
 			for (int i = 0; i < TAARtvsNum; i++)
 			{
-				taaRtvCPU.Offset(1, RtvDescriptorSize());
-				//ISRenderTargetProperties prop, UINT ClientWidth, UINT ClientHeight, bool ScaledByViewport = true
-				ISRenderTargetProperties prop;
-				prop.mRtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-				mTaaRTs[i] = std::make_shared<SDx12RenderTarget2D>(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, prop, true);
-				// Init RT Resource with a CPU rtv handle.
-				mTaaRTs[i]->BuildDescriptors(md3dDevice.Get(),
-					taaRtvCPU,
-					GetScreenEfxSrvCPU(1 + i),
-					GetScreenEfxSrvGPU(1 + i));
+				ISRenderTargetProperties vprop;
+				vprop.mRtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+				vprop.bScaleWithViewport = true;
+				vprop.rtType = ERenderTargetTypes::E_RT2D;
+				vprop.mWidth = mGraphicsConfs->clientWidth;
+				vprop.mHeight = mGraphicsConfs->clientHeight;
+				if (GetResourceManager()->
+					RegistNamedRenderTarget(RT2Ds::TAARTNames[i], vprop, RTVs::ScreenEfxRtvName, SRVs::ScreenEfxSrvName) != -1)
+				{
+					mTaaRTs[i] = (SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget(RT2Ds::TAARTNames[i]);
+					int j = mTaaRTs[i]->mSRtv.indexOnHeap;
+				}
 			}
 #endif
 		}
@@ -500,7 +497,7 @@ namespace SGraphics
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		mMotionVectorRT->ClearRenderTarget(mCommandList.Get());
-		D3D12_CPU_DESCRIPTOR_HANDLE mvRtv[1] = { mMotionVectorRT->mRtvCpu };
+		D3D12_CPU_DESCRIPTOR_HANDLE mvRtv[1] = { mMotionVectorRT->mSRtv.hCpu };
 		mMotionVectorPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mMotionVectorPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, mvRtv, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
@@ -509,7 +506,7 @@ namespace SGraphics
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvs[GBufferRTNum];
 		for (int i = 0; i < GBufferRTNum; i++)
 		{
-			rtvs[i] = GBufferRTs[i]->mRtvCpu;
+			rtvs[i] = GBufferRTs[i]->mSRtv.hCpu;
 			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[i]->mResource.Get(),
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 			GBufferRTs[i]->ClearRenderTarget(mCommandList.Get());
@@ -523,7 +520,7 @@ namespace SGraphics
 	#if defined(Sakura_SSAO)
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
-		mSsaoPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &GBufferRTs[1]->mRtvCpu, 1);
+		mSsaoPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &GBufferRTs[1]->mSRtv.hCpu, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 	#endif
@@ -540,10 +537,10 @@ namespace SGraphics
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv_thisPhase = CurrentBackBufferView();
 #if defined(Sakura_TAA)
-		rtv_thisPhase = mTaaRTs[0]->mRtvCpu;
+		rtv_thisPhase = mTaaRTs[0]->mSRtv.hCpu;
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[0]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
-		mCommandList->ClearRenderTargetView(mTaaRTs[0]->mRtvCpu, mTaaRTs[0]->mProperties.mClearColor, 0, nullptr);
+		mCommandList->ClearRenderTargetView(mTaaRTs[0]->mSRtv.hCpu, mTaaRTs[0]->mProperties.mClearColor, 0, nullptr);
 #endif
 #if defined(Sakura_Defferred)
 	{
@@ -610,7 +607,7 @@ namespace SGraphics
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[mTaaChain + 1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv_Taa[2];
-		rtv_Taa[0] = mTaaRTs[mTaaChain + 1]->mRtvCpu;
+		rtv_Taa[0] = mTaaRTs[mTaaChain + 1]->mSRtv.hCpu;
 		mTaaPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, rtv_Taa, 1);
 		rtv_Taa[0] = rtv_thisPhase;
 		mTaaPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, rtv_Taa, 1);

@@ -46,11 +46,13 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 	{
 		return descPtr;
 	}
-	else
+	else if(descriptorSize > 0)
 	{
+		desc.NumDescriptors = 100;
 		mDescriptorHeaps[name] = std::make_unique<SDescriptorHeap>(md3dDevice.Get(), descriptorSize, desc);
 		return mDescriptorHeaps[name].get();
 	}
+	return nullptr;
 }
 
 bool SGraphics::SDxResourceManager::LoadTextures(std::wstring Filename, std::string registName)
@@ -95,7 +97,7 @@ SGraphics::ISTexture* SGraphics::SDxResourceManager::GetTexture(std::string regi
 
 int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registName,
 	ISRenderTargetProperties rtProp, 
-	std::string targetSrvHeap, std::string targetRtvHeap)
+	std::string targetRtvHeap, std::string targetSrvHeap)
 {
 	if (mRenderTargets.find(registName) != mRenderTargets.end())
 		return false;
@@ -105,12 +107,10 @@ int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registNam
 	{
 		auto rt2d = std::make_unique<SDx12RenderTarget2D>(rtProp.mWidth, rtProp.mHeight,
 			rtProp, rtProp.bScaleWithViewport);
+		rt2d->BuildDescriptors(md3dDevice.Get(),
+			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize));
 		mRenderTargets[registName] = std::move(rt2d);
-		// Bind handles
-		//std::string srvName = registName + std::string("Srv");
-		//std::string rtvName = registName + std::string("Rtv");
-		//auto srvHeap = GetOrAllocDescriptorHeap(srvName, 1);
-		//rt2d->BuildDescriptors(md3dDevice, )
 	}
 		return 1;
 	case ERenderTargetTypes::E_RT3D:
