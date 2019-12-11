@@ -21,7 +21,9 @@ VertexOut VS(VertexIn vin)
 
 	// Set z = w so that z/w = 1 (i.e., skydome always on far plane).
 	vout.PosH = mul(posW, gViewProj).xyww;
-
+#if defined(REVERSE_Z)
+    vout.PosH = float4(vout.PosH.xy, 0, vout.PosH.z);
+#endif
     return vout;
 }
 

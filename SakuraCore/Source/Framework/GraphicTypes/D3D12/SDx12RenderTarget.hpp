@@ -21,7 +21,7 @@ namespace SGraphics
 		SDx12RenderTarget2D(UINT ClientWidth, UINT ClientHeight, ISRenderTargetProperties prop = {}, bool ScaledByViewport = true)
 		{
 			mProperties = prop;
-
+			
 			mProperties.mWidth = ClientWidth;
 			mProperties.mHeight = ClientHeight;
 
@@ -38,12 +38,17 @@ namespace SGraphics
 		}
 
 		~SDx12RenderTarget2D() {};
-		/*
+		
 		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
 			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
 		{
 			// Init RT
 			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
+#if defined(RESERVE_Z)
+			optClear.DepthStencil.Depth = 0;
+#else
+			optClear.DepthStencil.Depth = 1;
+#endif
 			ThrowIfFailed(md3dDevice->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
@@ -85,7 +90,7 @@ namespace SGraphics
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			BuildDescriptors(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
 		}
-		*/
+		
 		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
 			SDescriptorHeap* rtv,
 			SDescriptorHeap* srv)
@@ -286,7 +291,7 @@ namespace SGraphics
 				mProperties.mHeight = newHeight;
 
 				// New resource, so we need new descriptors to that resource.
-				BuildDescriptors(device);
+				//BuildDescriptors(device);
 			}
 		}
 	public:

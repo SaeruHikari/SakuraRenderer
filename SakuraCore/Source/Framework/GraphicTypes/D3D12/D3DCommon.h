@@ -10,6 +10,7 @@
 #include "FrameResource.h"
 #include "Utils/MeshImporter.h"
 #include "Dx12Samplers.h"
+#include "../GraphicsCommon/GraphicsConfigs.h"
 
 namespace SGraphics
 {
@@ -19,6 +20,7 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 		UINT64 currentFence;
 	};
+
 	struct SDx12DeviceInformation
 	{
 		UINT rtvDescriptorSize = 0;
@@ -34,4 +36,5 @@ namespace SGraphics
 		int clientWidth = 800;
 		int clientHeight = 600;
 	};
+
 }

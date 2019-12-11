@@ -190,6 +190,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadBuffer.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\GraphicsConfigs.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\UploadVertices.h" />
     <ClInclude Include="Source\Common\Microsoft\d3dx12.h" />
     <ClInclude Include="Source\Common\Thirdparty\stb_image.h" />
@@ -198,6 +199,8 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISTexture.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\RenderScene\SRenderScene.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\CommonInterface\Resource\SakuraGraphicsResourceManagerBase.h" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Debug\GBufferDebugPass.hpp" />
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\GBufferPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\BRDFLutPass.hpp" />

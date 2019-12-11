@@ -48,7 +48,8 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 	}
 	else if(descriptorSize > 0)
 	{
-		desc.NumDescriptors = 100;
+		if(desc.NumDescriptors <= 0)
+			desc.NumDescriptors = 1000;
 		mDescriptorHeaps[name] = std::make_unique<SDescriptorHeap>(md3dDevice.Get(), descriptorSize, desc);
 		return mDescriptorHeaps[name].get();
 	}

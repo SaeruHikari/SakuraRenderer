@@ -69,7 +69,11 @@ namespace SGraphics
 			// Make sure the depth function is LESS_EQUAL and not just LESS.  
 			// Otherwise, the normalized depth values at z = 1 (NDC) will 
 			// fail the depth test if the depth buffer was cleared to 1.
+#ifndef REVERSE_Z
 			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+#else
+			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+#endif 
 			skyPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 			skyPsoDesc.SampleMask = UINT_MAX;
 			skyPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;

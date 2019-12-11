@@ -5,7 +5,6 @@
 #include "MaterialCB.hlsl"
 #include "DeferredRegisters.hlsl"
 #include "PassCommon.hlsl"
-
 #include "Utils.hlsl"
 
 //Include structures and functions for lighting

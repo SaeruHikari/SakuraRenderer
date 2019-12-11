@@ -39,6 +39,5 @@ float4 PS_GBufferDebugging(VertexOut pin) : SV_Target
     if(pin.Type == 2) res = float4(RMO.rrrr);
     if(pin.Type == 3) res = float4(RMO.gggg);
     if(pin.Type == 4) res = float4(RMO.bbbb); 
-    //return float4(pin.TexC.rg, 0.f, 1.f);
     return res;
 }

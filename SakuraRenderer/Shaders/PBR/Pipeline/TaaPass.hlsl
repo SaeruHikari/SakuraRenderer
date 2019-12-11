@@ -117,7 +117,11 @@ float4 PS(VertexOut pin) : SV_Target
 
             float NeighborhoodDepthSamp = gDepthBuffer.Sample(gsamLinearClamp, sampleUV).r;
             NeighborhoodDepthSamp = LinearDepth(NeighborhoodDepthSamp);
-			if (NeighborhoodDepthSamp > closestDepth)
+#ifndef REVERSE_Z
+			if (NeighborhoodDepthSamp < closestDepth)
+#else
+            if (NeighborhoodDepthSamp > closestDepth)
+#endif
             {
                 closestDepth = NeighborhoodDepthSamp;
                 closestOffset = float2(x, y);

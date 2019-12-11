@@ -7,6 +7,7 @@ Details:
 #pragma once
 #include "../CommonInterface/SakuraGraphicsManagerBase.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
+#include "Resource/SDxResourceManager.h"
 
 //Link necessary d3d12 libraries
 #pragma comment(lib, "d3dcompiler.lib")
@@ -31,11 +32,16 @@ namespace SGraphics
 		bool Get4xMsaaState() const;
 		void Set4xMsaaState(bool value);
 		float AspectRatio() const;
+	protected:
+		inline auto GetResourceManager()
+		{
+			return (SDxResourceManager*)(pGraphicsResourceManager.get());
+		}
 	public:
 		inline auto GetRtvCPU(int offset)
 		{
-			auto rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
-			rtvCPU.Offset(offset, RtvDescriptorSize());
+			auto rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
+				->GetOrAllocDescriptorHeap("DefaultRtv")->GetCPUtDescriptorHandle(offset));
 			return rtvCPU;
 		}
 	public:
@@ -66,6 +72,7 @@ namespace SGraphics
 		inline auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
 
 	protected:
+
 		// D3D12 methods. 
 		bool InitDirect3D12();
 		// Create Descriptor Heaps for RenderTargetView & Depth/Stencil View
@@ -74,7 +81,7 @@ namespace SGraphics
 		void CreateSwapChain();
 		virtual bool CreateResourceManager();
 		ID3D12Resource* CurrentBackBuffer() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() ;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 
 		void CalculateFrameStats();
@@ -100,7 +107,6 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
 		Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;
 
 		D3D12_VIEWPORT mScreenViewport;

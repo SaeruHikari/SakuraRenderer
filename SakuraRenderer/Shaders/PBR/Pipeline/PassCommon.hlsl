@@ -23,4 +23,8 @@
     #define TAA_ENABLED
 #endif
 
+#ifndef REVERSE_Z
+    #define REVERSE_Z
+#endif
+
 #endif

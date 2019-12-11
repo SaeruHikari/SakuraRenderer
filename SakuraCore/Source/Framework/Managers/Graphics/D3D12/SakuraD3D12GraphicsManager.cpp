@@ -35,7 +35,8 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	mCurrBackBuffer = 0;
 
 	//Create the render target view
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	//CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle = GetRtvCPU(0);
 	for (UINT i = 0; i < SwapChainBufferCount; i++)
 	{
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
@@ -66,7 +67,11 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 
 	D3D12_CLEAR_VALUE optClear;
 	optClear.Format = mGraphicsConfs->depthStencilFormat;
+#if defined(REVERSE_Z)
+	optClear.DepthStencil.Depth = 0.f;
+#else
 	optClear.DepthStencil.Depth = 1.f;
+#endif
 	optClear.DepthStencil.Stencil = 0.f;
 	ThrowIfFailed(md3dDevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -284,12 +289,10 @@ ID3D12Resource* SGraphics::SakuraD3D12GraphicsManager::CurrentBackBuffer() const
 	return mSwapChainBuffer[mCurrBackBuffer].Get();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE SGraphics::SakuraD3D12GraphicsManager::CurrentBackBufferView() const
+D3D12_CPU_DESCRIPTOR_HANDLE SGraphics::SakuraD3D12GraphicsManager::CurrentBackBufferView() 
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		mCurrBackBuffer,
-		mDeviceInformation->rtvDescriptorSize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
+		->GetOrAllocDescriptorHeap("DefaultRtv")->GetCPUtDescriptorHandle(mCurrBackBuffer));
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE SGraphics::SakuraD3D12GraphicsManager::DepthStencilView() const
@@ -322,8 +325,8 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateRtvAndDsvDescriptorHeaps()
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-		&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
+	((SDxResourceManager*)(pGraphicsResourceManager.get()))
+		->GetOrAllocDescriptorHeap("DefaultRtvName", mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
 
 	//Create depth/stencil view descriptor 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;

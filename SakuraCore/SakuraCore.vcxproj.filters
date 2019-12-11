@@ -171,6 +171,15 @@
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\GraphicsConfigs.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Debug\GBufferDebugPass.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">

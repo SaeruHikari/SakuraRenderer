@@ -32,40 +32,40 @@ namespace SGraphics
 
 		void BuildPSO()
 		{
-			D3D12_GRAPHICS_PIPELINE_STATE_DESC skyPsoDesc;
-
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC brdfPsoDesc;
 			//
 			// PSO for opaque objects.
 			//
-			ZeroMemory(&skyPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-			skyPsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
-			skyPsoDesc.pRootSignature = mRootSignature.Get();
-			skyPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			skyPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-			skyPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-			skyPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-			// Make sure the depth function is LESS_EQUAL and not just LESS.  
-			// Otherwise, the normalized depth values at z = 1 (NDC) will 
-			// fail the depth test if the depth buffer was cleared to 1.
-			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-			skyPsoDesc.SampleMask = UINT_MAX;
-			skyPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-			skyPsoDesc.NumRenderTargets = 1;
-			skyPsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			skyPsoDesc.SampleDesc.Count = 1;
-			skyPsoDesc.SampleDesc.Quality = 0;
-			skyPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-			skyPsoDesc.VS =
+			ZeroMemory(&brdfPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+			brdfPsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+			brdfPsoDesc.pRootSignature = mRootSignature.Get();
+			brdfPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			brdfPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+			brdfPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			brdfPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+#ifndef REVERSE_Z
+			brdfPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+#else
+			brdfPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+#endif 
+			brdfPsoDesc.SampleMask = UINT_MAX;
+			brdfPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			brdfPsoDesc.NumRenderTargets = 1;
+			brdfPsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			brdfPsoDesc.SampleDesc.Count = 1;
+			brdfPsoDesc.SampleDesc.Quality = 0;
+			brdfPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			brdfPsoDesc.VS =
 			{
 				reinterpret_cast<BYTE*>(VS->GetBufferPointer()),
 				VS->GetBufferSize()
 			};
-			skyPsoDesc.PS =
+			brdfPsoDesc.PS =
 			{
 				reinterpret_cast<BYTE*>(PS->GetBufferPointer()),
 				PS->GetBufferSize()
 			};
-			ThrowIfFailed(mDevice->CreateGraphicsPipelineState(&skyPsoDesc, IID_PPV_ARGS(&mPSO)));
+			ThrowIfFailed(mDevice->CreateGraphicsPipelineState(&brdfPsoDesc, IID_PPV_ARGS(&mPSO)));
 		}
 
 		void BuildRootSignature()

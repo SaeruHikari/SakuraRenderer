@@ -10,7 +10,9 @@ VertexOut VS_Portable(VertexIn vin)
     vin.PosL.x = vin.PosL.x;
     vin.PosL.y = vin.PosL.y;
     vout.PosH = float4(vin.PosL, 1.0f);
-
+#if defined(REVERSE_Z)
+    vout.PosH.z = gFarZ;
+#endif
     vout.TexC = vin.TexC;
 
     // Transform quad corners to view space near plane.

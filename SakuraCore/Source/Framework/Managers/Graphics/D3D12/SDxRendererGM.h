@@ -26,6 +26,9 @@ namespace SGraphics
 	class SBrdfLutPass;
 	class STaaPass;
 	class SMotionVectorPass;
+	class SDeferredPass;
+	class SGBufferDebugPass;
+
 	class SDx12RenderTarget2D;
 
 
@@ -68,10 +71,6 @@ namespace SGraphics
 		}
 
 	public:
-		inline auto GetResourceManager()
-		{
-			return (SDxResourceManager*)(pGraphicsResourceManager.get());
-		}
 		inline auto GetDeferredSrvCPU(int offset)
 		{
 			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetCPUtDescriptorHandle(0));
@@ -81,18 +80,6 @@ namespace SGraphics
 		inline auto GetDeferredSrvGPU(int offset)
 		{
 			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName)->GetGPUtDescriptorHandle(0));
-			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
-			return srvGPU;
-		}
-		inline auto GetScreenEfxSrvCPU(int offset)
-		{
-			auto srvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName)->GetCPUtDescriptorHandle(0));
-			srvCPU.Offset(offset, CbvSrvUavDescriptorSize());
-			return srvCPU;
-		}
-		inline auto GetScreenEfxSrvGPU(int offset)
-		{
-			auto srvGPU = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetResourceManager()->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName)->GetGPUtDescriptorHandle(0));
 			srvGPU.Offset(offset, CbvSrvUavDescriptorSize());
 			return srvGPU;
 		}
@@ -116,54 +103,37 @@ namespace SGraphics
 	protected:
 		virtual void OnResize(UINT Width, UINT Height) override;
 
-		void AnimateMaterials();
 		void UpdateObjectCBs();
 		void UpdateMaterialCBs();
 		void UpdateMainPassCB();
 		void UpdateSsaoPassCB();
 
 		void LoadTextures();
-		void BuildGBufferPassRootSignature();
-		void BuildDeferredPassRootSignature();
-
 		// Create Descriptor Heaps for RenderTargetView & Depth/Stencil View
 		virtual void CreateRtvAndDsvDescriptorHeaps() override;
-
 		void BuildDescriptorHeaps();
-		void BuildGBufferPassDescriptorHeaps();
-		void BuildDeferredShadingPassDescriptorHeaps();
 		void BindPassResources();
-
-		void BuildShaderAndInputLayout();
-		void BuildGBufferPassShaderAndInputLayout();
-		void BuildGBufferDebugShaderAndInputLayout();
-
-		void BuildDeferredShadingPassShaderAndInputLayout();
-		void BuildGeneratedMeshes();
 		void BuildGeometry();
-
-		void BuildPSOs();
+		void BuildGeneratedMeshes();
 		void BuildFrameResources();
+
+
+
+		// TO DELETE!
+		// Build Debug Material
 		void BuildMaterials();
-
+		// Build Debug Render Items
 		void BuildRenderItems();
-
-		void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<SDxRenderItem*>& ritems);
 
 	private:
 		std::vector<std::unique_ptr<SFrameResource>> mFrameResources;
 		SFrameResource* mCurrFrameResource = nullptr;
 		int mCurrFrameResourceIndex = 0;
 		UINT mCbvSrvDescriptorSize = 0;
-		std::unordered_map<std::string, ComPtr<ID3D12RootSignature>> mRootSignatures;
-
 	public:
 		int CBIndex = 0;
 		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
 		std::unordered_map<std::string, OpaqueMaterial*> mMaterials;
-		std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
-		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
-		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayouts[SPasses::E_Count];
 
 		// List of all the render items
 		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
@@ -173,18 +143,15 @@ namespace SGraphics
 		// loose, need refactoring
 		SPassConstants mMainPassCB;
 		SsaoConstants mSsaoCB;
-
 		SD3DCamera mCamera;
 		SD3DCamera mCubeMapCamera[6];
 		POINT mLastMousePos;
-
 	protected:
 		void BuildCubeFaceCamera(float x, float y, float z);
 
 	protected:
 		// Rtv indices
 		int GBufferResourceSrv = 0;
-		int GBufferMaterials = 0;
 		inline static const int GBufferRTNum = 4;// 1 : SSAO
 		inline static const int LUTNum = 1;
 		inline static const int SkyCubeMips = 8;
@@ -201,8 +168,9 @@ namespace SGraphics
 
 	protected:
 		SDx12RenderTarget2D* mMotionVectorRT;
-		std::shared_ptr<SDx12RenderTarget2D>* GBufferRTs;
-		std::shared_ptr<SDx12RenderTarget2D> mBrdfLutRT2D;
+		SDx12RenderTarget2D* mBrdfLutRT2D;
+
+		SDx12RenderTarget2D** GBufferRTs;
 		SDx12RenderTarget2D** mTaaRTs;
 
 		std::shared_ptr<SGBufferPass> mGbufferPass = nullptr;
@@ -210,6 +178,8 @@ namespace SGraphics
 		std::shared_ptr<SkySpherePass> mDrawSkyPass = nullptr;
 		std::shared_ptr<STaaPass> mTaaPass = nullptr;
 		std::shared_ptr<SMotionVectorPass> mMotionVectorPass = nullptr;
+		std::shared_ptr<SDeferredPass> mDeferredPass = nullptr;
+		std::shared_ptr<SGBufferDebugPass> mGBufferDebugPass = nullptr;
 
 		struct SRVs
 		{
@@ -220,6 +190,7 @@ namespace SGraphics
 		};
 		struct RTVs
 		{
+			inline static const std::string DefaultRtvName = "DefaultRtv";
 			inline static const std::string CaptureRtvName = "CaptureRtv";
 			inline static const std::string ScreenEfxRtvName = "ScreenEfxRtv";
 		};
@@ -248,13 +219,21 @@ namespace SGraphics
 		{
 			inline static const std::string MotionVectorRTName = "MotionVectorRT";
 			inline static std::vector<std::string> TAARTNames;
+			inline static std::vector<std::string> GBufferRTNames;
+			inline static std::string BrdfLutRTName = "BrdfLutRT";
 			RT2Ds()
 			{
 				TAARTNames.resize(TAARtvsNum);
+				GBufferRTNames.resize(GBufferRTNum);
 				for (size_t i = 0; i < TAARtvsNum; i++)
 				{
 					std::string NameI = "TAARTName" + std::to_string(i);
 					TAARTNames[i] = (NameI);
+				}
+				for (size_t i = 0; i < GBufferRTNum; i++)
+				{
+					std::string NameI = "GBufferRTName" + std::to_string(i);
+					GBufferRTNames[i] = NameI;
 				}
 			}
 		};
@@ -265,6 +244,7 @@ namespace SGraphics
 		};
 
 		// Helper Containers
+		std::vector<ID3D12Resource*> mDeferredSrvResources;
 		std::vector<ID3D12Resource*> mGBufferSrvResources;
 		std::vector<ID3D12Resource*> mSsaoSrvResources;
 		std::vector<ID3D12Resource*> mTaaResources;

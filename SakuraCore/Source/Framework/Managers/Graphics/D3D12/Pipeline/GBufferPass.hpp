@@ -100,8 +100,12 @@ namespace SGraphics
 			if (!bWriteDepth)
 			{
 				gbufferPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-				gbufferPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 			}
+#ifndef REVERSE_Z
+			gbufferPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+#else
+			gbufferPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+#endif 
 			gbufferPsoDesc.SampleMask = UINT_MAX;
 			gbufferPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			gbufferPsoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;

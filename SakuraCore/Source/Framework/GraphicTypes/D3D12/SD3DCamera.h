@@ -1,6 +1,5 @@
 #ifndef CAMERA_H
 #define CAMERA_H
-
 #include "Utils/d3dUtil.h"
 
 class SD3DCamera
@@ -85,4 +84,4 @@ private:
 	DirectX::XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 };
 
-#endif // CAMERA_H
+#endif 

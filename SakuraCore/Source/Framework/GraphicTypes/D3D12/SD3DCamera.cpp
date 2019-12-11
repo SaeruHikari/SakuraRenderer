@@ -1,8 +1,8 @@
 //***************************************************************************************
 // SD3DCamera.h by Frank Luna (C) 2011 All Rights Reserved.
 //***************************************************************************************
-
 #include "SD3DCamera.h"
+#include "../GraphicsCommon/GraphicsConfigs.h"
 
 using namespace DirectX;
 
@@ -118,12 +118,15 @@ void SD3DCamera::SetLens(float fovY, float aspect, float zn, float zf)
 	// cache properties
 	mFovY = fovY;
 	mAspect = aspect;
+#ifndef REVERSE_Z
 	mNearZ = zn;
 	mFarZ = zf;
-
+#else
+	mFarZ = zn;
+	mNearZ = zf;
+#endif
 	mNearWindowHeight = 2.0f * mNearZ * tanf(0.5f * mFovY);
 	mFarWindowHeight = 2.0f * mFarZ * tanf(0.5f * mFovY);
-
 	XMMATRIX P = XMMatrixPerspectiveFovLH(mFovY, mAspect, mNearZ, mFarZ);
 	XMStoreFloat4x4(&mProj, P);
 }
