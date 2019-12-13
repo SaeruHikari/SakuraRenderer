@@ -217,7 +217,6 @@ struct SD3DTexture : public SGraphics::ISTexture
 {
 	// Unique texture name for lookup
 	std::string Name;
-
 	std::wstring Filename;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> Resource = nullptr;

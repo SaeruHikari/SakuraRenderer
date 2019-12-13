@@ -34,7 +34,7 @@ namespace SGraphics
 			_handle.Offset(index, heapDescriptorSize);
 			return _handle;
 		}
-		inline CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUtDescriptorHandle(size_t index ) const
+		inline CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUtDescriptorHandle(size_t index) const
 		{
 			auto _handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(descriptorHeap->GetCPUDescriptorHandleForHeapStart());
 			_handle.Offset(index, heapDescriptorSize);

@@ -34,35 +34,26 @@ namespace SGraphics
 		__dx12Pass(const __dx12Pass& rhs) = delete;
 		__dx12Pass& operator=(const __dx12Pass& rhs) = delete;
 		virtual ~__dx12Pass() {}
-
-
-		// Fill descriptor heaps
 		virtual void BuildDescriptorHeaps(std::vector<ID3D12Resource*> srvResources) = 0;
-		// Build root signature
 		virtual void BuildRootSignature() = 0;
-		//Build PSO
 		virtual void BuildPSO() = 0;
-
 		virtual bool Initialize()
 		{
 			BuildRootSignature();
 			BuildPSO();
 			return true;
 		}
-
 		virtual bool Initialize(std::vector<ComPtr<ID3D12DescriptorHeap>> srvHeaps)
 		{
 			mSrvDescriptorHeaps = srvHeaps;
 			return Initialize();
 		}
-
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources)
 		{
 			mSrvDescriptorHeaps.resize(1);
 			BuildDescriptorHeaps(srvResources);
 			return Initialize();
 		}
-
 		virtual bool StartUp(ID3D12GraphicsCommandList* cmdList)
 		{
 			return cmdList != nullptr;
@@ -70,15 +61,11 @@ namespace SGraphics
 
 	protected:
 		__dx12Pass() {}
-
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice = nullptr;
 		// Root signature.
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-
 		std::vector<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> mSrvDescriptorHeaps;
-
 		UINT mCbvSrvDescriptorSize = 0;
-
 		Microsoft::WRL::ComPtr<ID3DBlob> PS = nullptr;
 		Microsoft::WRL::ComPtr<ID3DBlob> VS = nullptr;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> mPSO = nullptr;
@@ -103,11 +90,11 @@ namespace SGraphics
 		
 
 		// Called once per pass before drawing.
-		virtual void BindPerPassResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, size_t passSrvNum) = 0;
+		virtual void BindPerPassResource(ID3D12GraphicsCommandList* cmdList, 
+			SFrameResource* frameResource, size_t passSrvNum) = 0;
 		// Called once per render item before drawing.
-		virtual void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList, SFrameResource* frameResource, SDxRenderItem* ri) = 0;
-		// Bind RT for drawing
-
+		virtual void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList,
+			SFrameResource* frameResource, SDxRenderItem* ri) = 0;
 	public:
 		// Current implementation would cause repeat drawing.
 		virtual void PushRenderItems(std::vector<SDxRenderItem*> renderItems)
@@ -120,23 +107,16 @@ namespace SGraphics
 			SFrameResource* frameRes, size_t passSrvNumOnFrameRes,
 			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num)
 		{
-			// positive-z
-			//if(dsv)
-			//	cmdList->ClearDepthStencilView(*dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0.f, 0.f, nullptr);
 			cmdList->OMSetRenderTargets(rtv_num, rtvs, true, dsv);
-
 			// Set descriptor heaps:
 			ID3D12DescriptorHeap** descriptorHeaps = mSrvDescriptorHeaps.size() == 0 
 				? nullptr : new ID3D12DescriptorHeap* [mSrvDescriptorHeaps.size()];
-
 			for(size_t i = 0; i < mSrvDescriptorHeaps.size(); i++)
 				 descriptorHeaps[i] = mSrvDescriptorHeaps[i].Get();
-
 			cmdList->SetPipelineState(mPSO.Get());
 			if(mSrvDescriptorHeaps.size() != 0)
 				cmdList->SetDescriptorHeaps(mSrvDescriptorHeaps.size(), descriptorHeaps);
 			cmdList->SetGraphicsRootSignature(mRootSignature.Get());
-
 			// Bind resource for this pass...
 			BindPerPassResource(cmdList, frameRes, passSrvNumOnFrameRes);
 			// Draw

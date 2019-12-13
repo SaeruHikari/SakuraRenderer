@@ -48,8 +48,15 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 	}
 	else if(descriptorSize > 0)
 	{
-		if(desc.NumDescriptors <= 0)
-			desc.NumDescriptors = 1000;
+		desc.NumDescriptors = 1000;
+		if (descriptorSize == mDeviceInformation->cbvSrvUavDescriptorSize)
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		else if (descriptorSize == mDeviceInformation->dsvDescriptorSize)
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		else if (descriptorSize == mDeviceInformation->rtvDescriptorSize)
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		else return nullptr;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		mDescriptorHeaps[name] = std::make_unique<SDescriptorHeap>(md3dDevice.Get(), descriptorSize, desc);
 		return mDescriptorHeaps[name].get();
 	}
@@ -118,13 +125,16 @@ int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registNam
 	{
 		auto rt3d = std::make_unique<SDx12RenderTargetCube>(
 			rtProp.mWidth, rtProp.mHeight, rtProp.mRtvFormat);
+		rt3d->BuildDescriptors(md3dDevice.Get(),
+			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize));
 		mRenderTargets[registName] = std::move(rt3d);
 	}
 		return 1;
 	default:
 		return -1;
 	}
-	return false;
+	return -1;
 }
 
 SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::GetRenderTarget(std::string registName)

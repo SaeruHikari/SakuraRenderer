@@ -84,7 +84,7 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    float3 FinalColor = gCubeMap[0].Sample(gsamLinearWrap, pin.PosL).xyz;
+    float3 FinalColor = gCubeMap[2].Sample(gsamAnisotropicClamp, pin.PosL).xyz;
     FinalColor = ACESToneMapping(FinalColor, 1.f);
     FinalColor = pow(FinalColor, 1 / 2.2);
     return float4(FinalColor, 1.f);
@@ -99,7 +99,7 @@ float4 PS_Conv(VertexOut pin): SV_Target
         float3 up = float3(0.f, 1.f, 0.f);
         float3 right = cross(up, N);
         up = cross(N, right);
-  
+        
         float sampleDelta = 0.025;
         float nrSamples = 0.0;
 

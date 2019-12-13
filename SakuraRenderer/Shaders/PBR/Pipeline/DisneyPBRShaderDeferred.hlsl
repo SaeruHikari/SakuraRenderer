@@ -20,8 +20,8 @@ float3 PrefilteredColor(float3 viewDir, float3 normal, float roughness)
     int fl = floor(roughnessLevel) + 1;
     int cl = ceil(roughnessLevel) + 1;
     float3 R = reflect(-viewDir, normal);
-    float3 flSample = gIBLCubeMap[fl].Sample(gsamLinearWrap, R).rgb;
-    float3 clSample = gIBLCubeMap[cl].Sample(gsamLinearWrap, R).rgb;
+    float3 flSample = gIBLCubeMap[fl].Sample(gsamAnisotropicClamp, R).rgb;
+    float3 clSample = gIBLCubeMap[cl].Sample(gsamAnisotropicClamp, R).rgb;
     return lerp(flSample, clSample, (roughnessLevel - fl));
 }
 
@@ -62,18 +62,18 @@ float4 PS(VertexOut pin) : SV_Target
     prefilteredColor, brdfLut.xyz,
     V, N, mat).xyz;
 #elif defined(BRDF_LUT_MULTISCATTER)
-    brdfLut = gBRDFLUT.Sample(gsamLinearWrap, float2(max(dot(N, V), 0.0f), mat.Roughness));
+    brdfLut = gBRDFLUT.Sample(gsamLinearWrap, float2(max(dot(N, V), 0.0f), 0));
     ambientC = AO *
-    AmbientBRDF_MultiScattering(gIBLCubeMap[0].SampleLevel(gsamLinearWrap, N, 0).xyz,
+    AmbientBRDF_MultiScattering(gIBLCubeMap[0].SampleLevel(gsamAnisotropicClamp, N, 0).xyz,
     prefilteredColor, brdfLut,
     V, N, L, mat).xyz;
 #endif
 
     float3 Disney = 0;
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 2; i++)
     {
         L = -gLights[i].Direction;
-        Disney += gLights[i].Strength  
+        Disney += 0.5 * PI * gLights[i].Strength  
          * DisneyBRDF_MultiScattering(L, V, N, mat, brdfLut.rgb);
     }
     //return ambientC.xyzz;

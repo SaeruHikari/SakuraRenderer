@@ -118,7 +118,6 @@ namespace SGraphics
 		void BuildFrameResources();
 
 
-
 		// TO DELETE!
 		// Build Debug Material
 		void BuildMaterials();
@@ -148,7 +147,6 @@ namespace SGraphics
 		POINT mLastMousePos;
 	protected:
 		void BuildCubeFaceCamera(float x, float y, float z);
-
 	protected:
 		// Rtv indices
 		int GBufferResourceSrv = 0;
@@ -156,15 +154,14 @@ namespace SGraphics
 		inline static const int LUTNum = 1;
 		inline static const int SkyCubeMips = 8;
 		inline static const int SkyCubePrefilters = 5;
-		inline static const int SkyCubeConvNum = 1;
-		inline static const int SkyCubeConvFilterNum = SkyCubePrefilters + SkyCubeConvNum;
-		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + SkyCubeConvNum + LUTNum;
+		// 1 : Conv
+		inline static const int SkyCubeConvFilterNum = SkyCubePrefilters + 1;
+		inline static const int GBufferSrvStartAt = SkyCubeMips + SkyCubePrefilters + 1 + LUTNum;
 		// Screen Efx phase Rtvs
 		#define MotionVectorRtvStart 0
 		inline static const int MotionVectorRtvNum = 1;
 		#define TAARtvsStart  MotionVectorRtvNum + MotionVectorRtvStart
 		inline static const int TAARtvsNum = 3;
-		#define ScreenEfxRtvsCount TAARtvsStart + TAARtvsNum
 
 	protected:
 		SDx12RenderTarget2D* mMotionVectorRT;
@@ -191,6 +188,7 @@ namespace SGraphics
 		struct RTVs
 		{
 			inline static const std::string DefaultRtvName = "DefaultRtv";
+			inline static const std::string DeferredRtvName = "DeferredRtv";
 			inline static const std::string CaptureRtvName = "CaptureRtv";
 			inline static const std::string ScreenEfxRtvName = "ScreenEfxRtv";
 		};
@@ -207,15 +205,22 @@ namespace SGraphics
 			};
 			inline static const std::vector<std::wstring> texFilenames =
 			{
-				L"Textures/Urn_ALB.dds",
-				L"Textures/Urn_RMA.dds",
-				L"Textures/Urn_RMA.dds",
-				L"Textures/Urn_NRM.dds",
+				L"Textures/FlameThrower_ALB.dds",
+				L"Textures/FlameThrower_RMA.dds",
+				L"Textures/FlameThrower_RMA.dds",
+				L"Textures/FlameThrower_NRM.dds",
 				L"Textures/grasscube1024.dds",
-				L"Textures/020.hdr"
+				L"Textures/venice_sunset_4k.hdr"
 			};
 		};
-		static struct RT2Ds
+		struct Meshes
+		{
+			inline static const std::string GunPath = "Models/gun.fbx";
+			inline static const std::string FlamePath = "Models/FlameThrower.fbx";
+			inline static const std::string UrnPath = "Models/Urn.fbx";
+			inline static std::string CurrPath = FlamePath;
+		};
+		struct RT2Ds
 		{
 			inline static const std::string MotionVectorRTName = "MotionVectorRT";
 			inline static std::vector<std::string> TAARTNames;
@@ -238,10 +243,27 @@ namespace SGraphics
 			}
 		};
 		inline static RT2Ds rt2ds{};
-		struct RT3Ds
+		static struct RT3Ds
 		{
-
+			inline static std::vector<std::string> SkyCubeRTNames;
+			inline static std::vector<std::string> ConvAndPrefilterNames;
+			RT3Ds()
+			{
+				SkyCubeRTNames.resize(SkyCubeMips);
+				ConvAndPrefilterNames.resize(SkyCubeConvFilterNum);
+				for (size_t i = 0; i < SkyCubeMips; i++)
+				{
+					std::string NameI = "SkyCubeRTName" + std::to_string(i);
+					SkyCubeRTNames[i] = (NameI);
+				}
+				for (int j = 0; j < SkyCubeConvFilterNum; j++)
+				{
+					std::string NameI = "ConvAndPrefilterRTName" + std::to_string(j);
+					ConvAndPrefilterNames[j] = (NameI);
+				}
+			}
 		};
+		inline static RT3Ds rt3ds{};
 
 		// Helper Containers
 		std::vector<ID3D12Resource*> mDeferredSrvResources;
@@ -252,8 +274,8 @@ namespace SGraphics
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 
 		// SRenderTargetCubeMultiLevels<5>
-		std::shared_ptr<SDx12RenderTargetCube> mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
-		std::shared_ptr<SDx12RenderTargetCube> mSkyCubeRT[SkyCubeMips];
+		SDx12RenderTargetCube* mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
+		SDx12RenderTargetCube* mSkyCubeRT[SkyCubeMips];
 
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;

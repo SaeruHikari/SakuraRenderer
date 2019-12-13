@@ -3,6 +3,7 @@
 
 bool SScene::SakuraScene::Initialize()
 {
+	/*
 	int MatCBInd = 0;
 	for (size_t i = 0; i < 11; i++)
 	{
@@ -37,7 +38,7 @@ bool SScene::SakuraScene::Initialize()
 			auto meshNode = std::make_shared<SEngine::SStaticMeshNode>(location, Name);
 			AddSceneNode(meshNode);
 		}
-	}
+	}*/
 	return true;
 }
 

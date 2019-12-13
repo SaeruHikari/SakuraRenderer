@@ -39,7 +39,20 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle = GetRtvCPU(0);
 	for (UINT i = 0; i < SwapChainBufferCount; i++)
 	{
+		ISRenderTargetProperties prop;
+		prop.rtType = ERenderTargetTypes::E_RT3D;
+		prop.mHeight = mGraphicsConfs->clientHeight;
+		prop.mWidth = mGraphicsConfs->clientWidth;
+		prop.mRtvFormat = mGraphicsConfs->backBufferFormat;
+		prop.bScaleWithViewport = true;
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
+		
+		/*if (GetResourceManager()->
+			RegistNamedRenderTarget("SwapChain" + std::to_string(i), prop, "DefaultRtv" , "DeferredSrv") != -1)
+		{
+			mSwapChainBuffer[i] = 
+				((SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget("SwapChain" + std::to_string(i)))->mResource);
+		}*/
 		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
 		rtvHeapHandle.Offset(1, RtvDescriptorSize());
 	}
@@ -326,7 +339,7 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateRtvAndDsvDescriptorHeaps()
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;
 	((SDxResourceManager*)(pGraphicsResourceManager.get()))
-		->GetOrAllocDescriptorHeap("DefaultRtvName", mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
+		->GetOrAllocDescriptorHeap("DefaultRtv", mDeviceInformation->cbvSrvUavDescriptorSize, rtvHeapDesc);
 
 	//Create depth/stencil view descriptor 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;

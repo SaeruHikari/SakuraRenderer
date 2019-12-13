@@ -1,7 +1,7 @@
 #include <minwindef.h>
 #include "SDxRendererGM.h"
 #include "../../../Core/Nodes/EngineNodes/SStaticMeshNode.hpp"
-//#define Sakura_Full_Effects
+#define Sakura_Full_Effects
 //#define Sakura_Debug_PureColor
 
 #define Sakura_MotionVector
@@ -93,17 +93,18 @@ namespace SGraphics
 			for (int j = 0; j < SkyCubeMips; j++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE convCubeRtvHandles[6];
-				mSkyCubeRT[j] = std::make_shared<SDx12RenderTargetCube>(_sizeS, _sizeS, DXGI_FORMAT_R16G16B16A16_FLOAT);
+				mSkyCubeRT[j] = new SDx12RenderTargetCube(_sizeS, _sizeS, DXGI_FORMAT_R16G16B16A16_FLOAT);
+				prop.mHeight = _sizeS;
+				prop.mWidth = _sizeS;
+				prop.mRtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+				prop.rtType = ERenderTargetTypes::E_RT3D;
 				_sizeS /= 2;
-				for (int i = 0; i < 6; i++)
+				prop.bScaleWithViewport = false;
+				if (GetResourceManager()->
+					RegistNamedRenderTarget(RT3Ds::SkyCubeRTNames[j], prop, RTVs::DeferredRtvName, SRVs::DeferredSrvName) != -1)
 				{
-					convCubeRtvHandles[i] = GetRtvCPU(SwapChainBufferCount + GBufferRTNum + i + j * 6);
+					mSkyCubeRT[j] = (SDx12RenderTargetCube*)GetResourceManager()->GetRenderTarget(RT3Ds::SkyCubeRTNames[j]);
 				}
-				mSkyCubeRT[j]->BuildDescriptors(
-					md3dDevice.Get(),
-					CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDeferredSrvCPU(LUTNum + j)),
-					CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDeferredSrvGPU(LUTNum + j)),
-					convCubeRtvHandles);
 			}
 			UINT size = 1024;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE cubeRtvHandles[6];
@@ -112,23 +113,24 @@ namespace SGraphics
 				if (i != 0)
 				{
 					mConvAndPrefilterCubeRTs[i] =
-						std::make_shared<SDx12RenderTargetCube>(size, size, DXGI_FORMAT_R16G16B16A16_FLOAT);
+						new SDx12RenderTargetCube(size, size, DXGI_FORMAT_R16G16B16A16_FLOAT);
+					prop.mHeight = size;
+					prop.mWidth = size;
 					size = size / 2;
 				}
 				else
 				{
 					mConvAndPrefilterCubeRTs[i] =
-						std::make_shared<SDx12RenderTargetCube>(64, 64, DXGI_FORMAT_R16G16B16A16_FLOAT);
+						new SDx12RenderTargetCube(64, 64, DXGI_FORMAT_R16G16B16A16_FLOAT);
+					prop.mHeight = 64;
+					prop.mWidth = 64;
 				}
-				for (int j = 0; j < 6; j++)
+				if (GetResourceManager()->
+					RegistNamedRenderTarget(RT3Ds::ConvAndPrefilterNames[i], prop, RTVs::DeferredRtvName, SRVs::DeferredSrvName) != -1)
 				{
-					cubeRtvHandles[j] = GetRtvCPU(SwapChainBufferCount + GBufferRTNum + SkyCubeMips * 6 + j + i * 6);
+					mConvAndPrefilterCubeRTs[i] = 
+						(SDx12RenderTargetCube*)GetResourceManager()->GetRenderTarget(RT3Ds::ConvAndPrefilterNames[i]);
 				}
-				mConvAndPrefilterCubeRTs[i]->BuildDescriptors(
-					md3dDevice.Get(),
-					GetDeferredSrvCPU(LUTNum + SkyCubeMips + i),
-					GetDeferredSrvGPU(LUTNum + SkyCubeMips + i),
-					cubeRtvHandles);
 			}
 #endif
 			// Velocity and History
@@ -160,25 +162,15 @@ namespace SGraphics
 				prop.mWidth = mGraphicsConfs->clientWidth;
 				prop.mHeight = mGraphicsConfs->clientHeight;
 				prop.mRtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-#if defined(Debugging_RT2D_CREATION)
 				if (GetResourceManager()->
-					RegistNamedRenderTarget(RT2Ds::GBufferRTNames[i], prop, RTVs::DefaultRtvName, SRVs::DeferredSrvName) != -1)
+					RegistNamedRenderTarget(RT2Ds::GBufferRTNames[i], prop, RTVs::DeferredRtvName, SRVs::DeferredSrvName) != -1)
 				{
 					GBufferRTs[i] = (SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget(RT2Ds::GBufferRTNames[i]);
 				}
-#else
-				GBufferRTs[i] = new SDx12RenderTarget2D(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight, prop, true);
-				// Init RT Resource with a CPU rtv handle.
-				GBufferRTs[i]->BuildDescriptors(md3dDevice.Get(),
-					GetRtvCPU(SwapChainBufferCount + i),
-					GetDeferredSrvCPU(GBufferSrvStartAt + i),
-					GetDeferredSrvGPU(GBufferSrvStartAt + i));
-#endif
 			}
 #endif
 		}
 		//¡ý Do have dependency on dx12 resources
-
 		BindPassResources();
 
 #if defined(Sakura_Defferred)
@@ -254,7 +246,7 @@ namespace SGraphics
 		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 		// Reusing the command list reuses memory.
 		ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), nullptr));
-#if defined(Sakura_IBL)
+#if defined(Sakura_IBL)//
 		mDrawSkyPass->Initialize(mSkyCubeResource);
 		Tick(1/60.f);
 #if defined(Sakura_IBL_HDR_INPUT)
@@ -508,11 +500,7 @@ namespace SGraphics
 	void SDxRendererGM::Draw()
 	{
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
-		// Reuse the memory associated with command recording.
-		// We can only reset when the associated command lists have finished execution on the GPU.
 		ThrowIfFailed(cmdListAlloc->Reset());
-		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
-		// Reusing the command list reuses memory.
 		ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), nullptr));
 		// Indicate a state transition on the resource usage.
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -629,12 +617,9 @@ namespace SGraphics
 		ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 	}
-
 	void SDxRendererGM::Finalize()
 	{
-
 	}
-
 	void SDxRendererGM::Tick(double deltaTime)
 	{
 		OnKeyDown(deltaTime);
@@ -697,25 +682,17 @@ namespace SGraphics
 		mLastMousePos.y = y;
 
 	}
-
 	void SDxRendererGM::OnMouseUp(SAKURA_INPUT_MOUSE_TYPES btnState, int x, int y)
 	{
-		
 	}
-
 	float* SDxRendererGM::CaputureBuffer(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
 		ID3D12Resource* resourceToRead, size_t outChannels /*= 4*/)
 	{
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 		FlushCommandQueue();
-		// Reuse the memory associated with command recording.
-		// We can only reset when the associated command lists have finished execution on the GPU.
 		ThrowIfFailed(cmdListAlloc->Reset());
-		// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
-		// Reusing the command list reuses memory.
 		ThrowIfFailed(cmdList->Reset(cmdListAlloc.Get(), nullptr));
 
-		// The output buffer (created below) is on a default heap, so only the GPU can access it.
 		float outputBufferSize = outChannels * sizeof(float) * resourceToRead->GetDesc().Height * resourceToRead->GetDesc().Width;
 
 		// The readback buffer (created below) is on a readback heap, so that the CPU can access it.
@@ -812,27 +789,22 @@ namespace SGraphics
 		auto dt = deltaTime;
 
 		if (GetAsyncKeyState('W') & 0x8000)
-			mCamera.Walk(30.0f * dt);
-
+			mCamera.Walk(100.0f * dt);
 		if (GetAsyncKeyState('S') & 0x8000)
-			mCamera.Walk(-30.0f * dt);
-
+			mCamera.Walk(-100.0f * dt);
 		if (GetAsyncKeyState('A') & 0x8000)
-			mCamera.Strafe(-30.0f * dt);
-
+			mCamera.Strafe(-100.0f * dt);
 		if (GetAsyncKeyState('D') & 0x8000)
-			mCamera.Strafe(30.0f * dt);
-
+			mCamera.Strafe(100.0f * dt);
 		if (GetAsyncKeyState('F') & 0x8000)
-			mCamera.SetPosition(0.0f, 0.0f, 0.0f);
-
+			mCamera.SetPosition(0.0f, 0.0f, -100.0f);
 		static bool Cap = false;
 		if (GetAsyncKeyState('P') & 0x8000 && Cap)
 		{
-			CaputureBuffer(md3dDevice.Get(), mCommandList.Get(),
-				mBrdfLutRT2D->mResource.Get(),
-				4);
-			Cap = false;
+			//CaputureBuffer(md3dDevice.Get(), mCommandList.Get(),
+			//	mBrdfLutRT2D->mResource.Get(),
+			//	4);
+			//Cap = false;
 		}else Cap = true;
 
 		mCamera.UpdateViewMatrix();
@@ -927,9 +899,9 @@ namespace SGraphics
 		mMainPassCB.TotalTime = 1;
 		mMainPassCB.DeltaTime = 1;
 
-		mMainPassCB.AmbientLight = { .25f, .25f, .35f, 1.f };
+		mMainPassCB.AmbientLight = { 0.f, 0.f, 0.f, 0.f };
 		mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-		mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+		mMainPassCB.Lights[0].Strength = { 1.000000000f, 1.000000000f, 0.878431439f };
 		mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 		mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
 		mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
@@ -981,9 +953,6 @@ namespace SGraphics
 
 	void SDxRendererGM::BuildDescriptorHeaps()
 	{
-		//
-		// Create the SRV heap.
-		//
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 		srvHeapDesc.NumDescriptors = GBufferResourceSrv;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -999,7 +968,7 @@ namespace SGraphics
 		((SDxResourceManager*)pGraphicsResourceManager.get())
 			->GetOrAllocDescriptorHeap(SRVs::DeferredSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 
-		srvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
+		srvHeapDesc.NumDescriptors = 10;
 		((SDxResourceManager*)pGraphicsResourceManager.get())
 			->GetOrAllocDescriptorHeap(SRVs::ScreenEfxSrvName, mDeviceInformation->cbvSrvUavDescriptorSize, srvHeapDesc);
 	}
@@ -1205,10 +1174,9 @@ namespace SGraphics
 
 	void SDxRendererGM::BuildGeometry()
 	{
-		mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), "Models/Urn.fbx", ESupportFileForm::ASSIMP_SUPPORTFILE));
+		mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), Meshes::CurrPath, ESupportFileForm::ASSIMP_SUPPORTFILE));
 		BuildGeneratedMeshes();
 	}
-
 
 	void SDxRendererGM::BuildFrameResources()
 	{
@@ -1239,12 +1207,12 @@ namespace SGraphics
 	{
 #if defined(Sakura_Full_Effects)
 		auto opaqueRitem = std::make_unique<SDxRenderItem>();
-		XMStoreFloat4x4(&opaqueRitem->World, XMMatrixScaling(TestScaling[0], TestScaling[1], TestScaling[2]) * 
+		XMStoreFloat4x4(&opaqueRitem->World, XMMatrixScaling(.2f, .2f, .2f) * 
 		XMMatrixTranslation(0.f, -6.f, 0.f) * XMMatrixRotationY(155));
 		opaqueRitem->PrevWorld = opaqueRitem->World;
 		opaqueRitem->TexTransform = MathHelper::Identity4x4();
 		opaqueRitem->ObjCBIndex = CBIndex++;
-		opaqueRitem->Mat = mMaterials["bricks0"].get();
+		opaqueRitem->Mat = mMaterials["bricks0"];
 		opaqueRitem->Geo = mGeometries["skullGeo"].get();
 		opaqueRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		opaqueRitem->IndexCount = opaqueRitem->Geo->DrawArgs["mesh"].IndexCount;
@@ -1325,22 +1293,24 @@ namespace SGraphics
 	{
 		//Create render target view descriptor for swap chain buffers
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-		// 6 * 5 : Cubemap with 5 mips
-		// 6  : CubeMap irradiance 
-		// 30 : 5 * 6 roughness prefiltered cube maps.
-		rtvHeapDesc.NumDescriptors = SwapChainBufferCount + GBufferRTNum + 
-			6 * SkyCubeMips + 6 * SkyCubeConvFilterNum + 1;
+		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		rtvHeapDesc.NodeMask = 0;
 		((SDxResourceManager*)(pGraphicsResourceManager.get()))
-			->GetOrAllocDescriptorHeap(RTVs::DefaultRtvName, mDeviceInformation->rtvDescriptorSize, rtvHeapDesc);
+			->GetOrAllocDescriptorHeap("DefaultRtv", mDeviceInformation->rtvDescriptorSize, rtvHeapDesc);
+
+		rtvHeapDesc.NumDescriptors =  GBufferRTNum + 
+			6 * SkyCubeMips + 6 * SkyCubeConvFilterNum + 100;
+		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		((SDxResourceManager*)(pGraphicsResourceManager.get()))
+			->GetOrAllocDescriptorHeap(RTVs::DeferredRtvName, mDeviceInformation->rtvDescriptorSize, rtvHeapDesc);
 
 		rtvHeapDesc.NumDescriptors = 1;
 		((SDxResourceManager*)(pGraphicsResourceManager.get()))
 			->GetOrAllocDescriptorHeap(RTVs::CaptureRtvName, mDeviceInformation->rtvDescriptorSize, rtvHeapDesc);
 
-		rtvHeapDesc.NumDescriptors = ScreenEfxRtvsCount;
+		rtvHeapDesc.NumDescriptors = 10;
 		((SDxResourceManager*)(pGraphicsResourceManager.get()))
 			->GetOrAllocDescriptorHeap(RTVs::ScreenEfxRtvName, mDeviceInformation->rtvDescriptorSize, rtvHeapDesc);
 

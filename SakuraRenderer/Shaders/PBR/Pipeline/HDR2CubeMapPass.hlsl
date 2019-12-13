@@ -82,5 +82,5 @@ float2 SampleSphericalMap(float3 v)
 float4 PS(VertexOut pin) : SV_Target
 {
     float2 uv = SampleSphericalMap(normalize(pin.PosL));
-    return gHDRMap.Sample(gsamLinearWrap, uv);
+    return gHDRMap.Sample(gsamAnisotropicWrap, uv);
 }

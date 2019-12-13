@@ -40,8 +40,13 @@ namespace SGraphics
 	public:
 		inline auto GetRtvCPU(int offset)
 		{
-			auto rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
-				->GetOrAllocDescriptorHeap("DefaultRtv")->GetCPUtDescriptorHandle(offset));
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvCPU;
+			if(offset < 2)
+				rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
+					->GetOrAllocDescriptorHeap("DefaultRtv")->GetCPUtDescriptorHandle(offset));
+			else
+				rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
+					->GetOrAllocDescriptorHeap("DeferredRtv")->GetCPUtDescriptorHandle(offset-2));
 			return rtvCPU;
 		}
 	public:

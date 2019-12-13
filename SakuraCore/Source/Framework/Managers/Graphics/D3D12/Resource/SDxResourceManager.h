@@ -6,6 +6,7 @@
 
 namespace SGraphics
 {
+
 	// CB: In Frame Resources
 	// Here: Create Rtv Srv Descriptors
 	class SDxResourceManager : public SakuraGraphicsResourceManagerBase
@@ -44,14 +45,15 @@ namespace SGraphics
 		std::shared_ptr<SFence> mFence;
 		std::shared_ptr<SDx12DeviceInformation> mDeviceInformation;
 		std::shared_ptr<SDx12GraphicsStates> mGraphicsConfs;
-
+		
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
-
+		
 		std::map<std::string, std::unique_ptr<SDescriptorHeap>> mDescriptorHeaps;
 		std::map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
 		std::map<std::string, std::unique_ptr<ISDx12RenderTarget>> mRenderTargets;
+
 
 		bool InitD3D12Device();
 		void CreateCommandObjects();

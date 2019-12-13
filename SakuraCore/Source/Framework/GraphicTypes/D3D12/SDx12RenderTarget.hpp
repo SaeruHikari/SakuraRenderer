@@ -13,6 +13,8 @@ namespace SGraphics
 		~ISDx12RenderTarget() {};
 		virtual void OnResize(ID3D12Device* device, UINT ClientWidth, UINT ClientHeight) = 0;
 		virtual ID3D12Resource* Resource() = 0;
+	protected:
+		bool Initialized = false;
 	};
 
 	class SDx12RenderTarget2D : public ISDx12RenderTarget
@@ -39,8 +41,9 @@ namespace SGraphics
 
 		~SDx12RenderTarget2D() {};
 		
-		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
+		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
+			SDescriptorHeap* rtv,
+			SDescriptorHeap* srv)
 		{
 			// Init RT
 			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
@@ -49,54 +52,6 @@ namespace SGraphics
 #else
 			optClear.DepthStencil.Depth = 1;
 #endif
-			ThrowIfFailed(md3dDevice->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				&optClear,
-				IID_PPV_ARGS(&mResource)));
-
-			// Create Cpu Rtv
-			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-			rtvDesc.Format = mProperties.mRtvFormat;
-			rtvDesc.Texture2D.MipSlice = 0;
-			rtvDesc.Texture2D.PlaneSlice = 0;
-			mSRtv.hCpu = rtvCPU;
-			mSSrv.hCpu = srvCPU;
-			mSSrv.hGpu = srvGPU;
-			md3dDevice->CreateRenderTargetView(mResource.Get(), &rtvDesc, rtvCPU);
-
-			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
-		}
-
-		void BuildDescriptors(ID3D12Device* md3dDevice, D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU,
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU, D3D12_GPU_DESCRIPTOR_HANDLE srvGPU)
-		{
-			D3D12_RESOURCE_DESC texDesc;
-			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
-			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-			texDesc.Alignment = 0;
-			texDesc.Width = mProperties.mWidth;
-			texDesc.Height = mProperties.mHeight;
-			texDesc.DepthOrArraySize = 1;
-			texDesc.MipLevels = 1;
-			texDesc.Format = mProperties.mRtvFormat;
-			texDesc.SampleDesc.Count = 1;
-			texDesc.SampleDesc.Quality = 0;
-			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-			BuildDescriptors(texDesc, md3dDevice, rtvCPU, srvCPU, srvGPU);
-		}
-		
-		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
-			SDescriptorHeap* rtv,
-			SDescriptorHeap* srv)
-		{
-			// Init RT
-			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
 			ThrowIfFailed(md3dDevice->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
@@ -196,7 +151,6 @@ namespace SGraphics
 			CreateShaderResourceView(md3dDevice, mProperties.mRtvFormat);
 		}
 
-		bool Initialized = false;
 		void CreateShaderResourceView(ID3D12Device* md3dDevice, DXGI_FORMAT format)
 		{
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -219,6 +173,10 @@ namespace SGraphics
 			mScissorRect = { 0, 0, (int)(mViewport.Width), (int)(mViewport.Height) };
 		}
 	public:
+		Microsoft::WRL::ComPtr<ID3D12Resource> GetResource()
+		{
+			return mResource;
+		}
 		Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
 
 		DescriptorHandleCouple mSRtv;
@@ -243,7 +201,6 @@ namespace SGraphics
 
 			mViewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
 			mScissorRect = { 0, 0, (int)width, (int)height };
-
 		}
 
 		SDx12RenderTargetCube(const SDx12RenderTargetCube& rhs) = delete;
@@ -256,11 +213,11 @@ namespace SGraphics
 		}
 		CD3DX12_GPU_DESCRIPTOR_HANDLE Srv()
 		{
-			return mhGpuSrv;
+			return mSSrv.hGpu;
 		}
 		CD3DX12_CPU_DESCRIPTOR_HANDLE Rtv(int faceIndex)
 		{
-			return mhCpuRtv[faceIndex];
+			return mSRtv[faceIndex].hCpu;
 		}
 
 		D3D12_VIEWPORT Viewport()const { return mViewport; }
@@ -268,17 +225,17 @@ namespace SGraphics
 
 		void BuildDescriptors(
 			ID3D12Device* device,
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuSrv,
-			CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuSrv,
-			CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuRtv[6]) 
+			SDescriptorHeap* rtv,
+			SDescriptorHeap* srv)
 		{
-			// Save references to the descriptors. 
-			mhCpuSrv = hCpuSrv;
-			mhGpuSrv = hGpuSrv;
-
-			for (int i = 0; i < 6; ++i)
-				mhCpuRtv[i] = hCpuRtv[i];
-
+			if (!Initialized)
+			{
+				// Save references to the descriptors. 
+				mSSrv = srv->GetAvailableHandle();
+				for (size_t i = 0; i < 6; i++)
+					mSRtv[i] = rtv->GetAvailableHandle();
+				Initialized = true;
+			}
 			//  Create the descriptors
 			BuildDescriptors(device);
 		}
@@ -289,9 +246,6 @@ namespace SGraphics
 			{
 				mProperties.mWidth = newWidth;
 				mProperties.mHeight = newHeight;
-
-				// New resource, so we need new descriptors to that resource.
-				//BuildDescriptors(device);
 			}
 		}
 	public:
@@ -301,14 +255,13 @@ namespace SGraphics
 			cmdList->RSSetScissorRects(1, &mScissorRect);
 			
 			for(size_t i = 0; i < 6; i++)
-				cmdList->ClearRenderTargetView(mhCpuRtv[i], mClearColor, 0, nullptr);
+				cmdList->ClearRenderTargetView(mSRtv[i].hCpu, mClearColor, 0, nullptr);
 		}
 
 	private:
 		void BuildDescriptors(ID3D12Device* device)
 		{
 			BuildResource(device);
-
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvDesc.Format = mFormat;
@@ -318,7 +271,7 @@ namespace SGraphics
 			srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
 			// Create SRV to the entire cubemap resource.
-			device->CreateShaderResourceView(mCubeMap.Get(), &srvDesc, mhCpuSrv);
+			device->CreateShaderResourceView(mCubeMap.Get(), &srvDesc, mSSrv.hCpu);
 
 			// Create RTV to each cube face.
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
@@ -333,18 +286,12 @@ namespace SGraphics
 			{
 				// Render target to ith element.
 				rtvDesc.Texture2DArray.FirstArraySlice = i;
-
 				// Create RTV to ith cubemap face.
-				device->CreateRenderTargetView(mCubeMap.Get(), &rtvDesc, mhCpuRtv[i]);
+				device->CreateRenderTargetView(mCubeMap.Get(), &rtvDesc, mSRtv[i].hCpu);
 			}
 		}
 		void BuildResource(ID3D12Device* device)
 		{
-			// Note, compressed formats cannot be used for UAV.  We get error like:
-			// ERROR: ID3D11Device::CreateTexture2D: The format (0x4d, BC3_UNORM) 
-			// cannot be bound as an UnorderedAccessView, or cast to a format that
-			// could be bound as an UnorderedAccessView.  Therefore this format 
-			// does not support D3D11_BIND_UNORDERED_ACCESS.
 			D3D12_RESOURCE_DESC texDesc;
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
 			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -360,7 +307,6 @@ namespace SGraphics
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			
 			CD3DX12_CLEAR_VALUE optClear(mFormat, mClearColor);
-			
 			ThrowIfFailed(device->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
@@ -372,17 +318,11 @@ namespace SGraphics
 
 	private:
 		FLOAT mClearColor[4] = { 1,0,0,0 };
-
 		D3D12_VIEWPORT mViewport;
 		D3D12_RECT mScissorRect;
-
-
 		DXGI_FORMAT mFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuSrv;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuRtv[6];
-
+		DescriptorHandleCouple mSRtv[6];
+		DescriptorHandleCouple mSSrv;
 		Microsoft::WRL::ComPtr<ID3D12Resource> mCubeMap = nullptr;
 	};
 }
