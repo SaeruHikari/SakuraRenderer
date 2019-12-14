@@ -10,12 +10,14 @@
 #include "FrameResource.h"
 #include "Utils/MeshImporter.h"
 #include "Dx12Samplers.h"
+#include "Interface\ISObject.h"
 #include "../GraphicsCommon/GraphicsConfigs.h"
+
 
 namespace SGraphics
 {
 	inline static const size_t gPoolPageSize = 100;
-	struct SFence : SImplements SakuraCore::ISSlientObject
+	struct SFence : SImplements SakuraCore::ISSilentObject
 	{
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 		UINT64 currentFence;

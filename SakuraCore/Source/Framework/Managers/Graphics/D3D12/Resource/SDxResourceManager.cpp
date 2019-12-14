@@ -1,5 +1,8 @@
 #include "SDxResourceManager.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
+#include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
+#include "Framework/GraphicTypes/D3D12/FrameResource.h"
+#include "Framework/GraphicTypes/D3D12/SDx12Pass.hpp"
 
 using namespace Microsoft::WRL;
 

@@ -46,12 +46,6 @@ bool SakuraCore::SCore::SakuraInitializeGraphicsCore(HWND hwnd, UINT width, UINT
 	return true;
 }
 
-bool SakuraCore::SCore::SakuraBindDbgHwnd(HWND hwnd, UINT weight, UINT height)
-{
-	mGraphicsManager->SetDbgHwnd(hwnd);
-	return true;
-}
-
 void SakuraCore::SCore::TickSakuraCore(double deltaTime, UINT mask)
 {
 	if ((mask & SAKURA_CORE_COMPONENT_MASK_GRAPHICS) != 0)

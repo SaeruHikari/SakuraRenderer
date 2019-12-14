@@ -5,13 +5,13 @@
 
 namespace SGraphics
 {
-	class SRenderItem : SImplements SakuraCore::ISSlientObject
+	class SRenderItem : SImplements SakuraCore::ISSilentObject
 	{
 	public:
 		SRenderItem()
 		{
 			dxRenderItem = SDxRenderItem();
-			ISSlientObject::ISSlientObject();
+			ISSilentObject::ISSilentObject();
 		}
 		union
 		{

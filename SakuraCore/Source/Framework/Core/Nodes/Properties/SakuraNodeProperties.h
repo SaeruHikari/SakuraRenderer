@@ -17,7 +17,7 @@ namespace SakuraMath
 
 namespace SakuraCore
 {
-	struct STransform : public ISSlientObject
+	struct STransform : public ISSilentObject
 	{
 	public:
 		STransform() = default;

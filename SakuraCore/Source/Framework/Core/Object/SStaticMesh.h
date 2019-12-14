@@ -13,12 +13,12 @@ namespace SEngine
 		
 	};
 
-	class SStaticMesh : SImplements ISSlientObject
+	class SStaticMesh : SImplements ISSilentObject
 	{
 	public:
 		SStaticMesh()
 		{
-			ISSlientObject::ISSlientObject();
+			ISSilentObject::ISSilentObject();
 			auto GeoGen = std::make_shared<GeometryGenerator>();
 			auto sp = GeoGen->CreateSphere(1.f, 50, 50);
 			meshData = std::make_unique<StaticMeshData>(std::move(sp));

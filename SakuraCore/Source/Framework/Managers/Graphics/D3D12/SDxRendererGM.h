@@ -123,7 +123,6 @@ namespace SGraphics
 		void BuildMaterials();
 		// Build Debug Render Items
 		void BuildRenderItems();
-
 	private:
 		std::vector<std::unique_ptr<SFrameResource>> mFrameResources;
 		SFrameResource* mCurrFrameResource = nullptr;
@@ -133,7 +132,6 @@ namespace SGraphics
 		int CBIndex = 0;
 		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
 		std::unordered_map<std::string, OpaqueMaterial*> mMaterials;
-
 		// List of all the render items
 		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
 		// Render items divided by PSO
@@ -164,20 +162,6 @@ namespace SGraphics
 		inline static const int TAARtvsNum = 3;
 
 	protected:
-		SDx12RenderTarget2D* mMotionVectorRT;
-		SDx12RenderTarget2D* mBrdfLutRT2D;
-
-		SDx12RenderTarget2D** GBufferRTs;
-		SDx12RenderTarget2D** mTaaRTs;
-
-		std::shared_ptr<SGBufferPass> mGbufferPass = nullptr;
-		std::shared_ptr<SsaoPass> mSsaoPass = nullptr;
-		std::shared_ptr<SkySpherePass> mDrawSkyPass = nullptr;
-		std::shared_ptr<STaaPass> mTaaPass = nullptr;
-		std::shared_ptr<SMotionVectorPass> mMotionVectorPass = nullptr;
-		std::shared_ptr<SDeferredPass> mDeferredPass = nullptr;
-		std::shared_ptr<SGBufferDebugPass> mGBufferDebugPass = nullptr;
-
 		struct SRVs
 		{
 			inline static const std::string GBufferSrvName = "GBufferSrv";
@@ -213,11 +197,28 @@ namespace SGraphics
 				L"Textures/venice_sunset_4k.hdr"
 			};
 		};
+		struct InitPasses
+		{
+			inline static const std::string BrdfLutPassName = "BrdfLutPass";
+			inline static const std::string HDR2CubeMapPassName = "HDR2CubePass";
+			inline static const std::string CubeMapConvPassName = "CubemapConvPass";
+		};
+		struct ConsistingPasses
+		{
+			inline static const std::string GBufferPassName = "GbufferPass";
+			inline static const std::string MotionVectorPassName = "MotionVectorPass";
+			inline static const std::string DeferredPassName = "DeferredPass";
+			inline static const std::string TaaPassName = "TaaPass";
+			inline static const std::string SsaoPassName = "SsaoPass";
+			inline static const std::string SkySpherePassName = "SkySpherePass";
+			inline static const std::string GBufferDebugPassName = "GBufferDebugPass";
+		};
 		struct Meshes
 		{
 			inline static const std::string GunPath = "Models/gun.fbx";
 			inline static const std::string FlamePath = "Models/FlameThrower.fbx";
 			inline static const std::string UrnPath = "Models/Urn.fbx";
+			inline static const std::string GuitarPath = "Models/Guitar.fbx";
 			inline static std::string CurrPath = FlamePath;
 		};
 		struct RT2Ds
@@ -273,13 +274,18 @@ namespace SGraphics
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 
+		SDx12RenderTarget2D* mMotionVectorRT;
+		SDx12RenderTarget2D* mBrdfLutRT2D;
+		SDx12RenderTarget2D** GBufferRTs;
+		SDx12RenderTarget2D** mTaaRTs;
 		// SRenderTargetCubeMultiLevels<5>
 		SDx12RenderTargetCube* mConvAndPrefilterCubeRTs[SkyCubeConvFilterNum];
 		SDx12RenderTargetCube* mSkyCubeRT[SkyCubeMips];
-
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;
 		inline static const float TAA_JITTER_DISTANCE = 1.f;
+
+
 	};
 
 }

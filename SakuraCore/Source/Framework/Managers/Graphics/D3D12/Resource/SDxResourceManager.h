@@ -1,11 +1,11 @@
 #pragma once
 #include "../../CommonInterface/Resource/SakuraGraphicsResourceManagerBase.h"
-#include "Framework/GraphicTypes/D3D12/FrameResource.h"
 #include "Framework/GraphicTypes/D3D12/SDescriptorHeap.hpp"
-#include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
 
+class SFrameResource;
 namespace SGraphics
 {
+	class ISDx12RenderTarget;
 
 	// CB: In Frame Resources
 	// Here: Create Rtv Srv Descriptors
@@ -28,7 +28,6 @@ namespace SGraphics
 		virtual void Finalize();
 		// Tick function, be called per frame.
 		virtual void Tick(double deltaTime);
-		// DO NOT Keep the returned ptr of Descriptor Heap.
 		virtual SDescriptorHeap* GetOrAllocDescriptorHeap(std::string name,
 			UINT descriptorSize = 0, 
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {});
@@ -39,6 +38,7 @@ namespace SGraphics
 		virtual int RegistNamedRenderTarget(std::string resgistName, ISRenderTargetProperties rtProp,
 			std::string targetSrvHeap, std::string targetRtvHeap) override;
 		virtual ISRenderTarget* GetRenderTarget(std::string registName) override;
+
 	protected:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 		Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
@@ -54,8 +54,8 @@ namespace SGraphics
 		std::map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
 		std::map<std::string, std::unique_ptr<ISDx12RenderTarget>> mRenderTargets;
 
-
 		bool InitD3D12Device();
 		void CreateCommandObjects();
 	};
+
 }

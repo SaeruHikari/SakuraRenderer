@@ -99,6 +99,7 @@ static const float BlendWeightLowerBound = 0.03f;
 static const float BlendWeightUpperBound = 0.12f;
 static const float BlendWeightVelocityScale = 100.0f * 60.0f;
 
+
 float4 PS(VertexOut pin) : SV_Target
 {
     int x, y, i;

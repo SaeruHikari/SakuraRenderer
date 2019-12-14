@@ -28,10 +28,6 @@ namespace SakuraCore
 		{
 			mhMainWnd = hwnd;
 		};
-		virtual void SetDbgHwnd(HWND hwnd)
-		{
-			mhDbgWnd = hwnd;
-		}
 		virtual void Clear() = 0;
 		virtual void Draw() = 0;
 		virtual void Present() = 0;
@@ -45,10 +41,6 @@ namespace SakuraCore
 		std::unique_ptr<SGraphics::SakuraGraphicsResourceManagerBase> pGraphicsResourceManager;
 		// HWND
 		HWND	  mhMainWnd = nullptr;
-#if defined(DEBUG) || defined(_DEBUG)
-		// HWND
-		HWND	  mhDbgWnd = nullptr;
-#endif
 	};
 	
 }

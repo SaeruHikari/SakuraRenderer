@@ -15,24 +15,24 @@ namespace SakuraCore
 
 	class SakuraGraphicsManagerBase;
 	class SSceneManager;
-	SInterface ISSlientObject
+	SInterface ISSilentObject
 	{
 	protected:
 		inline static SakuraGraphicsManagerBase* pGraphicsManager = nullptr;
 		inline static SSceneManager* pSceneManager = nullptr;
 	public:
-		ISSlientObject()
+		ISSilentObject()
 		{
 			ID = xg::newGuid();
 		}
-		virtual ~ISSlientObject() {};
+		virtual ~ISSilentObject() {};
 		virtual SGuid GetID() { return ID; }
 		virtual void SetID(SGuid id) { ID = id; }
 	protected:
 		SGuid ID;
 	};
 
-	SInterface ISTickObject : SImplements ISSlientObject
+	SInterface ISTickObject : SImplements ISSilentObject
 	{
 	public:
 		ISTickObject() = default;

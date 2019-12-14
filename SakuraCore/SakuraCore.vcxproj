@@ -75,6 +75,7 @@
     <IncludePath>$(SolutionDir)Includes;$(SolutionDir);$(ProjectDir)Source;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir);$(SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)Libs;$(LibraryPath)</LibraryPath>
+    <TargetName>$(ProjectName)_dbg</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -82,6 +83,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)Source;$(SolutionDir);$(SolutionDir)Includes;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libs;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SolutionDir);$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -103,11 +107,11 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /r /y $(OutDir)$(ProjectName).lib $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+      <Command>xcopy /r /y $(OutDir)$(ProjectName)_dbg.lib $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
 xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
-xcopy /r /y $(OutDir)$(ProjectName).dll $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
-xcopy /r /y $(OutDir)$(ProjectName).dll $(SolutionDir)Win32\Debug
-xcopy /r /y $(OutDir)$(ProjectName).lib $(SolutionDir)Libs
+xcopy /r /y $(OutDir)$(ProjectName)_dbg.dll $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
+xcopy /r /y $(OutDir)$(ProjectName)_dbg.dll $(SolutionDir)Win32\Debug
+xcopy /r /y $(OutDir)$(ProjectName)_dbg.lib $(SolutionDir)Libs
 xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(SolutionDir)Libs
 xcopy /r /y $(ProjectDir)Source\$(ProjectName).h $(SolutionDir)Includes
 xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(ProjectDir)..\..\..\OpenLib\$(ProjectName)\
@@ -132,15 +136,16 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -190,11 +195,14 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\UploadBuffer.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\GraphicsConfigs.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\UploadVertices.h" />
     <ClInclude Include="Source\Common\Microsoft\d3dx12.h" />
     <ClInclude Include="Source\Common\Thirdparty\stb_image.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISGPUResource.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderTarget.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISTexture.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\RenderScene\SRenderScene.hpp" />
@@ -233,12 +241,14 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp" />
     <ClCompile Include="Source\Framework\Core\Object\SStaticMesh.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SDx12Pass.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp" />
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\FrameResource.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp" />
     <ClCompile Include="Source\dllmain.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.cpp" />

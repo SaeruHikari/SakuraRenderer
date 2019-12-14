@@ -8,6 +8,8 @@ Details:
 #include "../CommonInterface/SakuraGraphicsManagerBase.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 #include "Resource/SDxResourceManager.h"
+#include "Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h"
+#include <thread>
 
 //Link necessary d3d12 libraries
 #pragma comment(lib, "d3dcompiler.lib")
@@ -15,6 +17,7 @@ Details:
 #pragma comment(lib, "dxgi.lib")
 
 using namespace SakuraCore;
+
 
 namespace SGraphics
 {
@@ -36,6 +39,10 @@ namespace SGraphics
 		inline auto GetResourceManager()
 		{
 			return (SDxResourceManager*)(pGraphicsResourceManager.get());
+		}
+		inline auto GetFrameGraph()
+		{
+			return pFrameGraph.get();
 		}
 	public:
 		inline auto GetRtvCPU(int offset)
@@ -120,6 +127,10 @@ namespace SGraphics
 		std::shared_ptr<SFence> mFence;
 		std::shared_ptr<SDx12DeviceInformation> mDeviceInformation;
 		std::shared_ptr<SDx12GraphicsStates> mGraphicsConfs;
+
+		//!
+		std::unique_ptr<SakuraFrameGraph> pFrameGraph;
+
 
 #if defined(DEBUG) || defined(_DEBUG)
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mDbgSwapChain;

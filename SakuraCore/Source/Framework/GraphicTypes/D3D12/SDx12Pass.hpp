@@ -1,35 +1,18 @@
 #pragma once
 #include "D3DCommon.h"
-#include "SDx12RenderTarget.hpp"
+#include "..\GraphicsInterface\ISRenderPass.h"
 
 namespace SGraphics
 {
-	class __dx12Pass
+	class __dx12Pass : SImplements ISRenderPass
 	{
 	public:
-		__dx12Pass(ID3D12Device* device)
-			:mDevice(device)
-		{
-			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		}
-		__dx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps, 
-			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-			:mDevice(device), PS(ps), VS(vs), mInputLayout(inputLayout)
-		{
-			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		}
+		__dx12Pass(ID3D12Device* device);
+		__dx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps,
+			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout);
 		__dx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
 			const std::wstring& psPath, const std::string& psTarg,
-			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-		{
-			VS = d3dUtil::CompileShader(vsPath, nullptr, vsTarg, "vs_5_1");
-			PS = d3dUtil::CompileShader(psPath, nullptr, psTarg, "ps_5_1");
-			mDevice = device;
-			mInputLayout = inputLayout;
-			mCbvSrvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		}
+			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout);
 		__dx12Pass(const __dx12Pass&& rhs) = delete;
 		__dx12Pass(const __dx12Pass& rhs) = delete;
 		__dx12Pass& operator=(const __dx12Pass& rhs) = delete;
@@ -37,27 +20,10 @@ namespace SGraphics
 		virtual void BuildDescriptorHeaps(std::vector<ID3D12Resource*> srvResources) = 0;
 		virtual void BuildRootSignature() = 0;
 		virtual void BuildPSO() = 0;
-		virtual bool Initialize()
-		{
-			BuildRootSignature();
-			BuildPSO();
-			return true;
-		}
-		virtual bool Initialize(std::vector<ComPtr<ID3D12DescriptorHeap>> srvHeaps)
-		{
-			mSrvDescriptorHeaps = srvHeaps;
-			return Initialize();
-		}
-		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources)
-		{
-			mSrvDescriptorHeaps.resize(1);
-			BuildDescriptorHeaps(srvResources);
-			return Initialize();
-		}
-		virtual bool StartUp(ID3D12GraphicsCommandList* cmdList)
-		{
-			return cmdList != nullptr;
-		}
+		virtual bool Initialize();
+		virtual bool Initialize(std::vector<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> srvHeaps);
+		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources);
+		virtual bool StartUp(ID3D12GraphicsCommandList* cmdList);
 
 	protected:
 		__dx12Pass() {}
@@ -72,23 +38,17 @@ namespace SGraphics
 		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 	};
 
-
 	class SDx12Pass : public SGraphics::__dx12Pass
 	{
 	public:
-		SDx12Pass()
-			:__dx12Pass() {}
-		SDx12Pass(ID3D12Device* device)
-			:__dx12Pass(device) {}
+		SDx12Pass();
+		SDx12Pass(ID3D12Device* device);
 		SDx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps,
-			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-			:__dx12Pass(device, vs, ps, inputLayout) {}
+			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout);
 		SDx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
 			const std::wstring& psPath, const std::string& psTarg,
-			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-			:__dx12Pass(device, vsPath, vsTarg, psPath, psTarg, inputLayout) {}
+			const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout);
 		
-
 		// Called once per pass before drawing.
 		virtual void BindPerPassResource(ID3D12GraphicsCommandList* cmdList, 
 			SFrameResource* frameResource, size_t passSrvNum) = 0;
@@ -97,47 +57,18 @@ namespace SGraphics
 			SFrameResource* frameResource, SDxRenderItem* ri) = 0;
 	public:
 		// Current implementation would cause repeat drawing.
-		virtual void PushRenderItems(std::vector<SDxRenderItem*> renderItems)
-		{
-			mRenderItems = renderItems;
-		}
-
-		virtual void Draw(ID3D12GraphicsCommandList* cmdList, 
-			D3D12_CPU_DESCRIPTOR_HANDLE* dsv, 
-			SFrameResource* frameRes, size_t passSrvNumOnFrameRes,
-			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num)
-		{
-			cmdList->OMSetRenderTargets(rtv_num, rtvs, true, dsv);
-			// Set descriptor heaps:
-			ID3D12DescriptorHeap** descriptorHeaps = mSrvDescriptorHeaps.size() == 0 
-				? nullptr : new ID3D12DescriptorHeap* [mSrvDescriptorHeaps.size()];
-			for(size_t i = 0; i < mSrvDescriptorHeaps.size(); i++)
-				 descriptorHeaps[i] = mSrvDescriptorHeaps[i].Get();
-			cmdList->SetPipelineState(mPSO.Get());
-			if(mSrvDescriptorHeaps.size() != 0)
-				cmdList->SetDescriptorHeaps(mSrvDescriptorHeaps.size(), descriptorHeaps);
-			cmdList->SetGraphicsRootSignature(mRootSignature.Get());
-			// Bind resource for this pass...
-			BindPerPassResource(cmdList, frameRes, passSrvNumOnFrameRes);
-			// Draw
-			for (size_t j = 0; j < mRenderItems.size(); ++j)
-			{
-				auto ri = mRenderItems[j];
-				cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-				cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
-				cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
-				BindPerRenderItemResource(cmdList, frameRes, ri);
-				cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-			}
-		}
+		virtual void PushRenderItems(std::vector<SDxRenderItem*> renderItems);
 
 		virtual void Draw(ID3D12GraphicsCommandList* cmdList,
 			D3D12_CPU_DESCRIPTOR_HANDLE* dsv,
-			SFrameResource* frameRes, 
-			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num)
-		{
-			this->Draw(cmdList, dsv, frameRes, 0, rtvs, rtv_num);
-		}
+			SFrameResource* frameRes, size_t passSrvNumOnFrameRes,
+			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num);
+
+		virtual void Draw(ID3D12GraphicsCommandList* cmdList,
+			D3D12_CPU_DESCRIPTOR_HANDLE* dsv,
+			SFrameResource* frameRes,
+			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num);
+
 	protected:
 		std::vector<SDxRenderItem*> mRenderItems;
 	};

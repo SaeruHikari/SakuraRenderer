@@ -35,7 +35,6 @@ namespace SakuraCore {
 	public:
 		bool SakuraInitScene();
 		bool SakuraInitializeGraphicsCore(HWND hwnd, UINT weight, UINT height);
-		bool SakuraBindDbgHwnd(HWND hwnd, UINT weight, UINT height);
 		
 	public:
 		// Tick group.

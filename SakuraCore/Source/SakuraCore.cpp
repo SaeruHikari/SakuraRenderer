@@ -25,9 +25,5 @@ SAKURACORE_API void __stdcall MsgSakuraCore(UINT coreMask, UINT MSG, UINT param0
 	}
 }
 
-SAKURACORE_API bool __stdcall BindSakuraDbgWnd(HWND hwnd, UINT width, UINT height)
-{
-	return SakuraCore::SCore::GetSakuraCore()->SakuraBindDbgHwnd(hwnd, width, height);
-}
 
 

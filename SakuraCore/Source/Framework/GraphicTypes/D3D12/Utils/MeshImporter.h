@@ -11,7 +11,11 @@
 #include <chrono>
 
 //Link necessary d3d12 libraries
+#if defined(DEBUG) || defined(_DEBUG)
 #pragma comment(lib, "assimp-vc142-mtd.lib")
+#else
+#pragma comment(lib, "assimp-vc142-mt.lib")
+#endif
 #pragma comment(lib, "tinyplyd.lib")
 
 struct StandardVertex;

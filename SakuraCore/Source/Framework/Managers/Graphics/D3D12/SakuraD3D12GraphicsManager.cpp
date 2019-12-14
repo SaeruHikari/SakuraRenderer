@@ -172,7 +172,7 @@ bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 	mDeviceInformation->dsvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	mDeviceInformation->cbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	// Create Resource Manager
+	// Create Resource Manager & FrameGraph
 	CreateResourceManager();
 
 	// Check 4x MSAA quality for our back buffer point.
@@ -252,24 +252,13 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateSwapChain()
 		mCommandQueue.Get(),
 		&sd,
 		mSwapChain.GetAddressOf()));
-
-#if defined(DEBUG) || defined(_DEBUG)
-	if (mhDbgWnd != nullptr)
-	{
-		sd.OutputWindow = mhDbgWnd;
-		// Note: Swap chain uses queue to perform flush.
-		ThrowIfFailed(mdxgiFactory->CreateSwapChain(
-			mCommandQueue.Get(),
-			&sd,
-			mDbgSwapChain.GetAddressOf()));
-	}
-#endif
 }
 
 bool SGraphics::SakuraD3D12GraphicsManager::CreateResourceManager()
 {
 	pGraphicsResourceManager = std::make_unique<SDxResourceManager>(mdxgiFactory, md3dDevice, mFence, mDeviceInformation, mGraphicsConfs);
 	pGraphicsResourceManager->Initialize();
+	pFrameGraph = std::make_unique<SakuraFrameGraph>();
 	return pGraphicsResourceManager != nullptr;
 }
 

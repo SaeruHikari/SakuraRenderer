@@ -27,7 +27,6 @@ extern "C"
 	/// Initialize Sakura Graphics Core.
 	///</summary>
 	SAKURACORE_API bool __stdcall InitSakuraGraphicsCore(HWND hwnd, UINT width, UINT height);
-	SAKURACORE_API bool __stdcall BindSakuraDbgWnd(HWND hwnd, UINT width, UINT height);
 }
 
 extern "C"

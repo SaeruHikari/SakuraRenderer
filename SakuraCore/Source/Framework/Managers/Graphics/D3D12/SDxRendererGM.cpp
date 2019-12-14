@@ -1,6 +1,7 @@
 #include <minwindef.h>
 #include "SDxRendererGM.h"
 #include "../../../Core/Nodes/EngineNodes/SStaticMeshNode.hpp"
+#include "../../../GraphicTypes/FrameGraph/SakuraFrameGraph.h"
 #define Sakura_Full_Effects
 //#define Sakura_Debug_PureColor
 
@@ -59,7 +60,6 @@ namespace SGraphics
 		BuildMaterials();
 		BuildRenderItems();
 		BuildDescriptorHeaps();
-
 		// ¡ü Do not have dependency on dx12 resources
 		{
 			{
@@ -88,12 +88,10 @@ namespace SGraphics
 			{
 				mBrdfLutRT2D = (SDx12RenderTarget2D*)GetResourceManager()->GetRenderTarget(RT2Ds::BrdfLutRTName);
 			}
-
 			UINT _sizeS = 2048;
 			for (int j = 0; j < SkyCubeMips; j++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE convCubeRtvHandles[6];
-				mSkyCubeRT[j] = new SDx12RenderTargetCube(_sizeS, _sizeS, DXGI_FORMAT_R16G16B16A16_FLOAT);
 				prop.mHeight = _sizeS;
 				prop.mWidth = _sizeS;
 				prop.mRtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -112,16 +110,12 @@ namespace SGraphics
 			{
 				if (i != 0)
 				{
-					mConvAndPrefilterCubeRTs[i] =
-						new SDx12RenderTargetCube(size, size, DXGI_FORMAT_R16G16B16A16_FLOAT);
 					prop.mHeight = size;
 					prop.mWidth = size;
 					size = size / 2;
 				}
 				else
 				{
-					mConvAndPrefilterCubeRTs[i] =
-						new SDx12RenderTargetCube(64, 64, DXGI_FORMAT_R16G16B16A16_FLOAT);
 					prop.mHeight = 64;
 					prop.mWidth = 64;
 				}
@@ -151,7 +145,7 @@ namespace SGraphics
 				}
 			}
 #endif
-			// Create resources depended by passes.
+			// Create resources depended by passes. 
 #if defined(Sakura_Defferred)
 			GBufferRTs = new SDx12RenderTarget2D* [GBufferRTNum];
 			for (int i = 0; i < GBufferRTNum; i++)
@@ -175,35 +169,41 @@ namespace SGraphics
 
 #if defined(Sakura_Defferred)
 #if defined(Sakura_MotionVector)
-		mGbufferPass = std::make_shared<SGBufferPass>(md3dDevice.Get(), false);
+		auto mGbufferPass = GetFrameGraph()->
+			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, md3dDevice.Get(), false);
 #else
-		mGbufferPass = std::make_shared<SGBufferPass>(md3dDevice.Get(), true);
+		auto mGbufferPass = GetResourceManager()->
+			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, md3dDevice.Get(), true);
 #endif
 		mGbufferPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 #endif
-
 		BuildFrameResources();
 		mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
 #if defined(Sakura_Defferred)
-		mDeferredPass = std::make_shared<SDeferredPass>(md3dDevice.Get());
+		auto mDeferredPass = GetFrameGraph()->
+			RegistNamedPassNode<SDeferredPass>(ConsistingPasses::DeferredPassName, md3dDevice.Get());
 		mDeferredPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 #if defined(Sakura_GBUFFER_DEBUG)
-		mGBufferDebugPass = std::make_shared<SGBufferDebugPass>(md3dDevice.Get());
+		auto mGBufferDebugPass = GetFrameGraph()->
+			RegistNamedPassNode<SGBufferDebugPass>(ConsistingPasses::GBufferDebugPassName, md3dDevice.Get());
 		mGBufferDebugPass->PushRenderItems(mRenderLayers[SRenderLayers::E_GBufferDebug]);
 #endif
 #endif
 
 #if defined(Sakura_MotionVector)
-		mMotionVectorPass = std::make_shared<SMotionVectorPass>(md3dDevice.Get());
+		auto mMotionVectorPass = GetFrameGraph()->
+			RegistNamedPassNode<SMotionVectorPass>(ConsistingPasses::MotionVectorPassName, md3dDevice.Get());
 		mMotionVectorPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mMotionVectorPass->Initialize();
 #endif
 #if defined(Sakura_TAA)
-		mTaaPass = std::make_shared<STaaPass>(md3dDevice.Get());
+		auto mTaaPass = GetFrameGraph()->
+			RegistNamedPassNode<STaaPass>(ConsistingPasses::TaaPassName, md3dDevice.Get());
 		mTaaPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 #endif
 #if defined(Sakura_SSAO)
-		mSsaoPass = std::make_shared<SsaoPass>(md3dDevice.Get());
+		auto mSsaoPass = GetFrameGraph()->
+			RegistNamedPassNode<SsaoPass>(ConsistingPasses::SsaoPassName, md3dDevice.Get());
 		mSsaoPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 		mSsaoPass->StartUp(mCommandList.Get());
 #endif
@@ -215,7 +215,8 @@ namespace SGraphics
 		brdfPass->Initialize();
 		//Update the viewport transform to cover the client area
 
-		mDrawSkyPass = std::make_shared<SkySpherePass>(md3dDevice.Get());
+		auto mDrawSkyPass = GetFrameGraph()->
+			RegistNamedPassNode<SkySpherePass>(ConsistingPasses::SkySpherePassName, md3dDevice.Get());
 		mDrawSkyPass->PushRenderItems(mRenderLayers[SRenderLayers::E_SKY]);
 #endif
 #if defined(Sakura_IBL_HDR_INPUT)
@@ -455,7 +456,8 @@ namespace SGraphics
 		{
 			GBufferRTs[i]->OnResize(md3dDevice.Get(), Width, Height);
 		}
-		mGbufferPass->Initialize(mGBufferSrvResources);
+		GetFrameGraph()->
+			GetNamedRenderPass(ConsistingPasses::GBufferPassName)->Initialize(mGBufferSrvResources);
 		auto GBufferAlbedo = GBufferRTs[0];
 		auto GBufferNormal = GBufferRTs[1];
 		auto GBufferWPos = GBufferRTs[2];
@@ -468,15 +470,16 @@ namespace SGraphics
 		mDeferredSrvResources[4] = mBrdfLutRT2D->mResource.Get();
 		for (size_t i = 0; i < _countof(mConvAndPrefilterCubeRTs); i++)
 			mDeferredSrvResources[5 + i] = mConvAndPrefilterCubeRTs[i]->Resource();
-		mDeferredPass->Initialize(mDeferredSrvResources);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::DeferredPassName)->Initialize(mDeferredSrvResources);
 #if defined(Sakura_GBUFFER_DEBUG)
-		mGBufferDebugPass->Initialize(mDeferredSrvResources);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferDebugPassName)->Initialize(mDeferredSrvResources);
 #endif
 #endif
 #if defined(Sakura_SSAO)
 		std::vector<ComPtr<ID3D12DescriptorHeap>> ssaoDescHeaps;
 		mSsaoSrvResources[0] = GBufferRTs[1]->mResource.Get();
 		mSsaoSrvResources[1] = mDepthStencilBuffer.Get();
+		auto mSsaoPass = GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SsaoPassName);
 		mSsaoPass->Initialize(mSsaoSrvResources);
 #endif
 #if defined(Sakura_MotionVector)
@@ -493,7 +496,8 @@ namespace SGraphics
 		mTaaResources[2] = mTaaRTs[0]->mResource.Get(); // Inputs
 		mTaaResources[3] = mMotionVectorRT->mResource.Get();  
 		mTaaResources[4] = mDepthStencilBuffer.Get();
-		mTaaPass->Initialize(mTaaResources);
+		GetFrameGraph()->
+			GetNamedRenderPass(ConsistingPasses::TaaPassName)->Initialize(mTaaResources);
 #endif
 	}
 
@@ -521,6 +525,8 @@ namespace SGraphics
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		mMotionVectorRT->ClearRenderTarget(mCommandList.Get());
 		D3D12_CPU_DESCRIPTOR_HANDLE mvRtv[1] = { mMotionVectorRT->mSRtv.hCpu };
+		auto mMotionVectorPass = GetFrameGraph()->
+			GetNamedRenderPass(ConsistingPasses::MotionVectorPassName);
 		mMotionVectorPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mMotionVectorPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, mvRtv, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMotionVectorRT->mResource.Get(),
@@ -534,8 +540,10 @@ namespace SGraphics
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 			GBufferRTs[i]->ClearRenderTarget(mCommandList.Get());
 		}
-		mGbufferPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
-		mGbufferPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, rtvs, GBufferRTNum);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferPassName)
+			->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferPassName)
+			->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, rtvs, GBufferRTNum);
 		// Change back to GENERIC_READ so we can read the texture in a shader.
 		for (int i = 0; i < GBufferRTNum; i++)
 			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[i]->mResource.Get(),
@@ -543,19 +551,12 @@ namespace SGraphics
 	#if defined(Sakura_SSAO)
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		auto mSsaoPass = GetFrameGraph()->
+			GetNamedRenderPass(ConsistingPasses::SsaoPassName);
 		mSsaoPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &GBufferRTs[1]->mSRtv.hCpu, 1);
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GBufferRTs[1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 	#endif
-#else
-		mCommandList->SetPipelineState(mPSOs["ForwardShading"].Get());
-		mCommandList->SetGraphicsRootSignature(mRootSignatures["GBufferPass"].Get());
-		// Clear the back buffer and depth buffer.
-		// Set Descriptor Heaps
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mGBufferSrvDescriptorHeap.Get() };
-		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		auto passCB = mCurrFrameResource->PassCB->Resource();
-		mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 #endif
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv_thisPhase = CurrentBackBufferView();
@@ -568,26 +569,25 @@ namespace SGraphics
 #if defined(Sakura_Defferred)
 	{
 		mCommandList->OMSetRenderTargets(1, &rtv_thisPhase, true, nullptr);
-		mDeferredPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &rtv_thisPhase, 1);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::DeferredPassName)
+			->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, &rtv_thisPhase, 1);
 	}
-#else
-		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
-		mCommandList->SetGraphicsRootDescriptorTable(0, mGBufferSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-		DrawRenderItems(mCommandList.Get(), mRenderLayers[SRenderLayers::E_Opaque]);
 #endif
 		
 #if defined(Sakura_IBL)
-		mDrawSkyPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &rtv_thisPhase, 1);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SkySpherePassName)
+			->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &rtv_thisPhase, 1);
 #endif
 		rtv_thisPhase = CurrentBackBufferView();
 #if defined(Sakura_TAA)
 		static int mTaaChain = 0;
+		auto mTaaPass = GetFrameGraph()->
+			GetNamedRenderPass<STaaPass>(ConsistingPasses::TaaPassName);
 		mTaaPass->ResourceIndex = mTaaChain;
 		mTaaChain = (mTaaChain + 1) % 2;
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTaaRTs[mTaaChain + 1]->mResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
-		D3D12_CPU_DESCRIPTOR_HANDLE rtv_Taa[2];
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv_Taa[1];
 		rtv_Taa[0] = mTaaRTs[mTaaChain + 1]->mSRtv.hCpu;
 		mTaaPass->Draw(mCommandList.Get(), nullptr, mCurrFrameResource, rtv_Taa, 1);
 		rtv_Taa[0] = rtv_thisPhase;
@@ -599,7 +599,9 @@ namespace SGraphics
 #endif
 		// Debug
 #if defined(Sakura_GBUFFER_DEBUG) 
-		mGBufferDebugPass->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &CurrentBackBufferView(), 1);
+		GetFrameGraph()->
+			GetNamedRenderPass(ConsistingPasses::GBufferDebugPassName)
+			->Draw(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource, &CurrentBackBufferView(), 1);
 #endif
 		// Indicate a state transition on the resource usage.
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -927,9 +929,9 @@ namespace SGraphics
 		mSsaoCB.InvProj = mMainPassCB.InvProj;
 		XMStoreFloat4x4(&mSsaoCB.ProjTex, XMMatrixTranspose(proj * T));
 		
-		mSsaoPass->GetOffsetVectors(mSsaoCB.OffsetVectors);
-
-		auto blurWeights = mSsaoPass->CalcGaussWeights(2.5f);
+		SsaoPass* mSsaoPas = (SsaoPass*)(GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SsaoPassName));
+		mSsaoPas->GetOffsetVectors(mSsaoCB.OffsetVectors);
+		auto blurWeights = mSsaoPas->CalcGaussWeights(2.5f);
 
 		mSsaoCB.InvRenderTargetSize = XMFLOAT2(1.0f / (mGraphicsConfs->clientWidth), 1.0f / (mGraphicsConfs->clientHeight));
 

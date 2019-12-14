@@ -14,7 +14,7 @@ SakuraGBufferViewport::~SakuraGBufferViewport()
 
 bool SakuraGBufferViewport::Initialize()
 {
-	return BindSakuraDbgWnd(HWND(this->winId()), this->size().width(), this->height());
+	return true;
 }
 
 void SakuraGBufferViewport::Tick(double deltaTime)

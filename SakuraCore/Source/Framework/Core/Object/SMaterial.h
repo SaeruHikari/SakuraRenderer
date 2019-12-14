@@ -6,12 +6,12 @@ namespace SGraphics
 {
 	// SObject wrap of Opaque Material.
 	// With Guid.
-	class SMaterial : SImplements SakuraCore::ISSlientObject
+	class SMaterial : SImplements SakuraCore::ISSilentObject
 	{
 	public:
 		SMaterial()
 		{
-			ISSlientObject::ISSlientObject();
+			ISSilentObject::ISSilentObject();
 		}
 		~SMaterial() {}
 		OpaqueMaterial data;

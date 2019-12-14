@@ -1,36 +1,82 @@
 ﻿  GameTimer.cpp
   GeometryGenerator.cpp
-D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\GameTimer.cpp(124,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
   MathHelper.cpp
-D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.cpp(830,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SStaticMesh.cpp
   SD3DCamera.cpp
-D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp(84,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SDx12Pass.cpp
   d3dUtil.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp(275,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(32,2): warning C4244: “参数”: 从“std::streamoff”转换到“SIZE_T”，可能丢失数据
   DDSTextureLoader.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(192,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
   FrameResource.cpp
-D:\Coding\Sakura\SakuraCore\Source\Common\HikaUtils\HikaCommonUtils\DDSTextureLoader.cpp(2368,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(71,29): warning C4244: “=”: 从“UINT64”转换到“LONG_PTR”，可能丢失数据
   Dx12Samplers.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.cpp(3,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
   MeshImporter.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Dx12Samplers.cpp(60,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
-  UploadVertices.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(331,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(277,24): warning C4018: “<”: 有符号/无符号不匹配
   dllmain.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\UploadVertices.cpp(2,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
-  SakuraEntity.cpp
-D:\Coding\Sakura\SakuraCore\Source\dllmain.cpp(20,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SDxResourceManager.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(306,24): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
   SDxRendererGM.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Core\Entities\SakuraEntity.cpp(17,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\SsaoPass.hpp(343,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\GBufferPass.hpp(68,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp(51,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp(66,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(302,33): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(301,41): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(508,120): warning C4244: “参数”: 从“float”转换到“UINT”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(508,115): warning C4244: “参数”: 从“float”转换到“UINT8”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(692,26): warning C4244: “初始化”: 从“UINT64”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(696,73): warning C4244: “参数”: 从“float”转换到“UINT64”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(751,39): warning C4838: 从“float”转换到“SIZE_T”需要收缩转换
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(751,39): warning C4244: “初始化”: 从“float”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(762,57): warning C4244: “参数”: 从“UINT64”转换到“const int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(788,24): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(790,25): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(792,27): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(794,26): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(872,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(873,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(944,21): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1003,21): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1051,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1088,22): warning C4018: “<”: 有符号/无符号不匹配
   SakuraD3D12GraphicsManager.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1535,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
-  SakuraGraphicsManagerBase.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\SakuraD3D12GraphicsManager.cpp(346,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1133,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
   SakuraScene.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\SakuraGraphicsManagerBase.cpp(9,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
   SCore.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Core\Scene\SakuraScene.cpp(39,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.cpp(88,34): warning C4244: “=”: 从“float”转换到“UINT8”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+  SSceneManager.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
   SakuraCore.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Core\SCore.cpp(76,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
-D:\Coding\Sakura\SakuraCore\Source\SakuraCore.cpp(34,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Scene\SSceneManager.cpp(28,20): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+    正在创建库 D:\Coding\Sakura\Release\SakuraCore.lib 和对象 D:\Coding\Sakura\Release\SakuraCore.exp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.cpp(163): warning C4715: “SGraphics::SDxResourceManager::InitD3D12Device”: 不是所有的控件路径都返回值
+  All 4027 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  SakuraCore.vcxproj -> D:\Coding\Sakura\Release\SakuraCore.dll

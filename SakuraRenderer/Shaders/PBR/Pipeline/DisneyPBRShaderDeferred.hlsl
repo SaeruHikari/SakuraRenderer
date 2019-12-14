@@ -70,7 +70,7 @@ float4 PS(VertexOut pin) : SV_Target
 #endif
 
     float3 Disney = 0;
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
     {
         L = -gLights[i].Direction;
         Disney += 0.5 * PI * gLights[i].Strength  
@@ -78,7 +78,7 @@ float4 PS(VertexOut pin) : SV_Target
     }
     //return ambientC.xyzz;
     float3 FinalColor = Disney.xyz + ambientC.xyz;
-    FinalColor = ACESToneMapping(FinalColor, 1.f);
+    FinalColor = ACESToneMapping(FinalColor, 1.3f);
     FinalColor = pow(FinalColor, 1 / 2.2);
     return float4(FinalColor, 1.f);
 }
