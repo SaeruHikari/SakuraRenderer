@@ -7,15 +7,15 @@ Details:
 #pragma once
 #include "Interface/ISObject.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
+#include "../GraphicsCommon/GraphicsConfigs.h"
+#include "../GraphicsInterface/ISRenderResource.h"
 
 namespace SGraphics
 {
 	struct SDescriptorHeap;
 	extern const size_t gPoolPageSize;
-	struct DescriptorHandleCouple
+	struct DescriptorHandleCouple : public SGraphics::SResourceHandle
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE hCpu;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpu;
 		int indexOnHeap = -1;
 		SDescriptorHeap* fromHeap = nullptr;
 	};
@@ -43,10 +43,8 @@ namespace SGraphics
 		inline DescriptorHandleCouple GetAvailableHandle()
 		{
 			DescriptorHandleCouple couple;
-			couple.hCpu = CD3DX12_CPU_DESCRIPTOR_HANDLE(descriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			couple.hCpu.Offset(filledNum, heapDescriptorSize);
-			couple.hGpu = CD3DX12_GPU_DESCRIPTOR_HANDLE(descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-			couple.hGpu.Offset(filledNum, heapDescriptorSize);
+			couple.hCpu = CD3DX12_CPU_DESCRIPTOR_HANDLE(descriptorHeap->GetCPUDescriptorHandleForHeapStart()).Offset(filledNum, heapDescriptorSize);;
+			couple.hGpu = CD3DX12_GPU_DESCRIPTOR_HANDLE(descriptorHeap->GetGPUDescriptorHandleForHeapStart()).Offset(filledNum, heapDescriptorSize);
 			couple.indexOnHeap = filledNum;
 			couple.fromHeap = this;
 			filledNum = filledNum + 1;

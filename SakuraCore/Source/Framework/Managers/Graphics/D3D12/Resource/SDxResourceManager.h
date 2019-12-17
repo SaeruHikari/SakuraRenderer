@@ -31,14 +31,11 @@ namespace SGraphics
 		virtual SDescriptorHeap* GetOrAllocDescriptorHeap(std::string name,
 			UINT descriptorSize = 0, 
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {});
-		// Load Textures
-		virtual bool LoadTextures(std::wstring Filename, std::string registName) override;
 		// Get Textures
-		virtual SGraphics::ISTexture* GetTexture(std::string registName) override;
-		virtual int RegistNamedRenderTarget(std::string resgistName, ISRenderTargetProperties rtProp,
-			std::string targetSrvHeap, std::string targetRtvHeap) override;
-		virtual ISRenderTarget* GetRenderTarget(std::string registName) override;
-
+		virtual ISRenderTarget* CreateNamedRenderTarget(std::string resgistName, ISRenderTargetProperties rtProp,
+			std::string targetSrvHeap, std::string targetRtvHeap, SRHIResource* resource = nullptr) override;
+		virtual ISRenderTarget* CreateNamedRenderTarget(std::string registName,
+			ISRenderTargetProperties rtProp, SRHIResource* resource, SResourceHandle srvHandle, SResourceHandle rtvHandle) override;
 	protected:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 		Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
@@ -51,11 +48,11 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 		
 		std::map<std::string, std::unique_ptr<SDescriptorHeap>> mDescriptorHeaps;
-		std::map<std::string, std::unique_ptr<SD3DTexture>> mTextures;
-		std::map<std::string, std::unique_ptr<ISDx12RenderTarget>> mRenderTargets;
 
 		bool InitD3D12Device();
 		void CreateCommandObjects();
+	protected:
+		virtual ISTexture* LoadTexture(std::wstring Filename, std::string textName) override;
 	};
 
 }

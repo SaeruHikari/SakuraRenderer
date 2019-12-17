@@ -97,7 +97,7 @@ namespace SGraphics
 			deferredPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 			deferredPsoDesc.SampleMask = UINT_MAX;
 			deferredPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-			deferredPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			deferredPsoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			deferredPsoDesc.pRootSignature = mRootSignature.Get();
 			deferredPsoDesc.NumRenderTargets = 1;
 			deferredPsoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;

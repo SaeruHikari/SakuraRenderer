@@ -3,6 +3,7 @@
 #include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
 #include "Framework/GraphicTypes/D3D12/FrameResource.h"
 #include "Framework/GraphicTypes/D3D12/SDx12Pass.hpp"
+#include <d3d12.h>
 
 using namespace Microsoft::WRL;
 
@@ -66,52 +67,40 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 	return nullptr;
 }
 
-bool SGraphics::SDxResourceManager::LoadTextures(std::wstring Filename, std::string registName)
+SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarget(std::string registName,
+	ISRenderTargetProperties rtProp, SRHIResource* resource, SResourceHandle srvHandle, SResourceHandle rtvHandle)
 {
-	// Reset the command list to prep for initialization commands.
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
-	if (Filename.find(L".dds") != std::string::npos)
+	switch (rtProp.rtType)
 	{
-		auto texMap = std::make_unique<SD3DTexture>();
-		texMap->Name = registName;
-		texMap->Filename = Filename;
-		ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-			mCommandList.Get(), texMap->Filename.c_str(),
-			texMap->Resource, texMap->UploadHeap));
-		mTextures[texMap->Name] = std::move(texMap);
-		// Execute the initialization commands.
-		ThrowIfFailed(mCommandList->Close());
-		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
-		return true;
-	}
-	else if (Filename.find(L".hdr") != std::string::npos)
+	case ERenderTargetTypes::E_RT2D:
 	{
-		auto texMap = std::unique_ptr<SD3DTexture>(d3dUtil::LoadHDRTexture(md3dDevice.Get(),
-				mCommandList.Get(), registName, Filename));
-		mTextures[registName] = std::move(texMap);
-		// Execute the initialization commands.
-		ThrowIfFailed(mCommandList->Close());
-		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
-		return true;
+		auto rt2d = std::make_unique<SDx12RenderTarget2D>(rtProp.mWidth, rtProp.mHeight,
+			rtProp, rtProp.bScaleWithViewport);
+		DescriptorHandleCouple srv;
+		srv.hCpu = srvHandle.hCpu;
+		srv.hGpu = srvHandle.hGpu;
+		DescriptorHandleCouple rtv;
+		rtv.hCpu = rtvHandle.hCpu;
+		rtv.hGpu = rtvHandle.hGpu;
+		rt2d->mSSrv = srv;
+		rt2d->mSRtv = rtv;
+		mResources[registName] = std::move(rt2d);
+		return (ISRenderTarget*)mResources[registName].get();
 	}
-	return false;
+	case ERenderTargetTypes::E_RT3D:
+	{
+		return nullptr;
+	}
+	default:
+		return nullptr;
+	}
+	return nullptr;
 }
 
-SGraphics::ISTexture* SGraphics::SDxResourceManager::GetTexture(std::string registName)
-{
-	if (mTextures.find(registName) != mTextures.end())
-		return mTextures[registName].get();
-	else return false;
-}
-
-int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registName,
+SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarget(std::string registName,
 	ISRenderTargetProperties rtProp, 
-	std::string targetRtvHeap, std::string targetSrvHeap)
+	std::string targetRtvHeap, std::string targetSrvHeap, SRHIResource* resource)
 {
-	if (mRenderTargets.find(registName) != mRenderTargets.end())
-		return false;
 	switch (rtProp.rtType)
 	{
 	case ERenderTargetTypes::E_RT2D:
@@ -120,32 +109,26 @@ int SGraphics::SDxResourceManager::RegistNamedRenderTarget(std::string registNam
 			rtProp, rtProp.bScaleWithViewport);
 		rt2d->BuildDescriptors(md3dDevice.Get(),
 			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
-			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize));
-		mRenderTargets[registName] = std::move(rt2d);
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize),
+			resource);
+		mResources[registName] = std::move(rt2d);
+		return (ISRenderTarget*)mResources[registName].get();
 	}
-		return 1;
 	case ERenderTargetTypes::E_RT3D:
 	{
 		auto rt3d = std::make_unique<SDx12RenderTargetCube>(
 			rtProp.mWidth, rtProp.mHeight, rtProp.mRtvFormat);
 		rt3d->BuildDescriptors(md3dDevice.Get(),
 			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
-			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize));
-		mRenderTargets[registName] = std::move(rt3d);
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize),
+			resource);
+		mResources[registName] = std::move(rt3d);
+		return (ISRenderTarget*)mResources[registName].get();
 	}
-		return 1;
 	default:
-		return -1;
-	}
-	return -1;
-}
-
-SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::GetRenderTarget(std::string registName)
-{
-	if (mRenderTargets.find(registName) == mRenderTargets.end())
 		return nullptr;
-	else
-		return mRenderTargets[registName].get();
+	}
+	return nullptr;
 }
 
 bool SGraphics::SDxResourceManager::InitD3D12Device()
@@ -187,5 +170,39 @@ void SGraphics::SDxResourceManager::CreateCommandObjects()
 	// to the command list we will reset it, and it needs to be closed before
 	// calling rest.
 	mCommandList->Close();
+}
+
+SGraphics::ISTexture* SGraphics::SDxResourceManager::LoadTexture(std::wstring Filename, std::string texName)
+{
+	// Reset the command list to prep for initialization commands.
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	if (Filename.find(L".dds") != std::string::npos)
+	{
+		auto texMap = std::make_unique<SD3DTexture>();
+		texMap->Name = texName;
+		texMap->Filename = Filename;
+		ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+			mCommandList.Get(), texMap->Filename.c_str(),
+			texMap->Resource, texMap->UploadHeap));
+
+		// Execute the initialization commands.
+		ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		mResources[texName] = std::move(texMap);
+		return (ISTexture*)mResources[texName].get();
+	}
+	else if (Filename.find(L".hdr") != std::string::npos)
+	{
+		auto texMap = std::unique_ptr<SD3DTexture>(d3dUtil::LoadHDRTexture(md3dDevice.Get(),
+			mCommandList.Get(), texName, Filename));
+		// Execute the initialization commands.
+		ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		mResources[texName] = std::move(texMap);
+		return (ISTexture*)mResources[texName].get();
+	}
+	return nullptr;
 }
 

@@ -4,6 +4,11 @@
 
 namespace SGraphics
 {
+	class ISRenderTarget;
+}
+
+namespace SGraphics
+{
 	class __dx12Pass : SImplements ISRenderPass
 	{
 	public:
@@ -61,13 +66,13 @@ namespace SGraphics
 
 		virtual void Draw(ID3D12GraphicsCommandList* cmdList,
 			D3D12_CPU_DESCRIPTOR_HANDLE* dsv,
-			SFrameResource* frameRes, size_t passSrvNumOnFrameRes,
-			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num);
+			SFrameResource* frameRes,
+			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num, size_t passSrvNumOnFrameRes = 0);
 
-		virtual void Draw(ID3D12GraphicsCommandList* cmdList,
+		virtual void Execute(ID3D12GraphicsCommandList* cmdList,
 			D3D12_CPU_DESCRIPTOR_HANDLE* dsv,
 			SFrameResource* frameRes,
-			D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num);
+			ISRenderTarget** rts, size_t rtv_num, size_t passSrvNumOnFrameRes = 0);
 
 	protected:
 		std::vector<SDxRenderItem*> mRenderItems;

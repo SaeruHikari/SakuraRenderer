@@ -1,9 +1,0 @@
-{
-  "ExpandedNodes": [
-    "",
-    "\\PBR",
-    "\\PBR\\Pipeline"
-  ],
-  "SelectedNode": "\\PBR\\Pipeline\\DeferredRegisters.hlsl",
-  "PreviewInSolutionExplorer": false
-}

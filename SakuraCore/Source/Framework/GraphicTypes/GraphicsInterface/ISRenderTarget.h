@@ -1,6 +1,8 @@
 #pragma once
 #include <minwindef.h>
 #include <dxgiformat.h>
+#include "ISRenderResource.h"
+#include <wrl\client.h>
 
 namespace SGraphics
 {
@@ -22,7 +24,7 @@ namespace SGraphics
 	public:
 		//bool bScaleWithViewport = true;
 		FLOAT mClearColor[4] = { 0,0,0,0 };
-		ERenderTargetTypes rtType;
+		ERenderTargetTypes rtType = ERenderTargetTypes::E_RT2D;
 		DXGI_FORMAT mRtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		// RtvWidth = viewportWidth * mWidthPercentage
 		UINT mWidth;
@@ -32,9 +34,25 @@ namespace SGraphics
 		bool bScaleWithViewport = false;
 		~ISRenderTargetProperties() {};
 	};
-	struct ISRenderTarget
+
+	struct ISRenderTarget : public ISRenderResource
 	{
 		ISRenderTargetProperties mProperties;
-		~ISRenderTarget() {};
+		~ISRenderTarget() 
+		{
+		};
+		virtual SRHIResource* GetGPUResource() override
+		{
+			return mResource.Get();
+		}
+		virtual SResourceHandle* GetResourceHandle() 
+		{
+			return nullptr;
+		}
+		virtual SResourceHandle* GetRenderTargetHandle(size_t num = 0)
+		{
+			return nullptr;
+		}
+		Microsoft::WRL::ComPtr<SRHIResource> mResource;
 	};
 }

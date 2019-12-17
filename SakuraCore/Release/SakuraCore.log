@@ -1,22 +1,24 @@
-﻿  GameTimer.cpp
-  GeometryGenerator.cpp
-  MathHelper.cpp
-  SStaticMesh.cpp
+﻿  SStaticMesh.cpp
   SD3DCamera.cpp
   SDx12Pass.cpp
   d3dUtil.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(32,2): warning C4244: “参数”: 从“std::streamoff”转换到“SIZE_T”，可能丢失数据
-  DDSTextureLoader.cpp
   FrameResource.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp(71,29): warning C4244: “=”: 从“UINT64”转换到“LONG_PTR”，可能丢失数据
-  Dx12Samplers.cpp
   MeshImporter.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(277,24): warning C4018: “<”: 有符号/无符号不匹配
-  dllmain.cpp
-  SDxResourceManager.cpp
+  SakuraFrameGraph.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\Utils\MeshImporter.cpp(306,24): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h(7,20): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“struct”现在使用的是“class”
+  SFG_PassNode.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(6,2): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“class”现在使用的是“struct”
+  SDxResourceManager.cpp
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
@@ -26,36 +28,40 @@ D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h(7,20): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(266): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\SsaoPass.hpp(343,22): warning C4018: “<”: 有符号/无符号不匹配
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\GBufferPass.hpp(68,22): warning C4018: “<”: 有符号/无符号不匹配
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\IBL\CubeMapConvolutionPass.hpp(51,22): warning C4018: “<”: 有符号/无符号不匹配
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp(66,22): warning C4018: “<”: 有符号/无符号不匹配
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(302,33): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(301,41): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(508,120): warning C4244: “参数”: 从“float”转换到“UINT”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(508,115): warning C4244: “参数”: 从“float”转换到“UINT8”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(692,26): warning C4244: “初始化”: 从“UINT64”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(696,73): warning C4244: “参数”: 从“float”转换到“UINT64”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(751,39): warning C4838: 从“float”转换到“SIZE_T”需要收缩转换
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(751,39): warning C4244: “初始化”: 从“float”转换到“SIZE_T”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(762,57): warning C4244: “参数”: 从“UINT64”转换到“const int”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(788,24): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(790,25): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(792,27): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(794,26): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(872,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(873,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(944,21): warning C4018: “<”: 有符号/无符号不匹配
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1003,21): warning C4018: “<”: 有符号/无符号不匹配
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1051,22): warning C4018: “<”: 有符号/无符号不匹配
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1088,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(310,33): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(309,41): warning C4244: “参数”: 从“UINT”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(518,120): warning C4244: “参数”: 从“float”转换到“UINT”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(518,115): warning C4244: “参数”: 从“float”转换到“UINT8”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(698,26): warning C4244: “初始化”: 从“UINT64”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(702,73): warning C4244: “参数”: 从“float”转换到“UINT64”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(757,39): warning C4838: 从“float”转换到“SIZE_T”需要收缩转换
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(757,39): warning C4244: “初始化”: 从“float”转换到“SIZE_T”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(768,57): warning C4244: “参数”: 从“UINT64”转换到“const int”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(794,24): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(796,25): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(798,27): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(800,26): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(878,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(879,26): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(950,21): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1009,21): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1057,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1094,22): warning C4018: “<”: 有符号/无符号不匹配
   SakuraD3D12GraphicsManager.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1133,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp(1139,22): warning C4018: “<”: 有符号/无符号不匹配
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h(7,20): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
   SakuraScene.cpp
   SCore.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.cpp(88,34): warning C4244: “=”: 从“float”转换到“UINT8”，可能丢失数据
@@ -63,20 +69,24 @@ D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h(7,20): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
   SSceneManager.cpp
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(266): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp(66,5): warning C4244: “=”: 从“UINT64”转换到“SIZE_T”，可能丢失数据
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.h(5,21): warning C4099: “SFrameResource”: 类型名称以前使用“struct”现在使用的是“class”
 D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(73): message : 参见“SFrameResource”的声明
-D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(279): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.h(7,20): warning C4099: “SGraphics::ISRenderPass”: 类型名称以前使用“struct”现在使用的是“class”
+D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h(5): message : 参见“SGraphics::ISRenderPass”的声明
+D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.h(266): warning C4091: “static ”: 没有声明变量时忽略“SGraphics::SDxRendererGM::RT3Ds”的左侧
   SakuraCore.cpp
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Scene\SSceneManager.cpp(28,20): warning C4018: “<”: 有符号/无符号不匹配
-D:\Coding\Sakura\SakuraCore\Source\Framework\GraphicTypes\D3D12\FrameResource.h(24,18): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
     正在创建库 D:\Coding\Sakura\Release\SakuraCore.lib 和对象 D:\Coding\Sakura\Release\SakuraCore.exp
   正在生成代码
-  Previous IPDB not found, fall back to full compilation.
 D:\Coding\Sakura\SakuraCore\Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.cpp(163): warning C4715: “SGraphics::SDxResourceManager::InitD3D12Device”: 不是所有的控件路径都返回值
-  All 4027 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  594 of 4063 functions (14.6%) were compiled, the rest were copied from previous compilation.
+    296 functions were new in current compilation
+    215 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   SakuraCore.vcxproj -> D:\Coding\Sakura\Release\SakuraCore.dll

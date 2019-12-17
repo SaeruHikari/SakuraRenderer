@@ -70,9 +70,9 @@ namespace SGraphics
 			// Otherwise, the normalized depth values at z = 1 (NDC) will 
 			// fail the depth test if the depth buffer was cleared to 1.
 #ifndef REVERSE_Z
-			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-#else
 			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+#else
+			skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 #endif 
 			skyPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 			skyPsoDesc.SampleMask = UINT_MAX;
@@ -82,7 +82,7 @@ namespace SGraphics
 			skyPsoDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
 			skyPsoDesc.SampleDesc.Count = 1;
 			skyPsoDesc.SampleDesc.Quality = 0;
-			skyPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			skyPsoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			skyPsoDesc.VS =
 			{
 				reinterpret_cast<BYTE*>(VS->GetBufferPointer()),

@@ -9,7 +9,7 @@ Details:
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 #include "Resource/SDxResourceManager.h"
 #include "Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h"
-#include <thread>
+
 
 //Link necessary d3d12 libraries
 #pragma comment(lib, "d3dcompiler.lib")
@@ -17,10 +17,9 @@ Details:
 #pragma comment(lib, "dxgi.lib")
 
 using namespace SakuraCore;
-
-
 namespace SGraphics
 {
+
 	class SakuraD3D12GraphicsManager : public SakuraGraphicsManagerBase
 	{
 	public:
@@ -48,12 +47,8 @@ namespace SGraphics
 		inline auto GetRtvCPU(int offset)
 		{
 			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvCPU;
-			if(offset < 2)
 				rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
 					->GetOrAllocDescriptorHeap("DefaultRtv")->GetCPUtDescriptorHandle(offset));
-			else
-				rtvCPU = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetResourceManager()
-					->GetOrAllocDescriptorHeap("DeferredRtv")->GetCPUtDescriptorHandle(offset-2));
 			return rtvCPU;
 		}
 	public:
@@ -128,7 +123,6 @@ namespace SGraphics
 		std::shared_ptr<SDx12DeviceInformation> mDeviceInformation;
 		std::shared_ptr<SDx12GraphicsStates> mGraphicsConfs;
 
-		//!
 		std::unique_ptr<SakuraFrameGraph> pFrameGraph;
 
 

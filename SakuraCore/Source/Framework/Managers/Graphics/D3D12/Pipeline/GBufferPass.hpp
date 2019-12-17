@@ -10,6 +10,7 @@ namespace SGraphics
 		SGBufferPass(ID3D12Device* device, bool bwriteDpeth)
 			:SDx12Pass(device), bWriteDepth(bwriteDpeth)
 		{
+
 		}
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources) override
 		{
@@ -73,6 +74,19 @@ namespace SGraphics
 				mDevice->CreateShaderResourceView(resource, &srvDesc, hDescriptor);
 				hDescriptor.Offset(1, mCbvSrvDescriptorSize);
 			}
+		}
+
+		virtual void Execute(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes
+			, ISRenderTarget** rtvs, size_t rtv_num,
+			size_t passSrvNumOnFrameRes)
+		{
+			for (size_t i = 0; i < rtv_num; i++)
+			{
+				cmdList->ClearRenderTargetView((*(rtvs + i))->GetRenderTargetHandle()->hCpu, 
+					(*(rtvs + i))->mProperties.mClearColor,
+					0, nullptr);
+			}
+			SDx12Pass::Execute(cmdList, dsv, frameRes, rtvs, rtv_num, passSrvNumOnFrameRes);
 		}
 
 		void BuildPSO()

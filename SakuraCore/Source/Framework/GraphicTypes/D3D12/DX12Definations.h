@@ -215,11 +215,22 @@ struct OpaqueMaterial
 
 struct SD3DTexture : public SGraphics::ISTexture
 {
+	SD3DTexture()
+	{
+
+	}
+	SD3DTexture(const std::string& name, ID3D12Resource* resource)
+	{
+		Name = name;
+		Resource.Attach(resource);
+	}
 	// Unique texture name for lookup
 	std::string Name;
 	std::wstring Filename;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> Resource = nullptr;
+	virtual SGraphics::SResourceHandle* GetResourceHandle()
+	{
+		return nullptr;
+	}
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadHeap = nullptr;
 };
 

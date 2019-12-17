@@ -1,4 +1,6 @@
 #include "SDx12Pass.hpp"
+#include "..\GraphicsInterface\ISRenderTarget.h"
+#include "..\GraphicsInterface\ISRenderResource.h"
 
 SGraphics::__dx12Pass::__dx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
 	const std::wstring& psPath, const std::string& psTarg,
@@ -67,7 +69,7 @@ void SGraphics::SDx12Pass::PushRenderItems(std::vector<SDxRenderItem*> renderIte
 	mRenderItems = renderItems;
 }
 
-void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes, size_t passSrvNumOnFrameRes, D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num)
+void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes, D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num, size_t passSrvNumOnFrameRes)
 {
 	cmdList->OMSetRenderTargets(rtv_num, rtvs, true, dsv);
 	// Set descriptor heaps:
@@ -93,9 +95,13 @@ void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DE
 	}
 }
 
-void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes, D3D12_CPU_DESCRIPTOR_HANDLE* rtvs, size_t rtv_num)
+void SGraphics::SDx12Pass::Execute(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes, 
+	ISRenderTarget** rts, size_t rtv_num, size_t passSrvNumOnFrameRes)
 {
-	this->Draw(cmdList, dsv, frameRes, 0, rtvs, rtv_num);
+	D3D12_CPU_DESCRIPTOR_HANDLE* rtvs = new D3D12_CPU_DESCRIPTOR_HANDLE[rtv_num];
+	for (size_t i = 0; i < rtv_num; i++)
+		rtvs[i] = rts[i]->GetRenderTargetHandle()->hCpu;
+	Draw(cmdList, dsv, frameRes, rtvs, rtv_num, passSrvNumOnFrameRes);
+	delete[] rtvs;
 }
-
 

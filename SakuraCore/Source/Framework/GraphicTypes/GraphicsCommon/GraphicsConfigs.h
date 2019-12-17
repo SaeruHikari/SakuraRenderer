@@ -5,17 +5,24 @@
 namespace SGraphics
 {
 	class SDx12Pass;
-	//class SakuraFrameGraph;
 }
+
+class ID3D12Resource;
+class ID3D12GraphicsCommandList;
+class D3D12_CPU_DESCRIPTOR_HANDLE;
+class D3D12_GPU_DESCRIPTOR_HANDLE;
 
 namespace SGraphics
 {
 #if defined(Sakura_D3D)
-	inline static SDx12Pass* PassTokenPtr = nullptr;
+	typedef SDx12Pass SRHIPass;
+	typedef ID3D12Resource SRHIResource;
+	typedef ID3D12GraphicsCommandList SCommandList;
+	typedef D3D12_CPU_DESCRIPTOR_HANDLE SResourceCPUHandle;
+	typedef D3D12_GPU_DESCRIPTOR_HANDLE SResourceGPUHandle;
 #elif defined(Sakura_Vulkan)
 	inline static SVulkanPass* PassTokenPtr = nullptr;
 #else
 	inline static void* PassTokenPtr = nullptr;
 #endif
-	//inline static std::unique_ptr<SakuraFrameGraph> pFrameGraph = nullptr;
 }

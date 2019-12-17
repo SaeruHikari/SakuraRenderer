@@ -35,6 +35,13 @@ namespace SGraphics
 			
 		}
 
+		virtual void Execute(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DESCRIPTOR_HANDLE* dsv, SFrameResource* frameRes,
+			size_t passSrvNumOnFrameRes, ISRenderTarget** rtvs, size_t rtv_num)
+		{
+			cmdList->ClearRenderTargetView((*(rtvs))->GetRenderTargetHandle()->hCpu, Colors::Black, 0, nullptr);
+			SDx12Pass::Execute(cmdList, dsv, frameRes, rtvs, rtv_num, passSrvNumOnFrameRes);
+		}
+
 		void BuildPSO()
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC gbufferPsoDesc;

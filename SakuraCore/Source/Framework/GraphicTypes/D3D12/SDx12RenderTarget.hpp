@@ -13,6 +13,8 @@ namespace SGraphics
 		~ISDx12RenderTarget() {};
 		virtual void OnResize(ID3D12Device* device, UINT ClientWidth, UINT ClientHeight) = 0;
 		virtual ID3D12Resource* Resource() = 0;
+		virtual SResourceHandle* GetResourceHandle() = 0;
+		virtual SResourceHandle* GetRenderTargetHandle(size_t num = 0) = 0;
 	protected:
 		bool Initialized = false;
 	};
@@ -43,7 +45,7 @@ namespace SGraphics
 		
 		void BuildDescriptors(D3D12_RESOURCE_DESC desc, ID3D12Device* md3dDevice,
 			SDescriptorHeap* rtv,
-			SDescriptorHeap* srv)
+			SDescriptorHeap* srv, SRHIResource* ResourceIn = nullptr)
 		{
 			// Init RT
 			CD3DX12_CLEAR_VALUE optClear(desc.Format, mProperties.mClearColor);
@@ -52,13 +54,20 @@ namespace SGraphics
 #else
 			optClear.DepthStencil.Depth = 1;
 #endif
-			ThrowIfFailed(md3dDevice->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				&optClear,
-				IID_PPV_ARGS(&mResource)));
+			if (ResourceIn == nullptr)
+			{
+				ThrowIfFailed(md3dDevice->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+					D3D12_HEAP_FLAG_NONE,
+					&desc,
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					&optClear,
+					IID_PPV_ARGS(&mResource)));
+			}
+			else 
+			{
+				mResource.Attach(ResourceIn);
+			}
 
 			// Create Cpu Rtv
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -79,7 +88,7 @@ namespace SGraphics
 
 		void BuildDescriptors(ID3D12Device* md3dDevice,
 			SDescriptorHeap* rtv,
-			SDescriptorHeap* srv)
+			SDescriptorHeap* srv, SRHIResource* ResourceIn = nullptr)
 		{
 			D3D12_RESOURCE_DESC texDesc;
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
@@ -94,9 +103,16 @@ namespace SGraphics
 			texDesc.SampleDesc.Quality = 0;
 			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-			BuildDescriptors(texDesc, md3dDevice, rtv, srv);
+			BuildDescriptors(texDesc, md3dDevice, rtv, srv, ResourceIn);
 		}
-
+		virtual SResourceHandle* GetResourceHandle() override
+		{
+			return &mSSrv;
+		}
+		virtual SResourceHandle* GetRenderTargetHandle(size_t num = 0) override
+		{
+			return &mSRtv;
+		}
 		virtual void OnResize(ID3D12Device* md3dDevice, UINT ClientWidth, UINT ClientHeight)
 		{
 			if (bScaledByViewport)
@@ -173,12 +189,10 @@ namespace SGraphics
 			mScissorRect = { 0, 0, (int)(mViewport.Width), (int)(mViewport.Height) };
 		}
 	public:
-		Microsoft::WRL::ComPtr<ID3D12Resource> GetResource()
+		ID3D12Resource* GetResource()
 		{
-			return mResource;
+			return mResource.Get();
 		}
-		Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
-
 		DescriptorHandleCouple mSRtv;
 		DescriptorHandleCouple mSSrv;
 
@@ -209,15 +223,7 @@ namespace SGraphics
 
 		virtual ID3D12Resource* Resource()
 		{
-			return mCubeMap.Get();
-		}
-		CD3DX12_GPU_DESCRIPTOR_HANDLE Srv()
-		{
-			return mSSrv.hGpu;
-		}
-		CD3DX12_CPU_DESCRIPTOR_HANDLE Rtv(int faceIndex)
-		{
-			return mSRtv[faceIndex].hCpu;
+			return mResource.Get();
 		}
 
 		D3D12_VIEWPORT Viewport()const { return mViewport; }
@@ -226,7 +232,7 @@ namespace SGraphics
 		void BuildDescriptors(
 			ID3D12Device* device,
 			SDescriptorHeap* rtv,
-			SDescriptorHeap* srv)
+			SDescriptorHeap* srv, SRHIResource* resource = nullptr)
 		{
 			if (!Initialized)
 			{
@@ -237,7 +243,7 @@ namespace SGraphics
 				Initialized = true;
 			}
 			//  Create the descriptors
-			BuildDescriptors(device);
+			BuildDescriptors(device, resource);
 		}
 
 		void OnResize(ID3D12Device* device, UINT newWidth, UINT newHeight)
@@ -249,6 +255,14 @@ namespace SGraphics
 			}
 		}
 	public:
+		virtual SResourceHandle* GetResourceHandle() override
+		{
+			return &mSSrv;
+		}
+		virtual SResourceHandle* GetRenderTargetHandle(size_t num = 0) override
+		{
+			return &mSRtv[num];
+		}
 		void ClearRenderTarget(ID3D12GraphicsCommandList* cmdList)
 		{
 			cmdList->RSSetViewports(1, &mViewport);
@@ -259,9 +273,9 @@ namespace SGraphics
 		}
 
 	private:
-		void BuildDescriptors(ID3D12Device* device)
+		void BuildDescriptors(ID3D12Device* device, SRHIResource* resource = nullptr)
 		{
-			BuildResource(device);
+			BuildResource(device, resource);
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvDesc.Format = mFormat;
@@ -271,7 +285,7 @@ namespace SGraphics
 			srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
 			// Create SRV to the entire cubemap resource.
-			device->CreateShaderResourceView(mCubeMap.Get(), &srvDesc, mSSrv.hCpu);
+			device->CreateShaderResourceView(mResource.Get(), &srvDesc, mSSrv.hCpu);
 
 			// Create RTV to each cube face.
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
@@ -287,10 +301,10 @@ namespace SGraphics
 				// Render target to ith element.
 				rtvDesc.Texture2DArray.FirstArraySlice = i;
 				// Create RTV to ith cubemap face.
-				device->CreateRenderTargetView(mCubeMap.Get(), &rtvDesc, mSRtv[i].hCpu);
+				device->CreateRenderTargetView(mResource.Get(), &rtvDesc, mSRtv[i].hCpu);
 			}
 		}
-		void BuildResource(ID3D12Device* device)
+		void BuildResource(ID3D12Device* device, SRHIResource* resource = nullptr)
 		{
 			D3D12_RESOURCE_DESC texDesc;
 			ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
@@ -307,13 +321,20 @@ namespace SGraphics
 			texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			
 			CD3DX12_CLEAR_VALUE optClear(mFormat, mClearColor);
-			ThrowIfFailed(device->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&texDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				&optClear,
-				IID_PPV_ARGS(&mCubeMap)));
+			if (resource == nullptr)
+			{
+				ThrowIfFailed(device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+					D3D12_HEAP_FLAG_NONE,
+					&texDesc,
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					&optClear,
+					IID_PPV_ARGS(&mResource)));
+			}
+			else
+			{
+				mResource.Attach(resource);
+			}
 		}
 
 	private:
@@ -323,6 +344,5 @@ namespace SGraphics
 		DXGI_FORMAT mFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		DescriptorHandleCouple mSRtv[6];
 		DescriptorHandleCouple mSSrv;
-		Microsoft::WRL::ComPtr<ID3D12Resource> mCubeMap = nullptr;
 	};
 }

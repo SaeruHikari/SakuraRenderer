@@ -189,12 +189,12 @@ namespace SGraphics
 			};
 			inline static const std::vector<std::wstring> texFilenames =
 			{
-				L"Textures/FlameThrower_ALB.dds",
-				L"Textures/FlameThrower_RMA.dds",
-				L"Textures/FlameThrower_RMA.dds",
-				L"Textures/FlameThrower_NRM.dds",
-				L"Textures/grasscube1024.dds",
-				L"Textures/venice_sunset_4k.hdr"
+				L"Resources/Textures/FlameThrower_ALB.dds",
+				L"Resources/Textures/FlameThrower_RMA.dds",
+				L"Resources/Textures/FlameThrower_RMA.dds",
+				L"Resources/Textures/FlameThrower_NRM.dds",
+				L"Resources/Textures/grasscube1024.dds",
+				L"Resources/Textures/venice_sunset_4k.hdr"
 			};
 		};
 		struct InitPasses
@@ -215,10 +215,10 @@ namespace SGraphics
 		};
 		struct Meshes
 		{
-			inline static const std::string GunPath = "Models/gun.fbx";
-			inline static const std::string FlamePath = "Models/FlameThrower.fbx";
-			inline static const std::string UrnPath = "Models/Urn.fbx";
-			inline static const std::string GuitarPath = "Models/Guitar.fbx";
+			inline static const std::string GunPath = "Resources/Models/gun.fbx";
+			inline static const std::string FlamePath = "Resources/Models/FlameThrower.fbx";
+			inline static const std::string UrnPath = "Resources/Models/Urn.fbx";
+			inline static const std::string GuitarPath = "Resources/Models/Guitar.fbx";
 			inline static std::string CurrPath = FlamePath;
 		};
 		struct RT2Ds
@@ -267,10 +267,9 @@ namespace SGraphics
 		inline static RT3Ds rt3ds{};
 
 		// Helper Containers
-		std::vector<ID3D12Resource*> mDeferredSrvResources;
-		std::vector<ID3D12Resource*> mGBufferSrvResources;
+		std::vector<std::string> GBufferPassResources;
+
 		std::vector<ID3D12Resource*> mSsaoSrvResources;
-		std::vector<ID3D12Resource*> mTaaResources;
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 
@@ -284,8 +283,6 @@ namespace SGraphics
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;
 		inline static const float TAA_JITTER_DISTANCE = 1.f;
-
-
 	};
 
 }

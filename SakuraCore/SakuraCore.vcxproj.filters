@@ -165,12 +165,6 @@
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\UploadVertices.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISGPUResource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDx12Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -187,6 +181,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\FrameGraph\SFG_ResourceNode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderResource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\FrameGraph\SFG_ResourceHandle.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -251,5 +254,11 @@
     <ClCompile Include="Source\Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

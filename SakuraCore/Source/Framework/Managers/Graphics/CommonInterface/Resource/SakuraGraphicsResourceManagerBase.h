@@ -5,8 +5,6 @@
 #include "Framework/GraphicTypes/GraphicsInterface/ISRenderTarget.h"
 #include "Framework/GraphicTypes/GraphicsInterface/ISTexture.h"
 
-
-
 namespace SGraphics
 {
 	class SakuraGraphicsResourceManagerBase : public SakuraCore::IRuntimeModule
@@ -28,12 +26,37 @@ namespace SGraphics
 		// Tick function, be called per frame.
 		virtual void Tick(double deltaTime) = 0;
 		//
-		virtual bool LoadTextures(std::wstring Filename, std::string registName) = 0;
+		template<typename TextureClass, 
+			typename std::enable_if<std::is_convertible<TextureClass*, ISTexture*>::value>::type * = nullptr>
+		__forceinline TextureClass* LoadTextures(std::wstring Filename, std::string textName)
+		{
+			return (TextureClass*)LoadTexture(Filename, textName);
+		}
+		virtual ISTexture* LoadTexture(std::wstring Filename, std::string textName) = 0;
+		virtual ISRenderTarget* CreateNamedRenderTarget(std::string resgistName, 
+			ISRenderTargetProperties rtProp, std::string targetSrvHeap, std::string targetRtvHeap, SRHIResource* resource = nullptr) = 0;
+		virtual ISRenderTarget* CreateNamedRenderTarget(std::string registName,
+			ISRenderTargetProperties rtProp, SRHIResource* resource, SResourceHandle srvHandle, SResourceHandle rtvHandle) = 0;
+		virtual SResourceHandle* GetResourceHandle(std::string resourceName)
+		{
+			if (mResources.find(resourceName) != mResources.end())
+			{
+				return mResources[resourceName]->GetResourceHandle();
+			}
+		}
 		
-		virtual ISTexture* GetTexture(std::string registName) = 0;
-		virtual int RegistNamedRenderTarget(std::string resgistName, 
-			ISRenderTargetProperties rtProp, std::string targetSrvHeap = "NULL", std::string targetRtvHeap = "NULL") = 0;
-		virtual ISRenderTarget* GetRenderTarget(std::string registName) = 0;
+		virtual SResourceHandle* GetRenderTargetHandle(std::string rtName)
+		{
+			if (mResources.find(rtName) != mResources.end())
+			{
+#if defined(DEBUG) || defined(_DEBUG)
+				return dynamic_cast<ISRenderTarget*>(mResources[rtName].get())->GetRenderTargetHandle();
+#else
+				return ((ISRenderTarget*)mResources[rtName].get())->GetRenderTargetHandle();
+#endif
+			}
+		}
+	protected:
+		std::unordered_map<std::string, std::unique_ptr<ISRenderResource>> mResources;
 	};
-
 }
