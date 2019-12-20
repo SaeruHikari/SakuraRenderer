@@ -78,7 +78,7 @@ namespace SGraphics
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC deferredPsoDesc;
 			// PSO for opaque objects.
 			ZeroMemory(&deferredPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-			deferredPsoDesc.InputLayout = { mInputLayout.data(), mInputLayout.size() };
+			deferredPsoDesc.InputLayout = { mInputLayout.data(), ((UINT)mInputLayout.size()) };
 			deferredPsoDesc.pRootSignature = mRootSignature.Get();
 			deferredPsoDesc.VS =
 			{

@@ -77,9 +77,7 @@ namespace SGraphics
 		inline void FlushCommandQueue();
 		inline auto GetQueue() { return mCommandQueue.Get(); }
 		inline auto GetAlloc() { return mDirectCmdListAlloc.Get(); }
-
 	protected:
-
 		// D3D12 methods. 
 		bool InitDirect3D12();
 		// Create Descriptor Heaps for RenderTargetView & Depth/Stencil View

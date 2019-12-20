@@ -5,7 +5,7 @@
 
 #include "SakuraCore.h"
 #if defined(DEBUG) || defined(_DEBUG)
-#pragma comment(lib, "SakuraCore_dbg.lib")
+#pragma comment(lib, "x86/Debug/SakuraCore_dbg.lib")
 #else
 #pragma comment(lib, "SakuraCore.lib")
 #endif

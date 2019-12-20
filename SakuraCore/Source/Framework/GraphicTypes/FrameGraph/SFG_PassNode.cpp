@@ -3,6 +3,19 @@
 #include "..\D3D12\SDx12Pass.hpp"
 #include "..\GraphicsInterface\ISRenderTarget.h"
 
+SGraphics::SFG_ResourceHandle SGraphics::SFG_PassNode::GetOutput(const std::string& resourceName)
+{
+	for (size_t i = 0; i < OutputResources.size(); i++)
+	{
+		if (OutputResources[i].name == resourceName)
+			return OutputResources[i];
+	}
+	std::string msg = "PASS: " + mName + "DO NOT HAVE output resource called" + resourceName;
+	assert(0 && msg.c_str());
+	SFG_ResourceHandle handle;
+	return handle;
+}
+
 void SGraphics::SFG_PassNode::Setup()
 {
 	if (InputResources.size() > 0)
@@ -11,9 +24,13 @@ void SGraphics::SFG_PassNode::Setup()
 		resources.resize(InputResources.size());
 		for (size_t i = 0; i < InputResources.size(); i++)
 		{
-			auto resourceNode = pFrameGraph->GetNamedRenderResourceNode(InputResources[i].name);
-			resourceNode->AddRef(this);
-			resources[i] = resourceNode->GetResource()->GetGPUResource();
+			auto node = 
+				pFrameGraph->GetNamedRenderResourceNode(InputResources[i]);
+#if defined(DEBUG) || defined(_DEBUG)
+			std::string err = "writer: " + InputResources[i].writer + " \nresource:" + InputResources[i].name + " NOT EXISTED";
+			assert(node != nullptr && err.c_str());
+#endif
+			resources[i] = node->GetResource()->GetGPUResource();
 		}
 		GetPass()->Initialize(resources);
 	}
@@ -55,39 +72,12 @@ void SGraphics::SFG_PassNode::Execute(SCommandList* cmdList, SResourceCPUHandle*
 		&backbuffer, 1);
 }
 
-void SGraphics::SFG_PassNode::ConfirmResourceInOut(const std::vector<std::string>& ResourcesIn, const std::vector<std::string>& ResourceOut)
+void SGraphics::SFG_PassNode::ConfirmInput_Internal(const std::vector<std::string>& ResourcesIn)
 {
 	InputResources.resize(ResourcesIn.size());
 	for (size_t i = 0; i < ResourcesIn.size(); i++)
 	{
 		InputResources[i].name = ResourcesIn[i];
-		InputResources[i].version = 0;
-	}
-	OutputResources.resize(ResourceOut.size());
-	for (size_t i = 0; i < ResourceOut.size(); i++)
-	{
-		OutputResources[i].name = ResourceOut[i];
-		OutputResources[i].version = 0;
-	}
-}
-
-void SGraphics::SFG_PassNode::ConfirmResourceOut(const std::vector<std::string>& ResourcesOut)
-{
-	OutputResources.resize(ResourcesOut.size());
-	for (size_t i = 0; i < ResourcesOut.size(); i++)
-	{
-		OutputResources[i].name = ResourcesOut[i];
-		OutputResources[i].version = 0;
-	}
-}
-
-void SGraphics::SFG_PassNode::ConfirmResourceInOut(const std::vector<std::string>& ResourcesIn)
-{
-	InputResources.resize(ResourcesIn.size());
-	for (size_t i = 0; i < ResourcesIn.size(); i++)
-	{
-		InputResources[i].name = ResourcesIn[i];
-		InputResources[i].version = 0;
 	}
 }
 

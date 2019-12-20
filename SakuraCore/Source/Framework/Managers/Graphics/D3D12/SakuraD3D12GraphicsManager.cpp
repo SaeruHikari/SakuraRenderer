@@ -33,7 +33,6 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
 	mCurrBackBuffer = 0;
-
 	//Create the render target view
 	//CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle = GetRtvCPU(0);
@@ -80,7 +79,7 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 		&depthStencilDesc,
 		D3D12_RESOURCE_STATE_COMMON,
 		&optClear,
-		IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
+		IID_PPV_ARGS(&mDepthStencilBuffer)));
 
 
 	//Create descriptor to mip level 0 of entire resource using the format of the resource
@@ -146,6 +145,7 @@ void SGraphics::SakuraD3D12GraphicsManager::OnResize(UINT Width, UINT Height)
 
 	mScissorRect = { 0, 0, mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight };
 }
+
 
 bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 {
@@ -215,7 +215,7 @@ bool SGraphics::SakuraD3D12GraphicsManager::InitDirect3D12()
 	CreateCommandObjects();
 	CreateSwapChain();
 	CreateRtvAndDsvDescriptorHeaps();
-
+	SakuraD3D12GraphicsManager::OnResize(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight);
 	return true;
 }
 
@@ -294,7 +294,7 @@ void SGraphics::SakuraD3D12GraphicsManager::FlushCommandQueue()
 	// Wait until the GPU has completed commands up to this fence point.
 	if (mFence->fence->GetCompletedValue() < mFence->currentFence)
 	{
-		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		HANDLE eventHandle = CreateEventEx(nullptr, NULL, false, EVENT_ALL_ACCESS);
 
 		// Fire event when GPU hits current Fence.
 		ThrowIfFailed(mFence->fence->SetEventOnCompletion(mFence->currentFence, eventHandle));

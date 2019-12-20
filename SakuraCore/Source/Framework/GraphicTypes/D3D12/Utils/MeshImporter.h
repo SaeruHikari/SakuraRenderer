@@ -11,12 +11,23 @@
 #include <chrono>
 
 //Link necessary d3d12 libraries
+#if defined(_X86_)
 #if defined(DEBUG) || defined(_DEBUG)
-#pragma comment(lib, "assimp-vc142-mtd.lib")
+#pragma comment(lib, "x86/Debug/assimp-vc142-mtd.lib")
+#pragma comment(lib, "x86/Debug/tinyplyd.lib")
 #else
-#pragma comment(lib, "assimp-vc142-mt.lib")
+#pragma comment(lib, "x86/Release/assimp-vc142-mt.lib")
+#pragma comment(lib, "x86/Release/tinyply.lib")
 #endif
-#pragma comment(lib, "tinyplyd.lib")
+#elif defined(_AMD64_)
+#pragma comment(lib, "x64/Debug/assimp-vc142-mtd.lib")
+#pragma comment(lib, "x64/Debug/tinyplyd64.lib")
+#else
+#pragma comment(lib, "x64/Release/assimp64-vc142-mt.lib")
+#pragma comment(lib, "x64/Release/tinyply64.lib")
+#endif
+
+
 
 struct StandardVertex;
 

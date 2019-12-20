@@ -15,6 +15,7 @@ namespace SGraphics
 	{
 		virtual SRHIResource* GetGPUResource() = 0;
 		virtual SResourceHandle* GetResourceHandle() = 0;
+		std::string lastModified = "NULL";
 	};
 
 }

@@ -10,6 +10,7 @@ Details:
 #include "../../../GraphicTypes/D3D12/SD3DCamera.h"
 #include "Framework/GraphicTypes/D3D12/SDx12RenderTarget.hpp"
 #include "Resource/SDxResourceManager.h"
+#include "../../../GraphicTypes/Debugger/DirectX/SDx12ImGuiDebugger.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -132,6 +133,9 @@ namespace SGraphics
 		int CBIndex = 0;
 		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
 		std::unordered_map<std::string, OpaqueMaterial*> mMaterials;
+
+		std::unique_ptr<SDx12ImGuiDebugger> mImGuiDebugger;
+
 		// List of all the render items
 		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
 		// Render items divided by PSO
@@ -168,6 +172,7 @@ namespace SGraphics
 			inline static const std::string CaptureSrvName = "CaptureSrv";
 			inline static const std::string DeferredSrvName = "DeferredSrv";
 			inline static const std::string ScreenEfxSrvName = "ScreenEfxSrv";
+			inline static const std::string ImGuiSrvName = "ImGuiSrv";
 		};
 		struct RTVs
 		{
@@ -269,7 +274,6 @@ namespace SGraphics
 		// Helper Containers
 		std::vector<std::string> GBufferPassResources;
 
-		std::vector<ID3D12Resource*> mSsaoSrvResources;
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 

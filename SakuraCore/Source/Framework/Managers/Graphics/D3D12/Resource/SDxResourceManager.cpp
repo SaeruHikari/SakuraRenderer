@@ -53,14 +53,6 @@ SGraphics::SDescriptorHeap* SGraphics::SDxResourceManager::GetOrAllocDescriptorH
 	else if(descriptorSize > 0)
 	{
 		desc.NumDescriptors = 1000;
-		if (descriptorSize == mDeviceInformation->cbvSrvUavDescriptorSize)
-			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		else if (descriptorSize == mDeviceInformation->dsvDescriptorSize)
-			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		else if (descriptorSize == mDeviceInformation->rtvDescriptorSize)
-			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		else return nullptr;
-		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		mDescriptorHeaps[name] = std::make_unique<SDescriptorHeap>(md3dDevice.Get(), descriptorSize, desc);
 		return mDescriptorHeaps[name].get();
 	}
@@ -101,6 +93,9 @@ SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarge
 	ISRenderTargetProperties rtProp, 
 	std::string targetRtvHeap, std::string targetSrvHeap, SRHIResource* resource)
 {
+	D3D12_DESCRIPTOR_HEAP_DESC rtDesc, srDesc;
+	rtDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	srDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	switch (rtProp.rtType)
 	{
 	case ERenderTargetTypes::E_RT2D:
@@ -108,8 +103,8 @@ SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarge
 		auto rt2d = std::make_unique<SDx12RenderTarget2D>(rtProp.mWidth, rtProp.mHeight,
 			rtProp, rtProp.bScaleWithViewport);
 		rt2d->BuildDescriptors(md3dDevice.Get(),
-			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
-			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize),
+			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize, rtDesc),
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize, srDesc),
 			resource);
 		mResources[registName] = std::move(rt2d);
 		return (ISRenderTarget*)mResources[registName].get();
@@ -119,8 +114,8 @@ SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarge
 		auto rt3d = std::make_unique<SDx12RenderTargetCube>(
 			rtProp.mWidth, rtProp.mHeight, rtProp.mRtvFormat);
 		rt3d->BuildDescriptors(md3dDevice.Get(),
-			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize),
-			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize),
+			GetOrAllocDescriptorHeap(targetRtvHeap, mDeviceInformation->rtvDescriptorSize, rtDesc),
+			GetOrAllocDescriptorHeap(targetSrvHeap, mDeviceInformation->cbvSrvUavDescriptorSize, srDesc),
 			resource);
 		mResources[registName] = std::move(rt3d);
 		return (ISRenderTarget*)mResources[registName].get();

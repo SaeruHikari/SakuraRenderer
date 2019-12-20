@@ -57,3 +57,19 @@ extern "C"
 	///</summary>
 	SAKURACORE_API void __stdcall SwitchSGraphicsManagerVersion(UINT mangerMask);
 }
+
+extern "C"
+{
+	///<summary>
+	/// Run with windows default msg loop. 
+	///</summary>
+	SAKURACORE_API int __stdcall Run();
+}
+
+extern "C"
+{
+	///<summary>
+	/// Run with windows default msg loop. 
+	///</summary>
+	SAKURACORE_API void __stdcall MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+}

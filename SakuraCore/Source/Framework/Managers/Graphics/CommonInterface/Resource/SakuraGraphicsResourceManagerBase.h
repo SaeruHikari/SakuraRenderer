@@ -45,6 +45,14 @@ namespace SGraphics
 			}
 		}
 		
+		__forceinline virtual ISRenderResource* GetNamedResource(const std::string& name)
+		{
+			if (mResources.find(name) != mResources.end())
+				return mResources[name].get();
+			else
+				return nullptr;
+		}
+
 		virtual SResourceHandle* GetRenderTargetHandle(std::string rtName)
 		{
 			if (mResources.find(rtName) != mResources.end())

@@ -10,10 +10,11 @@ Details:              A DAG that clearly knows global pass and resource usage.
 #include "Framework/GraphicTypes/D3D12/SDx12Pass.hpp"
 #include "Framework/GraphicTypes/FrameGraph/SFG_PassNode.h"
 #include "SFG_ResourceNode.h"
+#include "SFG_ResourceHandle.h"
+#include "..\..\Managers\Graphics\CommonInterface\Resource\SakuraGraphicsResourceManagerBase.h"
 
 namespace SGraphics
 {
-	class SakuraGraphicsResourceManagerBase;
 	class ISRenderTarget;
 }
 
@@ -27,6 +28,7 @@ namespace SGraphics
 	//     Compile: Construct DAG
 	class SakuraFrameGraph : SImplements SakuraCore::IRuntimeModule
 	{
+		friend class SDx12ImGuiDebugger;
 	public:
 		SakuraFrameGraph(SakuraGraphicsResourceManagerBase* resourceManager)
 			:IRuntimeModule() 
@@ -51,7 +53,8 @@ namespace SGraphics
 		virtual void Execute(SCommandList* cmdList, SResourceCPUHandle* dsv, SResourceCPUHandle* backbuffer, SFrameResource* frameResource);
 	private:
 		std::unordered_map<std::string, std::unique_ptr<SFG_PassNode>> mNamedPassNodes;
-		std::unordered_map<std::string, std::unique_ptr<SFG_ResourceNode>> mNamedResourceNodes;
+		std::unordered_map<SFG_ResourceHandle, std::unique_ptr<SFG_ResourceNode>> mNamedResourceNodes;
+		std::vector<SFG_PassNode*> RootNodes;
 		inline static SakuraGraphicsResourceManagerBase* pGraphicsResourceManager = nullptr;
 
 	public:
@@ -70,7 +73,7 @@ namespace SGraphics
 			else return nullptr;
 		}
 
-		__forceinline SFG_ResourceNode* GetNamedRenderResourceNode(const std::string& registName)
+		__forceinline SFG_ResourceNode* GetNamedRenderResourceNode(const SFG_ResourceHandle& registName)
 		{
 			if (mNamedResourceNodes.find(registName) != mNamedResourceNodes.end())
 				return mNamedResourceNodes[registName].get();
@@ -79,8 +82,10 @@ namespace SGraphics
 
 		__forceinline ISRenderResource* GetNamedRenderResource(const std::string& registName)
 		{
-			if (mNamedResourceNodes.find(registName) != mNamedResourceNodes.end())
-				return mNamedResourceNodes[registName]->GetResource();
+			SFG_ResourceHandle handle;
+			handle.name = registName;
+			if (mNamedResourceNodes.find(handle) != mNamedResourceNodes.end())
+				return mNamedResourceNodes[handle]->GetResource();
 			else return nullptr;
 		}
 	public:
@@ -110,17 +115,17 @@ namespace SGraphics
 		// Register DAG Node for a Pass.
 		template<typename PassClass, typename... Params,
 			typename std::enable_if<std::is_convertible<PassClass*, SRHIPass*>::value>::type * = nullptr>
-		__forceinline PassClass* RegistNamedPassNode(const std::string& registName, Params... params)
+		__forceinline SFG_PassNode* RegistNamedPassNode(const std::string& registName, Params... params)
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			if (mNamedPassNodes.find(registName) != mNamedPassNodes.end())
-				return (PassClass*)(mNamedPassNodes[registName]->GetPass());
+				return (SFG_PassNode*)(mNamedPassNodes[registName]).get();
 			else
 #endif
 			{
 				mNamedPassNodes[registName] = std::make_unique<SFG_PassNode>(this, registName);
 				mNamedPassNodes[registName]->Create<PassClass>(params...);
-				return (PassClass*)mNamedPassNodes[registName]->GetPass();
+				return (SFG_PassNode*)(mNamedPassNodes[registName].get());
 			}
 		}
 
@@ -129,17 +134,19 @@ namespace SGraphics
 			typename std::enable_if<std::is_convertible<ResourceClass*, ISTexture*>::value>::type * = nullptr>
 		__forceinline ResourceClass* RegistNamedResourceNode(const std::wstring& fileName, const std::string& registName, SRHIResource* resourceIn = nullptr)
 		{
+			SFG_ResourceHandle handle;
+			handle.name = registName;
 			ISRenderResource* resource = nullptr;
 			if (resourceIn == nullptr)
 				resource = pGraphicsResourceManager->LoadTexture(fileName, registName);
 			else
 				resource = new SD3DTexture(registName, resourceIn);
 			auto ResourceNode = std::make_unique<SFG_ResourceNode>(this, resource);
-			mNamedResourceNodes[registName] = std::move(ResourceNode);
+			mNamedResourceNodes[handle] = std::move(ResourceNode);
 #if defined(DEBUG) || defined(_DEBUG)
-			return dynamic_cast<ResourceClass*>(mNamedResourceNodes[registName]->GetResource());
+			return dynamic_cast<ResourceClass*>(mNamedResourceNodes[handle]->GetResource());
 #else
-			return (ResourceClass*)mNamedResourceNodes[registName]->GetResource();
+			return (ResourceClass*)mNamedResourceNodes[handle]->GetResource();
 #endif
 		}
 
@@ -149,24 +156,30 @@ namespace SGraphics
 			typename std::enable_if<std::is_convertible<ResourceClass*, ISRenderTarget*>::value>::type * = nullptr>
 		__forceinline ResourceClass* RegistNamedResourceNode(const std::string& registName, Params... params)
 		{
-			if (mNamedResourceNodes.find(registName) != mNamedResourceNodes.end())
+			SFG_ResourceHandle handle;
+			handle.name = registName;
+			if (mNamedResourceNodes.find(handle) != mNamedResourceNodes.end())
 #if defined(DEBUG) || defined(_DEBUG)
-				return dynamic_cast<ResourceClass*>(mNamedResourceNodes[registName]->GetResource());
+				return dynamic_cast<ResourceClass*>(mNamedResourceNodes[handle]->GetResource());
 #else
-				return (ResourceClass*)(mNamedResourceNodes[registName]->GetResource());
+				return (ResourceClass*)(mNamedResourceNodes[handle]->GetResource());
 #endif
 			else
 			{
 				auto resource = pGraphicsResourceManager->CreateNamedRenderTarget(registName, params...);
 				auto ResourceNode = std::make_unique<SFG_ResourceNode>(this, resource);
-				mNamedResourceNodes[registName] = std::move(ResourceNode);
+				mNamedResourceNodes[handle] = std::move(ResourceNode);
 #if defined(DEBUG) || defined(_DEBUG)
-				return dynamic_cast<ResourceClass*>(mNamedResourceNodes[registName]->GetResource());
+				return dynamic_cast<ResourceClass*>(mNamedResourceNodes[handle]->GetResource());
 #else
-				return (ResourceClass*)mNamedResourceNodes[registName]->GetResource();
+				return (ResourceClass*)mNamedResourceNodes[handle]->GetResource();
 #endif
 			}
 		}
 
+		protected:
+			void RegistNewVersionResourceNode(const std::string& resource, const std::string& writer);
+			void RegistNewVersionResourceNode(const SFG_ResourceHandle& newhandle);
+			bool Compile(SFG_PassNode* nodeToCompile);
 	};
 }

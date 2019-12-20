@@ -48,7 +48,7 @@ namespace SGraphics
 
 			// PSO for opaque objects.
 			ZeroMemory(&gbufferPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-			gbufferPsoDesc.InputLayout = { mInputLayout.data(), mInputLayout.size() };
+			gbufferPsoDesc.InputLayout = { mInputLayout.data(), ((UINT)mInputLayout.size()) };
 			gbufferPsoDesc.pRootSignature = mRootSignature.Get();
 			gbufferPsoDesc.VS =
 			{

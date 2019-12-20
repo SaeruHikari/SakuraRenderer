@@ -68,7 +68,7 @@ namespace SGraphics
 		void BuildPSO()
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC dbgPsoDesc = {};
-			dbgPsoDesc.InputLayout = { mInputLayout.data(), mInputLayout.size() };
+			dbgPsoDesc.InputLayout = { mInputLayout.data(), ((UINT)mInputLayout.size()) };
 			dbgPsoDesc.pRootSignature = mRootSignature.Get();
 			dbgPsoDesc.VS =
 			{

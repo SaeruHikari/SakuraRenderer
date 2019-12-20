@@ -4,7 +4,7 @@
 
 SAKURACORE_API bool __stdcall CreateSakuraCore(UINT GraphicsAPIMask)
 {
-	return (SakuraCore::SCore::CreateSakuraCore(CORE_GRAPHICS_API_CONF(GraphicsAPIMask)) != nullptr);
+	return (SakuraCore::SCore::CreateSakuraCore(CORE_GRAPHICS_API_CONF(GraphicsAPIMask)) != nullptr);  
 }
 
 SAKURACORE_API bool __stdcall InitSakuraGraphicsCore(HWND hwnd, UINT width, UINT height)
@@ -25,5 +25,13 @@ SAKURACORE_API void __stdcall MsgSakuraCore(UINT coreMask, UINT MSG, UINT param0
 	}
 }
 
+SAKURACORE_API int __stdcall Run()
+{
+	return SakuraCore::SCore::GetSakuraCore()->Run();
+}
 
+SAKURACORE_API void __stdcall MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	return SakuraCore::SCore::GetSakuraCore()->MsgProc(hwnd, msg, wParam, lParam);
+}
 

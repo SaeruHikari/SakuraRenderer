@@ -95,7 +95,7 @@ namespace SGraphics
 
 			// PSO for opaque objects.
 			ZeroMemory(&ssaoPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-			ssaoPsoDesc.InputLayout = { mInputLayout.data(), mInputLayout.size() };
+			ssaoPsoDesc.InputLayout = { mInputLayout.data(), ((UINT)mInputLayout.size()) };
 			ssaoPsoDesc.pRootSignature = mRootSignature.Get();
 			ssaoPsoDesc.VS =
 			{

@@ -13,6 +13,7 @@ namespace SGraphics
 {
 	class SFG_ResourceNode : SImplements SakuraCore::ISSilentObject
 	{
+		friend class SGraphics::SakuraFrameGraph;
 	public:
 		SFG_ResourceNode(SakuraFrameGraph* frameGraph, ISRenderResource* resource)
 			:ISSilentObject()
@@ -20,20 +21,20 @@ namespace SGraphics
 			pFrameGraph = frameGraph;
 			mResource = resource;
 		}
-		inline void AddRef(SFG_PassNode* _writer)
-		{
-			writers.push_back(_writer);
-			refs++;
-		}
 		__forceinline ISRenderResource* GetResource()
 		{
 			return mResource;
 		}
+		std::unique_ptr<SFG_ResourceNode> Duplicate()
+		{
+			auto copy = std::make_unique<SFG_ResourceNode>(pFrameGraph, mResource);
+			copy->mName = mName;
+			return copy;
+		}
 	private:
 		size_t refs = 0;
 		std::string mName = "NULL";
-		std::vector<SFG_PassNode*> writers;
-		bool bValid = true;
+		SFG_PassNode* writer = nullptr;
 		SGraphics::ISRenderResource* mResource = nullptr;
 		SakuraFrameGraph* pFrameGraph = nullptr;
 	};
