@@ -12,12 +12,16 @@ namespace SakuraCore
 	{
 	public:
 		SSceneManager();
-		SIndex RegistMesh(SStaticMesh* data, std::string matname = "NULL");
+		SIndex RegistMesh(SStaticMesh* data, std::string matname = "NULL", ERenderLayer renderLayer = E_Opaque);
 		// Material need to be registed in graphics layer.
-		SIndex RegistOpaqueMat(SMaterial* material, std::string name);
+		SMaterial* RegistOpaqueMat(const std::string& name, OpaqueMaterial& opaqueMat);
 
 		SRenderItem* GetRenderItem(SIndex index);
 		SMaterial* GetMaterial(std::string Name);
+		__forceinline SRenderScene* GetRenderScene()
+		{
+			return renderScene.get();
+		}
 		virtual bool Initialize()
 		{
 			return true;

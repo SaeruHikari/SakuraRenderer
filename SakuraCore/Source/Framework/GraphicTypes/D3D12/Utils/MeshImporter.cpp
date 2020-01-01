@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Common/HikaUtils/HikaCommonUtils/HikaCommonUtil.h"
 #include <DirectXMath.h>
+#include "../../../Core/Nodes/SakuraSceneNode.hpp"
 using namespace std;
 using namespace HikaD3DUtils;
 using namespace tinyply;
@@ -57,7 +58,16 @@ std::unique_ptr<Dx12MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device,
 	else if (FileForm == ESupportFileForm::ASSIMP_SUPPORTFILE)
 	{
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(FilePath, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+		importer.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
+		// Cannot remove pivot points because the static mesh will be in the wrong place
+		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+
+		const aiScene* scene = importer.ReadFile(FilePath,
+			aiProcess_Triangulate | aiProcess_CalcTangentSpace | 
+			 aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords|
+			aiProcess_TransformUVCoords | aiProcess_FindInstances | aiProcess_ValidateDataStructure|
+			aiProcess_OptimizeMeshes | 0);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -115,7 +125,6 @@ std::unique_ptr<Dx12MeshGeometry> MeshImporter::ImportMesh(ID3D12Device* device,
 	
 	return geo;
 }
-
 
 void HikaD3DUtils::MeshImporter::processNode(aiNode* node, const aiScene* scene, 
 		std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices)

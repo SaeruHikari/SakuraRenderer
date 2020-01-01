@@ -74,29 +74,29 @@ namespace SScene
 		virtual void SetScale(const SakuraMath::SVector&& scale) { NodeTransform.Scale = scale; }
 
 		// returns nullptr if not found.
-		virtual std::shared_ptr<SakuraSceneNode> GetChild(SGuid id) 
+		virtual SakuraSceneNode* GetChild(SGuid id)
 		{ 
 			for (size_t i = 0; i < ChildNodes.size(); i++)
 			{
 				if (ChildNodes[i]->ID == id)
-					return ChildNodes[i];
+					return ChildNodes[i].get();
 			}
 			return nullptr;
 		}
-		virtual std::shared_ptr<SakuraSceneNode> GetChild(size_t index)
+		virtual SakuraSceneNode* GetChild(size_t index)
 		{
-			return ChildNodes[index];
+			return ChildNodes[index].get();
 		}
 		virtual size_t GetChildNum() { return ChildNodes.size(); }
 		virtual SakuraSceneNode* GetParent() { return parentNode; }
 
 		// If a child with same id exists already, return false.
-		virtual bool Attach(std::shared_ptr<SakuraSceneNode> child)
+		virtual bool Attach(SakuraSceneNode* child)
 		{
 			SGuid id = child->GetID();
 			if (GetChild(id) == nullptr)
 			{
-				ChildNodes.push_back(child);
+				ChildNodes.push_back(std::move(std::unique_ptr<SakuraSceneNode>(child)));
 				return true;
 			}
 			return false;
@@ -104,7 +104,7 @@ namespace SScene
 
 		// If node not attached to the parent, do nothing and return false. 
 		// Detached child node will be attached to parent of this node.
-		virtual bool Detach(std::shared_ptr<SakuraSceneNode> child)
+		virtual bool Detach(SakuraSceneNode* child)
 		{
 			SGuid id = child->GetID();
 			bool res = (GetChild(id) != nullptr);
@@ -122,21 +122,25 @@ namespace SScene
 		virtual bool DetachAndFinalize(SakuraSceneNode* child)
 		{
 			SGuid id = child->GetID();
-			auto res = GetChild(id);
-			if (res == nullptr) return false;
-			// Remove child from Map.
-			ChildNodes.erase(std::remove(std::begin(ChildNodes), std::end(ChildNodes), res), ChildNodes.end());
+			for (size_t i = 0; i < ChildNodes.size(); i++)
+			{
+				if (ChildNodes[i]->ID == id)
+				{
+					ChildNodes[i].reset();
+					ChildNodes.erase(std::remove(std::begin(ChildNodes), std::end(ChildNodes), ChildNodes[i]), ChildNodes.end());
+				}
+			}
 			return true;
 		}
 
-		virtual void AttachTo(std::shared_ptr<SakuraSceneNode> parent)
+		virtual void AttachTo(SakuraSceneNode* parent)
 		{
-			parent->Attach(std::shared_ptr<SakuraSceneNode>(this));
+			parent->Attach(this);
 		}
 	protected:
 		// Child node pointer.
 		SakuraSceneNode* parentNode = nullptr;
-		std::vector<std::shared_ptr<SakuraSceneNode>> ChildNodes;
+		std::vector<std::unique_ptr<SakuraSceneNode>> ChildNodes;
 		SakuraCore::STransform NodeTransform;
 	};
 }

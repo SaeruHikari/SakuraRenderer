@@ -373,6 +373,128 @@ SGraphics::SakuraD3D12GraphicsManager::~SakuraD3D12GraphicsManager()
 		FlushCommandQueue();
 }
 
+SGraphics::SRenderItem* SGraphics::SakuraD3D12GraphicsManager::SelectSceneObject(int sx, int sy)
+{
+	/*
+	XMFLOAT4X4 p = mCamera.GetProj4x4f();
+	// Compute picking ray in view space.
+	float vx = (+2.0f * sx / mGraphicsConfs->clientWidth - 1.0f) / p._11;
+	float vy = (-2.0f * sy / mGraphicsConfs->clientHeight + 1.0f) / p._22;
+
+	XMVECTOR viewRayOrigin = XMVectorSet(0.f, 0.f, 0.f, 1.f);
+	XMVECTOR viewRayDir = XMVectorSet(vx, vy, 1.f, 0.f);
+
+	XMMATRIX dxView = mCamera.GetView();
+	XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(dxView), dxView);
+
+	SRenderItem* pickedSceneObject = nullptr;
+	float tPicked = FLT_MAX;
+
+	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
+	// of objects that can be selected.   
+	for (auto so : GetRenderScene()->GetRenderLayer(E_Opaque))
+	{
+		auto mesh = so->dxRenderItem.Geo->
+
+		XMMATRIX W = GDx::GGiToDxMatrix(so->GetTransform());
+
+		XMMATRIX invWorld = XMMatrixInverse(&XMMatrixDeterminant(W), W);
+
+		// Tranform ray to vi space of Mesh.
+		XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
+
+		XMVECTOR rayOrigin = XMVector3TransformCoord(viewRayOrigin, toLocal);
+		XMVECTOR rayDir = XMVector3TransformNormal(viewRayDir, toLocal);
+
+		// Make the ray direction unit length for the intersection tests.
+		rayDir = XMVector3Normalize(rayDir);
+
+		// If we hit the bounding box of the Mesh, then we might have picked a Mesh triangle,
+		// so do the ray/triangle tests.
+		//
+		// If we did not hit the bounding box, then it is impossible that we hit 
+		// the Mesh, so do not waste effort doing ray/triangle tests.
+		BoundingBox bBox;
+		bBox.Center.x = so->GetMesh()->bounds.Center[0];
+		bBox.Center.y = so->GetMesh()->bounds.Center[1];
+		bBox.Center.z = so->GetMesh()->bounds.Center[2];
+		bBox.Extents.x = so->GetMesh()->bounds.Extents[0];
+		bBox.Extents.y = so->GetMesh()->bounds.Extents[1];
+		bBox.Extents.z = so->GetMesh()->bounds.Extents[2];
+		float tmin = 0.0f;
+		if (bBox.Intersects(rayOrigin, rayDir, tmin))
+		{
+			// NOTE: For the demo, we know what to cast the vertex/index data to.  If we were mixing
+			// formats, some metadata would be needed to figure out what to cast it to.
+			GDxMesh* dxMesh = dynamic_cast<GDxMesh*>(so->GetMesh());
+			if (dxMesh == nullptr)
+				ThrowGGiException("cast failed from GRiMesh* to GDxMesh*.");
+			shared_ptr<GDxStaticVIBuffer> dxViBuffer = dynamic_pointer_cast<GDxStaticVIBuffer>(dxMesh->mVIBuffer);
+			if (dxViBuffer == nullptr)
+				ThrowGGiException("cast failed from shared_ptr<GDxStaticVIBuffer> to shared_ptr<GDxStaticVIBuffer>.");
+
+			auto vertices = (GRiVertex*)dxViBuffer->VertexBufferCPU->GetBufferPointer();
+			auto indices = (std::uint32_t*)dxViBuffer->IndexBufferCPU->GetBufferPointer();
+			UINT triCount = dxMesh->mVIBuffer->IndexCount / 3;
+
+			// Find the nearest ray/triangle intersection.
+			tmin = GGiEngineUtil::Infinity;
+			for (auto submesh : so->GetMesh()->Submeshes)
+			{
+				auto startIndexLocation = submesh.second.StartIndexLocation;
+				auto baseVertexLocation = submesh.second.BaseVertexLocation;
+
+				for (size_t i = 0; i < (submesh.second.IndexCount / 3); i++)
+				{
+					// Indices for this triangle.
+					UINT i0 = indices[startIndexLocation + i * 3 + 0] + baseVertexLocation;
+					UINT i1 = indices[startIndexLocation + i * 3 + 1] + baseVertexLocation;
+					UINT i2 = indices[startIndexLocation + i * 3 + 2] + baseVertexLocation;
+
+					// Vertices for this triangle.
+					XMFLOAT3 v0f;
+					XMFLOAT3 v1f;
+					XMFLOAT3 v2f;
+					v0f.x = vertices[i0].Position[0];
+					v0f.y = vertices[i0].Position[1];
+					v0f.z = vertices[i0].Position[2];
+					v1f.x = vertices[i1].Position[0];
+					v1f.y = vertices[i1].Position[1];
+					v1f.z = vertices[i1].Position[2];
+					v2f.x = vertices[i2].Position[0];
+					v2f.y = vertices[i2].Position[1];
+					v2f.z = vertices[i2].Position[2];
+					XMVECTOR v0 = XMLoadFloat3(&v0f);
+					XMVECTOR v1 = XMLoadFloat3(&v1f);
+					XMVECTOR v2 = XMLoadFloat3(&v2f);
+
+					// We have to iterate over all the triangles in order to find the nearest intersection.
+					float t = 0.0f;
+					if (TriangleTests::Intersects(rayOrigin, rayDir, v0, v1, v2, t))
+					{
+						if (t < tmin)
+						{
+							// This is the new nearest picked triangle.
+							tmin = t;
+						}
+					}
+				}
+			}
+			std::vector<float> soScale = so->GetScale();
+			float relSize = (float)pow(soScale[0] * soScale[0] + soScale[1] * soScale[1] + soScale[2] * soScale[2], 0.5);
+			tmin *= relSize;
+
+			if (tmin < tPicked)
+			{
+				tPicked = tmin;
+				pickedSceneObject = so;
+			}
+		}
+	}*/
+	return nullptr;
+	//return pickedSceneObject;
+}
+
 bool SGraphics::SakuraD3D12GraphicsManager::Get4xMsaaState() const
 {
 	return m4xMsaaState;

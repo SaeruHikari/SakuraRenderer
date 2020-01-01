@@ -6,6 +6,7 @@
 #include <d3d12.h>
 
 using namespace Microsoft::WRL;
+using namespace HikaD3DUtils;
 
 SGraphics::SDxResourceManager::SDxResourceManager(
 	Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory,
@@ -87,6 +88,20 @@ SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarge
 		return nullptr;
 	}
 	return nullptr;
+}
+
+Dx12MeshGeometry* SGraphics::SDxResourceManager::RegistGeometry(const std::string& GeoName,
+	std::string FilePath, HikaD3DUtils::ESupportFileForm FileForm /*= ESupportFileForm::ASSIMP_SUPPORTFILE*/)
+{
+	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	mGeometries[GeoName]
+		= std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), FilePath, ESupportFileForm::ASSIMP_SUPPORTFILE));
+	// Execute the initialization commands.
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+	FlushCommandQueue();
 }
 
 SGraphics::ISRenderTarget* SGraphics::SDxResourceManager::CreateNamedRenderTarget(std::string registName,
@@ -199,5 +214,27 @@ SGraphics::ISTexture* SGraphics::SDxResourceManager::LoadTexture(std::wstring Fi
 		return (ISTexture*)mResources[texName].get();
 	}
 	return nullptr;
+}
+
+void SGraphics::SDxResourceManager::FlushCommandQueue()
+{
+	mFence->currentFence++;
+	// Add an instruction to the command queue to set a new fence point. Because we 
+	// are on the GPU time line, the new fence point won't be set until the GPU finishes
+	// processing all the commands prior to this Signare()
+	ThrowIfFailed(mCommandQueue->Signal(mFence->fence.Get(), mFence->currentFence));
+
+	// Wait until the GPU has completed commands up to this fence point.
+	if (mFence->fence->GetCompletedValue() < mFence->currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, NULL, false, EVENT_ALL_ACCESS);
+
+		// Fire event when GPU hits current Fence.
+		ThrowIfFailed(mFence->fence->SetEventOnCompletion(mFence->currentFence, eventHandle));
+
+		// Wait until the GPU hits current fence event is fired.
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
 }
 

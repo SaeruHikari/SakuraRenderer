@@ -68,7 +68,7 @@ float4 PS(VertexOut pin) : SV_Target
     prefilteredColor, brdfLut,
     V, N, L, mat).xyz;
 #endif
-
+    return prefilteredColor.xyzz;
     float3 Disney = 0;
     for (int i = 0; i < 3; i++)
     {

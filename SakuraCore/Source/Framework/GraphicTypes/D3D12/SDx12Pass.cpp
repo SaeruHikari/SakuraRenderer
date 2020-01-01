@@ -1,6 +1,7 @@
 #include "SDx12Pass.hpp"
 #include "..\GraphicsInterface\ISRenderTarget.h"
 #include "..\GraphicsInterface\ISRenderResource.h"
+#include "..\RenderScene\SRenderScene.hpp"
 
 SGraphics::__dx12Pass::__dx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
 	const std::wstring& psPath, const std::string& psTarg,
@@ -64,7 +65,7 @@ bool SGraphics::__dx12Pass::Initialize(std::vector<Microsoft::WRL::ComPtr<ID3D12
 	return Initialize();
 }
 
-void SGraphics::SDx12Pass::PushRenderItems(std::vector<SDxRenderItem*> renderItems)
+void SGraphics::SDx12Pass::PushRenderItems(std::vector<SGraphics::SRenderItem*> renderItems)
 {
 	mRenderItems = renderItems;
 }
@@ -86,7 +87,7 @@ void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DE
 	// Draw
 	for (size_t j = 0; j < mRenderItems.size(); ++j)
 	{
-		auto ri = mRenderItems[j];
+		auto ri = &mRenderItems[j]->dxRenderItem;
 		cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
 		cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
 		cmdList->IASetPrimitiveTopology(ri->PrimitiveType);

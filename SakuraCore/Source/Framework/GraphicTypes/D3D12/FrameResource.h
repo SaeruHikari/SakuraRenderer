@@ -33,6 +33,7 @@ struct SPassConstants
 	DirectX::XMFLOAT2 Pad = { 0.f, 0.f };
 	DirectX::XMFLOAT4X4 PrevViewProj = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 UnjitteredViewProj = MathHelper::Identity4x4();
+	DirectX::XMFLOAT4X4 UnjiterredInvProj = MathHelper::Identity4x4();
 	// Indices [0, NUM_DIR_LIGHTS] are directional lights;
 	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS + NUM_POINT_LIGHTS] are point lights;
 	// indices [NUM_DIR_LIGHTS + NUM_POINT_LIGHTS, NUM_DIR_LIGHTS + NUM_POINT_LIGHTS + NUM_SPOT_LIGHTS]

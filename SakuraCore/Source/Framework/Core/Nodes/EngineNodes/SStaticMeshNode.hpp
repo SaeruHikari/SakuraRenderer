@@ -21,12 +21,12 @@ namespace SEngine
 			// Upload
 			i_renderItem = pSceneManager->RegistMesh(Mesh.get(), matName);
 		}
+		~SStaticMeshNode()
+		{
 
+		}
 		virtual void Tick(double deltaTime) override
 		{
-			// Test
-			static double T = 0;
-			T += deltaTime;
 			SakuraSceneNode::Tick(deltaTime);
 			if(auto renderItem = GetRenderItem())
 			{

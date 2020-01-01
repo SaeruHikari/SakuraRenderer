@@ -9,7 +9,7 @@ SakuraCore::SSceneManager::SSceneManager()
 	renderScene->Initialize();
 }
 
-SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matname)
+SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matname, ERenderLayer renderLayer)
 {
 	auto gmng = (SDxRendererGM*)pGraphicsManager;
 	ID3D12Device* device = gmng->GetDevice();
@@ -61,38 +61,33 @@ SIndex SakuraCore::SSceneManager::RegistMesh(SStaticMesh* data, std::string matn
 	auto srItem = std::make_unique<SRenderItem>();
 	auto rItem = &srItem->dxRenderItem;
 	rItem->World = MathHelper::Identity4x4();
+	rItem->Mat = &GetMaterial(matname)->data;
 	rItem->TexTransform = MathHelper::Identity4x4();
-	rItem->ObjCBIndex = gmng->CBIndex++;
+	rItem->ObjCBIndex = renderScene->mAllRItems.size();
 	rItem->Geo = geo;
 	rItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rItem->IndexCount = rItem->Geo->DrawArgs[geo->Name].IndexCount;
 	rItem->StartIndexLocation = rItem->Geo->DrawArgs[geo->Name].StartIndexLocation;
 	rItem->BaseVertexLocation = rItem->Geo->DrawArgs[geo->Name].BaseVertexLocation;
 	rItem->NumFramesDirty = 3;
-	gmng->mRenderLayers[SRenderLayers::E_Opaque].push_back(rItem);
-	gmng->mAllRitems.push_back(std::move(std::unique_ptr<SDxRenderItem>(rItem)));
-	renderScene->OpaqueRItems.push_back(std::move(srItem));
-	gmng->mMaterials[matname] = &GetMaterial(matname)->data;
-	rItem->Mat = gmng->mMaterials[matname];
+	renderScene->mRenderLayers[renderLayer].push_back(srItem.get());
+	renderScene->mAllRItems.push_back(std::move(srItem));
 
 	ThrowIfFailed(cmdList->Close());
 	ID3D12CommandList* cmdsList0[] = { cmdList };
 	gmng->GetQueue()->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
 	gmng->FlushCommandQueue();
-	return renderScene->OpaqueRItems.size() - 1;
+	return renderScene->mAllRItems.size() - 1;
 }
 
-SIndex SakuraCore::SSceneManager::RegistOpaqueMat(SMaterial* material, std::string name)
+SMaterial* SakuraCore::SSceneManager::RegistOpaqueMat(const std::string& name, OpaqueMaterial& opaqueMat)
 {
-	auto unique = std::unique_ptr<SMaterial>(material);
-	renderScene->OpaqueMaterials[name] = std::move(unique);
-
-	return renderScene->OpaqueMaterials.size() - 1;
+	return renderScene->RegistOpaqueMaterial(name, opaqueMat);
 }
 
 SGraphics::SRenderItem* SakuraCore::SSceneManager::GetRenderItem(SIndex index)
 {
-	return renderScene->OpaqueRItems[index].get();
+	return renderScene->mAllRItems[index].get();
 }
 
 SGraphics::SMaterial* SakuraCore::SSceneManager::GetMaterial(std::string Name)

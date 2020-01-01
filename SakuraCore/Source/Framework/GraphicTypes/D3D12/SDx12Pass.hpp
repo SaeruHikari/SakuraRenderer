@@ -5,6 +5,7 @@
 namespace SGraphics
 {
 	class ISRenderTarget;
+	class SRenderItem;
 }
 
 namespace SGraphics
@@ -62,7 +63,7 @@ namespace SGraphics
 			SFrameResource* frameResource, SDxRenderItem* ri) = 0;
 	public:
 		// Current implementation would cause repeat drawing.
-		virtual void PushRenderItems(std::vector<SDxRenderItem*> renderItems);
+		virtual void PushRenderItems(std::vector<SGraphics::SRenderItem*> renderItems);
 
 		virtual void Draw(ID3D12GraphicsCommandList* cmdList,
 			D3D12_CPU_DESCRIPTOR_HANDLE* dsv,
@@ -75,6 +76,6 @@ namespace SGraphics
 			ISRenderTarget** rts, size_t rtv_num, size_t passSrvNumOnFrameRes = 0);
 
 	protected:
-		std::vector<SDxRenderItem*> mRenderItems;
+		std::vector<SRenderItem*> mRenderItems;
 	};
 }

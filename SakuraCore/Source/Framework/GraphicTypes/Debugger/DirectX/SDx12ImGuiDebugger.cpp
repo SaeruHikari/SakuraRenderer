@@ -17,6 +17,7 @@ bool SGraphics::SDx12ImGuiDebugger::Initialize(HWND hwnd, ID3D12Device* d3dDevic
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.WantCaptureMouse = true;
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 
@@ -36,7 +37,6 @@ void SGraphics::SDx12ImGuiDebugger::Draw(ID3D12GraphicsCommandList* cmdList, Sak
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-
 	{
 		static float f = 0.0f;
 		static int counter = 0;

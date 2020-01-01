@@ -47,7 +47,6 @@ namespace SakuraWPF.UserControls
                 IntPtr Hwnd = MainViewPort.Handle;
                 SakuraCore.InitSakuraGraphicsCore(Hwnd, (uint)MainViewPort.Width, (uint)MainViewPort.Height);
                 SakuraCore.Run();
-                
                 //System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
                 //timer.Interval = 1;
                 //timer.Tick += MasterTick;

@@ -9,6 +9,7 @@ Details:
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 #include "Resource/SDxResourceManager.h"
 #include "Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h"
+#include "../../../GraphicTypes/D3D12/SD3DCamera.h"
 
 
 //Link necessary d3d12 libraries
@@ -19,7 +20,6 @@ Details:
 using namespace SakuraCore;
 namespace SGraphics
 {
-
 	class SakuraD3D12GraphicsManager : public SakuraGraphicsManagerBase
 	{
 	public:
@@ -31,6 +31,7 @@ namespace SGraphics
 		SakuraD3D12GraphicsManager& operator=(const SakuraD3D12GraphicsManager& rhs) = delete;
 		~SakuraD3D12GraphicsManager();
 	public:
+		virtual SRenderItem* SelectSceneObject(int sx, int sy) override;
 		bool Get4xMsaaState() const;
 		void Set4xMsaaState(bool value);
 		float AspectRatio() const;
@@ -97,6 +98,7 @@ namespace SGraphics
 		bool	m4xMsaaState = false;	// 4xMSAA enabled.
 		UINT    m4xMsaaQuality = 0;		// quality level of 4x MSAA
 
+		SD3DCamera mCamera;
 		// D3D12
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;

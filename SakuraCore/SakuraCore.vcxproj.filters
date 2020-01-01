@@ -225,6 +225,15 @@
     <ClInclude Include="Source\Common\Thirdparty\Imgui\imnodes.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISGPUMeshGeometry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Assimp\AssimpDefinations.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Importers\SceneImporter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\dllmain.cpp">
@@ -312,6 +321,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imnodes.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Importers\SceneImporter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

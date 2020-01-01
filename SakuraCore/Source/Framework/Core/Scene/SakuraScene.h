@@ -19,10 +19,10 @@ namespace SScene
 		virtual void Tick(double deltaTime) override;
 
 		// Add Entity to the entities root.
-		virtual bool AddSceneNode(std::shared_ptr<SakuraSceneNode> childNode);
+		virtual bool AddSceneNode(SakuraSceneNode* childNode);
 		// Find scene node
-		virtual std::shared_ptr<SakuraSceneNode> FindSceneNode(SGuid id);
+		virtual SakuraSceneNode* FindSceneNode(SGuid id);
 	private:
-		std::shared_ptr<SakuraSceneNode> EntitiesRoot;
+		std::unique_ptr<SakuraSceneNode> EntitiesRoot;
 	};
 }

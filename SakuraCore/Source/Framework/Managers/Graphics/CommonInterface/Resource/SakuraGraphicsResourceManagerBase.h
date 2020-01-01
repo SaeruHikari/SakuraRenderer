@@ -37,12 +37,14 @@ namespace SGraphics
 			ISRenderTargetProperties rtProp, std::string targetSrvHeap, std::string targetRtvHeap, SRHIResource* resource = nullptr) = 0;
 		virtual ISRenderTarget* CreateNamedRenderTarget(std::string registName,
 			ISRenderTargetProperties rtProp, SRHIResource* resource, SResourceHandle srvHandle, SResourceHandle rtvHandle) = 0;
+
 		virtual SResourceHandle* GetResourceHandle(std::string resourceName)
 		{
 			if (mResources.find(resourceName) != mResources.end())
 			{
 				return mResources[resourceName]->GetResourceHandle();
 			}
+			return nullptr;
 		}
 		
 		__forceinline virtual ISRenderResource* GetNamedResource(const std::string& name)

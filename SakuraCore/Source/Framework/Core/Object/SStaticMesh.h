@@ -23,6 +23,10 @@ namespace SEngine
 			auto sp = GeoGen->CreateSphere(1.f, 50, 50);
 			meshData = std::make_unique<StaticMeshData>(std::move(sp));
 		}
+		~SStaticMesh()
+		{
+			meshData.reset();
+		}
 		auto GetMeshData()
 		{
 			return meshData.get();

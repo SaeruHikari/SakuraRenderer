@@ -21,13 +21,13 @@
 #include "Common/Microsoft/d3dx12.h"
 #include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
 #include "../GraphicsInterface/ISTexture.h"
+#include "../GraphicsInterface/ISGPUMeshGeometry.h"
 
 ///<summary>
 /// Extern const int gNumFrameResources
 /// The num of frame resources
 ///</summary>
 inline static const int gNumFrameResources = 3;
-
 
 class DxException
 {
@@ -50,6 +50,7 @@ public:
 struct SubmeshGeometry
 {
 	UINT IndexCount = 0;
+	UINT VertexCount = 0;
 	UINT StartIndexLocation = 0;
 	INT BaseVertexLocation = 0;
 
@@ -58,11 +59,8 @@ struct SubmeshGeometry
 	DirectX::BoundingBox Bounds;
 };
 
-struct Dx12MeshGeometry
+struct Dx12MeshGeometry : public SGraphics::ISMeshGeometry
 {
-	//Give it a name so we can look it up by name
-	std::string Name;
-
 	//System memory copies. Use Blobs because the vertex/index format can be generic
 	//It is up to the client to cast appropriately
 	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
@@ -73,12 +71,6 @@ struct Dx12MeshGeometry
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
-
-	//Data about the buffers
-	UINT VertexByteStride = 0;
-	UINT VertexBufferByteSize = 0;
-	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
-	UINT IndexBufferByteSize = 0;
 
 	//A Dx12MeshGeometry may store multiple geometries in one vertex/index buffer.
 	//Use this container to define the Submesh geometries so we can draw
@@ -91,7 +83,6 @@ struct Dx12MeshGeometry
 		vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();
 		vbv.StrideInBytes = VertexByteStride;
 		vbv.SizeInBytes = VertexBufferByteSize;
-
 		return vbv;
 	}
 
@@ -103,7 +94,6 @@ struct Dx12MeshGeometry
 
 		return ibv;
 	}
-
 	//We can free this memory after we finish upload to the GPU
 	void DisposeUploaders()
 	{

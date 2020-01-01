@@ -35,18 +35,6 @@ namespace SGraphics
 
 	class SakuraScene;
 
-	namespace SRenderLayers
-	{
-		enum ERenderLayer
-		{
-			E_Opaque = 0,
-			E_ScreenQuad = 1,
-			E_GBufferDebug = 2,
-			E_SKY = 3,
-			E_Cube = 4,
-			E_Count = 5
-		};
-	}
 	namespace SPasses
 	{
 		enum EPasses
@@ -118,40 +106,32 @@ namespace SGraphics
 		void BuildGeneratedMeshes();
 		void BuildFrameResources();
 
-
 		// TO DELETE!
 		// Build Debug Material
 		void BuildMaterials();
 		// Build Debug Render Items
 		void BuildRenderItems();
+
+		
 	private:
-		std::vector<std::unique_ptr<SFrameResource>> mFrameResources;
 		SFrameResource* mCurrFrameResource = nullptr;
 		int mCurrFrameResourceIndex = 0;
 		UINT mCbvSrvDescriptorSize = 0;
 	public:
 		int CBIndex = 0;
-		std::unordered_map<std::string, std::unique_ptr<Dx12MeshGeometry>> mGeometries;
-		std::unordered_map<std::string, OpaqueMaterial*> mMaterials;
-
 		std::unique_ptr<SDx12ImGuiDebugger> mImGuiDebugger;
 
-		// List of all the render items
-		std::vector<std::unique_ptr<SDxRenderItem>> mAllRitems;
-		// Render items divided by PSO
-		std::vector<SDxRenderItem*> mRenderLayers[SRenderLayers::E_Count];
 	private:
 		// loose, need refactoring
 		SPassConstants mMainPassCB;
 		SsaoConstants mSsaoCB;
-		SD3DCamera mCamera;
 		SD3DCamera mCubeMapCamera[6];
 		POINT mLastMousePos;
 	protected:
 		void BuildCubeFaceCamera(float x, float y, float z);
 	protected:
 		// Rtv indices
-		int GBufferResourceSrv = 0;
+		int GBufferResourceSrv = 4;
 		inline static const int GBufferRTNum = 4;// 1 : SSAO
 		inline static const int LUTNum = 1;
 		inline static const int SkyCubeMips = 8;
@@ -223,8 +203,9 @@ namespace SGraphics
 			inline static const std::string GunPath = "Resources/Models/gun.fbx";
 			inline static const std::string FlamePath = "Resources/Models/FlameThrower.fbx";
 			inline static const std::string UrnPath = "Resources/Models/Urn.fbx";
+			inline static const std::string SponzaPath = "Resources/Models/SM_Sponza.fbx";
 			inline static const std::string GuitarPath = "Resources/Models/Guitar.fbx";
-			inline static std::string CurrPath = FlamePath;
+			inline static std::string CurrPath = SponzaPath;
 		};
 		struct RT2Ds
 		{
@@ -273,7 +254,6 @@ namespace SGraphics
 
 		// Helper Containers
 		std::vector<std::string> GBufferPassResources;
-
 		std::vector<ID3D12Resource*> mConvAndPrefilterSkyCubeResource[SkyCubeConvFilterNum];
 		std::vector<ID3D12Resource*> mSkyCubeResource;
 
@@ -286,7 +266,7 @@ namespace SGraphics
 		SDx12RenderTargetCube* mSkyCubeRT[SkyCubeMips];
 		//TAA
 		inline static const int TAA_SAMPLE_COUNT = 8;
-		inline static const float TAA_JITTER_DISTANCE = 1.f;
+		inline static const float TAA_JITTER_DISTANCE = .5f;
 	};
 
 }

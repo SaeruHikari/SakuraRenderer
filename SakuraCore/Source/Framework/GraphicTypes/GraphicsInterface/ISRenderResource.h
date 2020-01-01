@@ -7,6 +7,7 @@ namespace SGraphics
 	struct SResourceHandle
 	{
 	public:
+		int indexOnHeap = -1;
 		SResourceCPUHandle hCpu;
 		SResourceGPUHandle hGpu;
 	};

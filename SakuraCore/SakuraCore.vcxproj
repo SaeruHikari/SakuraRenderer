@@ -228,6 +228,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsCommon\UploadVertices.h" />
     <ClInclude Include="Source\Common\Microsoft\d3dx12.h" />
     <ClInclude Include="Source\Common\Thirdparty\stb_image.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISGPUMeshGeometry.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderPass.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderResource.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderTarget.h" />
@@ -259,6 +260,8 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\Core\Nodes\SakuraSceneNode.hpp" />
     <ClInclude Include="Source\Framework\Core\SCore.h" />
     <ClInclude Include="Source\Framework\Managers\Scene\SSceneManager.h" />
+    <ClInclude Include="Source\Modules\Assimp\AssimpDefinations.hpp" />
+    <ClInclude Include="Source\Modules\Importers\SceneImporter.h" />
     <ClInclude Include="Source\SakuraCoreUtils.h" />
     <ClInclude Include="Source\SakuraCore.h" />
   </ItemGroup>
@@ -291,6 +294,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Framework\Core\Scene\SakuraScene.cpp" />
     <ClCompile Include="Source\Framework\Core\SCore.cpp" />
     <ClCompile Include="Source\Framework\Managers\Scene\SSceneManager.cpp" />
+    <ClCompile Include="Source\Modules\Importers\SceneImporter.cpp" />
     <ClCompile Include="Source\SakuraCore.cpp" />
   </ItemGroup>
   <ItemGroup>

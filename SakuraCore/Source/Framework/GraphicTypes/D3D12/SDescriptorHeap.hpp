@@ -16,7 +16,6 @@ namespace SGraphics
 	extern const size_t gPoolPageSize;
 	struct DescriptorHandleCouple : public SGraphics::SResourceHandle
 	{
-		int indexOnHeap = -1;
 		SDescriptorHeap* fromHeap = nullptr;
 	};
 	struct SDescriptorHeap

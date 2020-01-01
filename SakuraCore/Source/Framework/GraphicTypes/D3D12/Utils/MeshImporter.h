@@ -3,9 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include <memory>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include "Modules/Assimp/AssimpDefinations.hpp"
 #include "tinyply.h"
 #include "d3dUtil.h"
 #include <chrono>
@@ -13,23 +11,22 @@
 //Link necessary d3d12 libraries
 #if defined(_X86_)
 #if defined(DEBUG) || defined(_DEBUG)
-#pragma comment(lib, "x86/Debug/assimp-vc142-mtd.lib")
 #pragma comment(lib, "x86/Debug/tinyplyd.lib")
 #else
-#pragma comment(lib, "x86/Release/assimp-vc142-mt.lib")
 #pragma comment(lib, "x86/Release/tinyply.lib")
 #endif
 #elif defined(_AMD64_)
-#pragma comment(lib, "x64/Debug/assimp-vc142-mtd.lib")
 #pragma comment(lib, "x64/Debug/tinyplyd64.lib")
 #else
-#pragma comment(lib, "x64/Release/assimp64-vc142-mt.lib")
 #pragma comment(lib, "x64/Release/tinyply64.lib")
 #endif
 
-
-
 struct StandardVertex;
+
+namespace SScene
+{
+	class SakuraSceneNode;
+}
 
 using namespace std;
 namespace HikaD3DUtils
@@ -38,6 +35,7 @@ namespace HikaD3DUtils
 	{
 		TEXT = 0,
 		ASSIMP_SUPPORTFILE = 1,
+		// now please use assimp to import ply file.
 		PLY = 2,
 		COUNT
 	};
@@ -50,8 +48,8 @@ namespace HikaD3DUtils
 		/// Returns an unique pointer of Mesh Geometry
 		/// with only one submesh.
 		///</summary>
-		static std::unique_ptr<Dx12MeshGeometry> ImportMesh(ID3D12Device* device, ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm = ESupportFileForm::TEXT);
-	
+		static std::unique_ptr<Dx12MeshGeometry> ImportMesh(ID3D12Device* device, 
+			ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm = ESupportFileForm::TEXT);
 	private:
 		static void processNode(aiNode* node, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
 		static void processMesh(aiMesh* mesh, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);

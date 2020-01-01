@@ -2,17 +2,14 @@
 #include "..\Nodes\EngineNodes\SStaticMeshNode.hpp"
 
 bool SScene::SakuraScene::Initialize()
-{
-	/*
-	int MatCBInd = 0;
+{/*
 	for (size_t i = 0; i < 11; i++)
 	{
 		for (size_t j = 0; j < 11; j++)
 		{
 			std::string Name = "test" + std::to_string(i) + std::to_string(j);
-			auto testM = new SMaterial();
+			auto testM = std::make_unique<SMaterial>();
 			testM->data.Name = Name;
-			testM->data.MatCBIndex = MatCBInd++;
 			testM->data.MatConstants.DiffuseSrvHeapIndex = -1;
 			testM->data.MatConstants.RMOSrvHeapIndex = -1;
 			testM->data.MatConstants.SpecularSrvHeapIndex = -1;
@@ -33,9 +30,9 @@ bool SScene::SakuraScene::Initialize()
 				j == 9 ? Colors::LightGray :
 				Colors::DarkGray
 			);
-			pSceneManager->RegistOpaqueMat(testM, Name);
+			pSceneManager->RegistOpaqueMat(Name, testM->data);
 			SakuraMath::SVector location = { i * 2.5f, j * 2.5f, 0.f };
-			auto meshNode = std::make_shared<SEngine::SStaticMeshNode>(location, Name);
+			auto meshNode = new SEngine::SStaticMeshNode(location, Name);
 			AddSceneNode(meshNode);
 		}
 	}*/
@@ -55,17 +52,16 @@ void SScene::SakuraScene::Tick(double deltaTime)
 		EntitiesRoot->Tick(deltaTime);
 }
 
-bool SScene::SakuraScene::AddSceneNode(std::shared_ptr<SakuraSceneNode> childNode)
+bool SScene::SakuraScene::AddSceneNode(SakuraSceneNode* childNode)
 {
 	if (EntitiesRoot == nullptr)
-		EntitiesRoot = childNode;
+		EntitiesRoot = std::unique_ptr<SakuraSceneNode>(childNode);
 	else 
-		EntitiesRoot->Attach(std::move(childNode));
+		EntitiesRoot->Attach(childNode);
 	return true;
 }
 
-std::shared_ptr<SScene::SakuraSceneNode> SScene::SakuraScene::FindSceneNode(SGuid id)
+SScene::SakuraSceneNode* SScene::SakuraScene::FindSceneNode(SGuid id)
 {
-
 	return nullptr;
 }

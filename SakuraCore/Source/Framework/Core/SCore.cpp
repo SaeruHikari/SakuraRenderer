@@ -6,6 +6,7 @@
 #include "../Managers\Graphics\D3D12\SDxRendererGM.h"
 #define ManagerClass SGraphics::SDxRendererGM
 #endif
+#include <Common/Thirdparty/Imgui/imgui.h>
 
 SakuraCore::SCore* SakuraCore::SCore::mCore = nullptr;
 SakuraCore::SCore::SCore(CORE_GRAPHICS_API_CONF gAPI)
@@ -64,12 +65,9 @@ int SakuraCore::SCore::Run()
 			// If there are Window messages then process them.
 			if (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE))
 			{
-				if (msg.message != WM_SETFOCUS && msg.message != WM_KILLFOCUS)
-				{
-					PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
+				PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
 			} 
 			// Otherwise, do animation/game stuff.
 			else
@@ -78,6 +76,7 @@ int SakuraCore::SCore::Run()
 				{
 					mTimer->Tick();
 					mGraphicsManager->Tick(mTimer->DeltaTime());
+					CurrScene->Tick(mTimer->DeltaTime());
 					mGraphicsManager->Draw();
 				}
 				else
@@ -97,8 +96,11 @@ int SakuraCore::SCore::Run()
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
-		return;
+	if (ImGui::GetCurrentContext() != NULL)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+	}
 	static bool LMDown = false;
 	static bool RMDown = false;
 	static bool Resizing = false;

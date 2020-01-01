@@ -46,9 +46,10 @@ namespace SGraphics
 	{
 		if (!SakuraD3D12GraphicsManager::Initialize())
 			return false;
+		BuildGeometry();
+
 		// Reset the command list to prep for initialization commands.
 		ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
-
 		// Get the increment size of a descriptor in this heap type. This is hardware specific
 		// so we have to query this information
 		mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -56,7 +57,6 @@ namespace SGraphics
 		BuildCubeFaceCamera(0.0f, 2.0f, 0.0f);
 
 		LoadTextures();
-		BuildGeometry();
 		BuildMaterials();
 		BuildRenderItems();
 		BuildDescriptorHeaps();
@@ -188,7 +188,6 @@ namespace SGraphics
 		GetFrameGraph()->
 			RegistNamedPassNode<SMotionVectorPass>(ConsistingPasses::MotionVectorPassName, md3dDevice.Get());
 		auto mMotionVectorPassNode = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::MotionVectorPassName);
-		mMotionVectorPassNode->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		mMotionVectorPassNode->ConfirmOutput(RT2Ds::MotionVectorRTName);
 #else
 		auto mGbufferPass = GetResourceManager()->
@@ -200,11 +199,9 @@ namespace SGraphics
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferPassName)
 			->ConfirmOutput(RT2Ds::GBufferRTNames[0], RT2Ds::GBufferRTNames[1],
 				RT2Ds::GBufferRTNames[2], RT2Ds::GBufferRTNames[3]);
-		mGbufferPass->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 #if defined(Sakura_SSAO)
 		auto mSsaoPassNode = GetFrameGraph()->
 			RegistNamedPassNode<SsaoPass>(ConsistingPasses::SsaoPassName, md3dDevice.Get());
-		mSsaoPassNode->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 		mSsaoPassNode->GetPass()->StartUp(mCommandList.Get());
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SsaoPassName)
 			->ConfirmInput(
@@ -216,7 +213,7 @@ namespace SGraphics
 #endif
 
 		BuildFrameResources();
-		mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
+		mCurrFrameResource = GetRenderScene()->GetFrameResource(mCurrFrameResourceIndex);
 
 #if defined(Sakura_Defferred)
 		auto mDeferredPass = GetFrameGraph()->
@@ -234,19 +231,18 @@ namespace SGraphics
 
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::DeferredPassName)
 			->ConfirmOutput(RT2Ds::TAARTNames[0]);
-		mDeferredPass->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 #endif
 
 #if defined(Sakura_IBL)
 		std::shared_ptr<SBrdfLutPass> brdfPass = nullptr;
 		// Draw brdf Lut
 		brdfPass = std::make_shared<SBrdfLutPass>(md3dDevice.Get());
-		brdfPass->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
+		brdfPass->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_ScreenQuad));
 		brdfPass->Initialize();
 		//Update the viewport transform to cover the client area
 		auto mDrawSkyPassNode = GetFrameGraph()->
 			RegistNamedPassNode<SkySpherePass>(ConsistingPasses::SkySpherePassName, md3dDevice.Get());
-		mDrawSkyPassNode->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_SKY]);
+		mMotionVectorPassNode->GetPass()->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Opaque));
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SkySpherePassName)
 			->ConfirmInput(RT3Ds::SkyCubeRTNames[0], RT3Ds::SkyCubeRTNames[1], RT3Ds::SkyCubeRTNames[2],
 				RT3Ds::SkyCubeRTNames[3], RT3Ds::SkyCubeRTNames[4], 
@@ -258,7 +254,6 @@ namespace SGraphics
 #if defined(Sakura_TAA)
 		auto mTaaPass = GetFrameGraph()->
 			RegistNamedPassNode<STaaPass>(ConsistingPasses::TaaPassName, md3dDevice.Get());
-		mTaaPass->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_ScreenQuad]);
 		GetFrameGraph()->
 			GetNamedPassNode(ConsistingPasses::TaaPassName)
 			->ConfirmOutput(RT2Ds::TAARTNames[1], RT2Ds::TAARTNames[2]);
@@ -274,7 +269,6 @@ namespace SGraphics
 	#if defined(Sakura_GBUFFER_DEBUG)
 			auto mGBufferDebugPass = GetFrameGraph()->
 				RegistNamedPassNode<SGBufferDebugPass>(ConsistingPasses::GBufferDebugPassName, md3dDevice.Get());
-			mGBufferDebugPass->GetPass()->PushRenderItems(mRenderLayers[SRenderLayers::E_GBufferDebug]);
 			GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferDebugPassName)
 				->ConfirmInput(
 					mGbufferPassNode->GetOutput(RT2Ds::GBufferRTNames[0]),
@@ -294,8 +288,8 @@ namespace SGraphics
 		std::shared_ptr<SCubeMapConvPass> mCubeMapConvPass = nullptr;
 		mHDRUnpackPass = std::make_shared<SHDR2CubeMapPass>(md3dDevice.Get());
 		mCubeMapConvPass = std::make_shared<SCubeMapConvPass>(md3dDevice.Get());
-		mHDRUnpackPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Cube]);
-		mCubeMapConvPass->PushRenderItems(mRenderLayers[SRenderLayers::E_Cube]);
+		mHDRUnpackPass->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Cube));
+		mCubeMapConvPass->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Cube));
 		std::vector<ID3D12Resource*> mHDRResource;
 		mHDRResource.push_back(((SD3DTexture*)GetFrameGraph()->
 			GetNamedRenderResource(Textures::texNames[5]))->Resource.Get());
@@ -311,11 +305,6 @@ namespace SGraphics
 		pFrameGraph->Compile();
 		OnResize(mGraphicsConfs->clientWidth, mGraphicsConfs->clientHeight);
 
-		auto gbufferPass = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferPassName);
-		auto taaPass = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::TaaPassName);
-		auto ssaoPass = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SsaoPassName);
-		auto deferredPass = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::DeferredPassName);
-		auto skySpherePass = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SkySpherePassName);
 
 		// Pre-Compute RTs
 		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
@@ -350,7 +339,7 @@ namespace SGraphics
 					D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 				mSkyCubeRT[i]->ClearRenderTarget(mCommandList.Get());
 			}
-
+			
 			D3D12_VIEWPORT screenViewport0;
 			D3D12_RECT scissorRect0;
 			screenViewport0.TopLeftX = 0;
@@ -447,7 +436,6 @@ namespace SGraphics
 				mCommandList->RSSetScissorRects(1, &scissorRect);
 				// Prepare to draw convoluted cube map.
 				// Change to RENDER_TARGET.
-
 				SPassConstants convPassCB = mMainPassCB;
 				convPassCB.AddOnMsg = i;
 				while (Init < 6)
@@ -465,6 +453,7 @@ namespace SGraphics
 					XMStoreFloat4x4(&convPassCB.Proj, XMMatrixTranspose(proj));
 					XMStoreFloat4x4(&convPassCB.InvProj, XMMatrixTranspose(invProj));
 					XMStoreFloat4x4(&convPassCB.ViewProj, XMMatrixTranspose(viewProj));
+					XMStoreFloat4x4(&convPassCB.UnjitteredViewProj, XMMatrixTranspose(viewProj));
 					XMStoreFloat4x4(&convPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
 					convPassCB.EyePosW = mCubeMapCamera[Init].GetPosition3f();
 					convPassCB.RenderTargetSize = XMFLOAT2((float)screenViewport.Width,
@@ -548,9 +537,6 @@ namespace SGraphics
 	}
 
 
-
-
-
 	void SDxRendererGM::Draw()
 	{
 		std::string CurrBufName = "SwapChain" + std::to_string(mCurrBackBuffer);
@@ -563,6 +549,20 @@ namespace SGraphics
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 		mCommandList->RSSetViewports(1, &mScreenViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Opaque));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SsaoPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_ScreenQuad));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::DeferredPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_ScreenQuad));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SkySpherePassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_SKY));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::TaaPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_ScreenQuad));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferDebugPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_GBufferDebug));
+		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::MotionVectorPassName)
+			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Opaque));
 #if defined(Sakura_TAA)
 		auto mTaaPass = GetFrameGraph()->
 			GetNamedRenderPass<STaaPass>(ConsistingPasses::TaaPassName);
@@ -580,19 +580,11 @@ namespace SGraphics
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0.f, 0.f, nullptr);
 #endif
 
-		// Early-Z and Motion Vector
-#if defined(Sakura_MotionVector)
-		GetFrameGraph()->
-			GetNamedRenderPass(ConsistingPasses::MotionVectorPassName)->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
-#endif
-
 #if defined(Sakura_MotionVector)
 		GetFrameGraph()->
 			GetNamedPassNode(ConsistingPasses::MotionVectorPassName)
 			->Execute(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource);
 #endif
-		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::GBufferPassName)
-			->PushRenderItems(mRenderLayers[SRenderLayers::E_Opaque]);
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferPassName)
 			->Execute(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource);
 	#if defined(Sakura_SSAO)
@@ -625,13 +617,13 @@ namespace SGraphics
 			->Execute(mCommandList.Get(), &DepthStencilView(), mCurrFrameResource,
 			(ISRenderTarget*)GetFrameGraph()->GetNamedRenderResource(CurrBufName));
 #endif
-
+		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, nullptr);
 		mImGuiDebugger->Draw(mCommandList.Get(), pFrameGraph.get());
-
 		// Indicate a state transition on the resource usage.
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 		// Done recording commands.
+
 		ThrowIfFailed(mCommandList->Close());
 		// Add the command list to the queue for execution.
 		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -656,7 +648,7 @@ namespace SGraphics
 		//mCamera.SetLens(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 		// Cycle through the circular frame resource array.
 		mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
-		mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
+		mCurrFrameResource = GetRenderScene()->GetFrameResource(mCurrFrameResourceIndex);
 
 		// Has the GPU finished processing the commands of the current frame resource? 
 		// If not, wait until the GPU has completed commands up to this fence point
@@ -842,8 +834,9 @@ namespace SGraphics
 	void SDxRendererGM::UpdateObjectCBs()
 	{
 		auto CurrObjectCB = mCurrFrameResource->ObjectCB.get();
-		for (auto& e : mAllRitems)
+		for (auto& se : GetRenderScene()->mAllRItems)
 		{
+			auto e = &se->dxRenderItem;
 			// Only update the cbuffer data if the constants have changed.
 			// This needs to be tracked per frame resource
 			if (e->NumFramesDirty > 0)
@@ -868,11 +861,11 @@ namespace SGraphics
 	void SDxRendererGM::UpdateMaterialCBs()
 	{
 		auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
-		for (auto& e : mMaterials)
+		for (auto& e : GetRenderScene()->OpaqueMaterials)
 		{
 			// Only update the cbuffer data if the constants have changed. If the cbuffer
 			// data changes, it needs to be updated for each FrameResource.
-			OpaqueMaterial* mat = e.second;
+			OpaqueMaterial* mat = &e.second->data;
 			if (mat->NumFramesDirty > 0)
 			{
 				PBRMaterialConstants matConstants;
@@ -897,13 +890,15 @@ namespace SGraphics
 		XMMATRIX viewProj = XMMatrixMultiply(view, proj);
 #if defined(Sakura_TAA)
 		XMStoreFloat4x4(&mMainPassCB.UnjitteredViewProj, XMMatrixTranspose(viewProj));
+		XMMATRIX unj_invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+		XMStoreFloat4x4(&mMainPassCB.UnjiterredInvProj, XMMatrixTranspose(unj_invProj));
 		double JitterX = SGraphics::Halton_2[mFrameCount] / (double)mGraphicsConfs->clientWidth * (double)TAA_JITTER_DISTANCE;
 		double JitterY = SGraphics::Halton_3[mFrameCount] / (double)mGraphicsConfs->clientHeight * (double)TAA_JITTER_DISTANCE;
-		proj.r[2].m128_f32[0] += (float)JitterX;
-		proj.r[2].m128_f32[1] += (float)JitterY;
+		proj.r[2].m128_f32[0] += JitterX;
+		proj.r[2].m128_f32[1] += JitterY;
 		mMainPassCB.AddOnMsg = mFrameCount;
-		mMainPassCB.Jitter.x = JitterX;
-		mMainPassCB.Jitter.y = -JitterY;
+		mMainPassCB.Jitter.x = JitterX / 2;
+		mMainPassCB.Jitter.y = -JitterY / 2;
 #endif
 		viewProj = XMMatrixMultiply(view, proj);
 		XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
@@ -953,7 +948,7 @@ namespace SGraphics
 
 		mSsaoCB.View = mMainPassCB.View;
 		mSsaoCB.Proj = mMainPassCB.Proj;
-		mSsaoCB.InvProj = mMainPassCB.InvProj;
+		mSsaoCB.InvProj = mMainPassCB.UnjiterredInvProj;
 		XMStoreFloat4x4(&mSsaoCB.ProjTex, XMMatrixTranspose(proj * T));
 		
 		SsaoPass* mSsaoPas = (SsaoPass*)(GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::SsaoPassName));
@@ -976,7 +971,6 @@ namespace SGraphics
 	{
 		for (int i = 0; i < Textures::texNames.size(); ++i)
 		{
-			//pGraphicsResourceManager->LoadTextures<SD3DTexture>(Textures::texFilenames[i], Textures::texNames[i]);
 			GetFrameGraph()->
 				RegistNamedResourceNode<SD3DTexture>(Textures::texFilenames[i], Textures::texNames[i]);
 		}
@@ -1022,97 +1016,44 @@ namespace SGraphics
 		GeometryGenerator geoGen;
 		auto quad = geoGen.CreateQuad(0.f, 0.f, 1.f, 1.f, 0.f);
 
+		std::vector<ScreenQuadVertex> vertices0((UINT)quad.Indices32.size());
+		for (int i = 0; i < quad.Vertices.size(); ++i)
+		{
+			vertices0[i].Pos = quad.Vertices[i].Position;
+			vertices0[i].TexC = quad.Vertices[i].TexC;
+		}
+		std::vector<std::uint16_t> indices;
+		indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
+		GetResourceManager()->RegistGeometry("ScreenQuad", "ScreenQuad", vertices0, indices);
+
 		SubmeshGeometry quadSubmesh;
 		quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
 		quadSubmesh.StartIndexLocation = 0;
 		quadSubmesh.BaseVertexLocation = 0;
-
-		std::vector<ScreenQuadVertex> vertices(quadSubmesh.IndexCount);
-		for (int i = 0; i < quad.Vertices.size(); ++i)
-		{
-			vertices[i].Pos = quad.Vertices[i].Position;
-			vertices[i].TexC = quad.Vertices[i].TexC;
-		}
-		std::vector<std::uint16_t> indices;
-		indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
-
-		auto geo = std::make_unique<Dx12MeshGeometry>();
-		geo->Name = "ScreenQuad";
-
-		const UINT vbByteSize = (UINT)vertices.size() * sizeof(ScreenQuadVertex);
-		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-		// Create StandardVertex Buffer Blob
-		ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-		CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-		ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-		CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-		
-		geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-		geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-		geo->VertexByteStride = sizeof(ScreenQuadVertex);
-		geo->VertexBufferByteSize = vbByteSize;
-		geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-		geo->IndexBufferByteSize = ibByteSize;
-
-		geo->DrawArgs["ScreenQuad"] = quadSubmesh;
-		mGeometries["ScreenQuad"] = std::move(geo);
-		
 #if defined(Sakura_GBUFFER_DEBUG) 
 		{
-		quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
-		quadSubmesh.StartIndexLocation = 0;
-		quadSubmesh.BaseVertexLocation = 0;
-
-		const UINT vbByteSize = (UINT)vertices.size() * sizeof(ScreenQuadDebugVertex);
-		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-		for (int j = 0; j < 6; j++)
-		{
-			auto geo = std::make_unique<Dx12MeshGeometry>();
-			std::string Name = "DebugScreenQuad" + std::to_string(j);
-			mGeometries[Name] = std::move(geo);
-
-			std::vector<ScreenQuadDebugVertex> vertices(quadSubmesh.IndexCount);
-			for (int i = 0; i < quad.Vertices.size(); ++i)
+			for (int j = 0; j < 6; j++)
 			{
-				vertices[i].Pos = quad.Vertices[i].Position;
-				vertices[i].TexC = quad.Vertices[i].TexC;
-				vertices[i].Type = j;
+				std::string Name = "DebugScreenQuad" + std::to_string(j);
+				std::vector<ScreenQuadDebugVertex> vertices(quadSubmesh.IndexCount);
+				const UINT vbByteSize = (UINT)vertices.size() * sizeof(ScreenQuadDebugVertex);
+				const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+				for (int i = 0; i < quad.Vertices.size(); ++i)
+				{
+					vertices[i].Pos = quad.Vertices[i].Position;
+					vertices[i].TexC = quad.Vertices[i].TexC;
+					vertices[i].Type = j;
+				}
+				std::vector<std::uint16_t> indices;
+				indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
+				GetResourceManager()->RegistGeometry(Name, Name, vertices, indices);
 			}
-			std::vector<std::uint16_t> indices;
-			indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
-
-			// Create StandardVertex Buffer Blob
-			ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeometries[Name]->VertexBufferCPU));
-			CopyMemory(mGeometries[Name]->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-			ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeometries[Name]->IndexBufferCPU));
-			CopyMemory(mGeometries[Name]->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-			mGeometries[Name]->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), vertices.data(), vbByteSize, mGeometries[Name]->VertexBufferUploader);
-			mGeometries[Name]->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), indices.data(), ibByteSize, mGeometries[Name]->IndexBufferUploader);
-			mGeometries[Name]->VertexByteStride = sizeof(ScreenQuadDebugVertex);
-			mGeometries[Name]->VertexBufferByteSize = vbByteSize;
-			mGeometries[Name]->IndexFormat = DXGI_FORMAT_R16_UINT;
-			mGeometries[Name]->IndexBufferByteSize = ibByteSize;
-			mGeometries[Name]->DrawArgs[Name] = quadSubmesh;
-		}
 		}
 #endif
-		
 #if defined(Sakura_IBL)
 		{
 			auto sphere = geoGen.CreateSphere(0.5f, 120, 120);
-			SubmeshGeometry quadSubmesh;
-			quadSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-			quadSubmesh.StartIndexLocation = 0;
-			quadSubmesh.BaseVertexLocation = 0;
-
-			std::vector<StandardVertex> vertices(quadSubmesh.IndexCount);
+			std::vector<StandardVertex> vertices((UINT)sphere.Indices32.size());
 			for (int i = 0; i < sphere.Vertices.size(); ++i)
 			{
 				vertices[i].Pos = sphere.Vertices[i].Position;
@@ -1123,41 +1064,13 @@ namespace SGraphics
 			}
 			std::vector<std::uint16_t> indices;
 			indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-
-			auto geo = std::make_unique<Dx12MeshGeometry>();
-			geo->Name = "SkySphere";
-
-			const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
-			const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-			// Create StandardVertex Buffer Blob
-			ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-			CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-			ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-			CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-			geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-			geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-			geo->VertexByteStride = sizeof(StandardVertex);
-			geo->VertexBufferByteSize = vbByteSize;
-			geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-			geo->IndexBufferByteSize = ibByteSize;
-
-			geo->DrawArgs[geo->Name] = quadSubmesh;
-			mGeometries[geo->Name] = std::move(geo);
+			GetResourceManager()->RegistGeometry("SkySphere", "SkySphere", vertices, indices);
 		}
 #endif
 #if defined(Sakura_IBL_HDR_INPUT)
 		{
 			auto cube = geoGen.CreateBox(1.f, 1.f, 1.f, 1);
-			SubmeshGeometry quadSubmesh;
-			quadSubmesh.IndexCount = (UINT)cube.Indices32.size();
-			quadSubmesh.StartIndexLocation = 0;
-			quadSubmesh.BaseVertexLocation = 0;
-
-			std::vector<StandardVertex> vertices(quadSubmesh.IndexCount);
+			std::vector<StandardVertex> vertices((UINT)cube.Indices32.size());
 			for (int i = 0; i < cube.Vertices.size(); ++i)
 			{
 				vertices[i].Pos = cube.Vertices[i].Position;
@@ -1168,37 +1081,14 @@ namespace SGraphics
 			}
 			std::vector<std::uint16_t> indices;
 			indices.insert(indices.end(), std::begin(cube.GetIndices16()), std::end(cube.GetIndices16()));
-
-			auto geo = std::make_unique<Dx12MeshGeometry>();
-			geo->Name = "HDRCube";
-
-			const UINT vbByteSize = (UINT)vertices.size() * sizeof(StandardVertex);
-			const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-			// Create StandardVertex Buffer Blob
-			ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-			CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-			ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-			CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-			geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-			geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-				mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-			geo->VertexByteStride = sizeof(StandardVertex);
-			geo->VertexBufferByteSize = vbByteSize;
-			geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-			geo->IndexBufferByteSize = ibByteSize;
-
-			geo->DrawArgs[geo->Name] = quadSubmesh;
-			mGeometries[geo->Name] = std::move(geo);
+			GetResourceManager()->RegistGeometry("HDRCube", "HDRCube", vertices, indices);
 		}
 #endif
 	}
 
 	void SDxRendererGM::BuildGeometry()
 	{
-		mGeometries["skullGeo"] = std::move(MeshImporter::ImportMesh(md3dDevice.Get(), mCommandList.Get(), Meshes::CurrPath, ESupportFileForm::ASSIMP_SUPPORTFILE));
+		GetResourceManager()->RegistGeometry("skullGeo", Meshes::CurrPath, ESupportFileForm::ASSIMP_SUPPORTFILE);
 		BuildGeneratedMeshes();
 	}
 
@@ -1206,108 +1096,99 @@ namespace SGraphics
 	{
 		for (int i = 0; i < gNumFrameResources; i++)
 		{
-			mFrameResources.push_back(std::make_unique<SFrameResource>(md3dDevice.Get(),
-				1 + 6 + SkyCubeConvFilterNum * 6, (UINT)mAllRitems.size() * 50, (UINT)mMaterials.size() + 200));
+			GetRenderScene()->mFrameResources.push_back(std::make_unique<SFrameResource>(md3dDevice.Get(),
+				1 + 6 + SkyCubeConvFilterNum * 6, 300, 500));
 		}
 	}
 
 	void SDxRendererGM::BuildMaterials()
 	{
-		int MatCBInd = 0;
-		auto bricks0 = new OpaqueMaterial();
-		bricks0->Name = "bricks0";
-		bricks0->MatCBIndex = MatCBInd++;
-		bricks0->MatConstants.DiffuseSrvHeapIndex = 0;
-		bricks0->MatConstants.RMOSrvHeapIndex = 1;
-		bricks0->MatConstants.SpecularSrvHeapIndex = 2;
-		bricks0->MatConstants.NormalSrvHeapIndex = 3;
-		bricks0->MatConstants.BaseColor = XMFLOAT3(Colors::White);
-		bricks0->MatConstants.Roughness = 1.f;
-		GBufferResourceSrv += 4;
-		mMaterials["bricks0"] = bricks0;
+		OpaqueMaterial Mat;
+		Mat.Name = "DefaultMat";
+		Mat.MatConstants.DiffuseSrvHeapIndex = -1;
+		Mat.MatConstants.RMOSrvHeapIndex = -1;
+		Mat.MatConstants.SpecularSrvHeapIndex = -1;
+		Mat.MatConstants.NormalSrvHeapIndex = -1;
+		Mat.MatConstants.BaseColor = XMFLOAT3(Colors::Gray);
+		Mat.MatConstants.Roughness = 1.f;
+		GetRenderScene()->RegistOpaqueMaterial(Mat);
+
+		Mat.Name = "FlameThrower";
+		Mat.MatConstants.DiffuseSrvHeapIndex = 0;
+		Mat.MatConstants.RMOSrvHeapIndex = 1;
+		Mat.MatConstants.SpecularSrvHeapIndex = 2;
+		Mat.MatConstants.NormalSrvHeapIndex = 3;
+		Mat.MatConstants.BaseColor = XMFLOAT3(Colors::White);
+		Mat.MatConstants.Roughness = 1.f;
+		GetRenderScene()->RegistOpaqueMaterial("FlameThrower", Mat);
 	}
 	
 	void SDxRendererGM::BuildRenderItems()
 	{
+		/**/
 #if defined(Sakura_Full_Effects)
-		auto opaqueRitem = std::make_unique<SDxRenderItem>();
-		XMStoreFloat4x4(&opaqueRitem->World, XMMatrixScaling(.2f, .2f, .2f) * 
+		SDxRenderItem opaqueRitem;
+		XMStoreFloat4x4(&opaqueRitem.World, XMMatrixScaling(.2f, .2f, .2f) * 
 		XMMatrixTranslation(0.f, -6.f, 0.f) * XMMatrixRotationY(155));
-		opaqueRitem->PrevWorld = opaqueRitem->World;
-		opaqueRitem->TexTransform = MathHelper::Identity4x4();
-		opaqueRitem->ObjCBIndex = CBIndex++;
-		opaqueRitem->Mat = mMaterials["bricks0"];
-		opaqueRitem->Geo = mGeometries["skullGeo"].get();
-		opaqueRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		opaqueRitem->IndexCount = opaqueRitem->Geo->DrawArgs["mesh"].IndexCount;
-		opaqueRitem->StartIndexLocation = opaqueRitem->Geo->DrawArgs["mesh"].StartIndexLocation;
-		opaqueRitem->BaseVertexLocation = opaqueRitem->Geo->DrawArgs["mesh"].BaseVertexLocation;
-		mRenderLayers[SRenderLayers::E_Opaque].push_back(opaqueRitem.get());
-		mAllRitems.push_back(std::move(opaqueRitem));
+		opaqueRitem.PrevWorld = opaqueRitem.World;
+		opaqueRitem.TexTransform = MathHelper::Identity4x4();
+		opaqueRitem.Mat = &GetRenderScene()->GetMaterial("DefaultMat")->data;
+		opaqueRitem.Geo = GetResourceManager()->GetGeometry("skullGeo");
+		opaqueRitem.PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		opaqueRitem.IndexCount = opaqueRitem.Geo->DrawArgs["mesh"].IndexCount;
+		opaqueRitem.StartIndexLocation = opaqueRitem.Geo->DrawArgs["mesh"].StartIndexLocation;
+		opaqueRitem.BaseVertexLocation = opaqueRitem.Geo->DrawArgs["mesh"].BaseVertexLocation;
+		GetRenderScene()->RegistRenderItem(opaqueRitem, E_Opaque);
 #endif
-		auto screenQuad = std::make_unique<SDxRenderItem>();
-		screenQuad->World = MathHelper::Identity4x4();
-		screenQuad->TexTransform = MathHelper::Identity4x4();
-		screenQuad->ObjCBIndex = CBIndex++;
-		screenQuad->Mat = mMaterials["bricks0"];
-		screenQuad->Geo = mGeometries["ScreenQuad"].get();
-		screenQuad->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		screenQuad->IndexCount = screenQuad->Geo->DrawArgs["ScreenQuad"].IndexCount;
-		screenQuad->StartIndexLocation = screenQuad->Geo->DrawArgs["ScreenQuad"].StartIndexLocation;
-		screenQuad->BaseVertexLocation = screenQuad->Geo->DrawArgs["ScreenQuad"].BaseVertexLocation;
-
-		mRenderLayers[SRenderLayers::E_ScreenQuad].push_back(screenQuad.get());
-		mAllRitems.push_back(std::move(screenQuad));
-
+		SDxRenderItem screenQuad;
+		screenQuad.World = MathHelper::Identity4x4();
+		screenQuad.TexTransform = MathHelper::Identity4x4();
+		screenQuad.Mat = &GetRenderScene()->GetMaterial("FlameThrower")->data;
+		screenQuad.Geo = GetResourceManager()->GetGeometry("ScreenQuad");
+		screenQuad.PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		screenQuad.IndexCount = screenQuad.Geo->DrawArgs["ScreenQuad"].IndexCount;
+		screenQuad.StartIndexLocation = screenQuad.Geo->DrawArgs["ScreenQuad"].StartIndexLocation;
+		screenQuad.BaseVertexLocation = screenQuad.Geo->DrawArgs["ScreenQuad"].BaseVertexLocation;
+		GetRenderScene()->RegistRenderItem(screenQuad, E_ScreenQuad);
 #if defined(Sakura_IBL)
-		auto skyRitem = std::make_unique<SDxRenderItem>();
-		XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.f, 5000.f, 5000.f));
-		skyRitem->TexTransform = MathHelper::Identity4x4();
-		skyRitem->ObjCBIndex = CBIndex++;
-		skyRitem->Mat = mMaterials["bricks0"];
-		skyRitem->Geo = mGeometries["SkySphere"].get();
-		skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		skyRitem->IndexCount = skyRitem->Geo->DrawArgs["SkySphere"].IndexCount;
-		skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["SkySphere"].StartIndexLocation;
-		skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["SkySphere"].BaseVertexLocation;
-
-		mRenderLayers[SRenderLayers::E_SKY].push_back(skyRitem.get());
-		mAllRitems.push_back(std::move(skyRitem));
+		SDxRenderItem skyRitem;
+		XMStoreFloat4x4(&skyRitem.World, XMMatrixScaling(5000.f, 5000.f, 5000.f));
+		skyRitem.TexTransform = MathHelper::Identity4x4();
+		skyRitem.Mat = &GetRenderScene()->GetMaterial("FlameThrower")->data;
+		skyRitem.Geo = GetResourceManager()->GetGeometry("SkySphere");
+		skyRitem.PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		skyRitem.IndexCount = skyRitem.Geo->DrawArgs["SkySphere"].IndexCount;
+		skyRitem.StartIndexLocation = skyRitem.Geo->DrawArgs["SkySphere"].StartIndexLocation;
+		skyRitem.BaseVertexLocation = skyRitem.Geo->DrawArgs["SkySphere"].BaseVertexLocation;
+		GetRenderScene()->RegistRenderItem(skyRitem, E_SKY);
 #endif
 
 #if defined(Sakura_IBL_HDR_INPUT)
-		auto boxRitem = std::make_unique<SDxRenderItem>();
-		XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(1000.f, 1000.f, 1000.f));
-		boxRitem->TexTransform = MathHelper::Identity4x4();
-		boxRitem->ObjCBIndex = CBIndex++;
-		boxRitem->Mat = mMaterials["bricks0"];
-		boxRitem->Geo = mGeometries["HDRCube"].get();
-		boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		boxRitem->IndexCount = boxRitem->Geo->DrawArgs["HDRCube"].IndexCount;
-		boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["HDRCube"].StartIndexLocation;
-		boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["HDRCube"].BaseVertexLocation;
-
-		mRenderLayers[SRenderLayers::E_Cube].push_back(boxRitem.get());
-		mAllRitems.push_back(std::move(boxRitem));
+		SDxRenderItem boxRitem;
+		XMStoreFloat4x4(&boxRitem.World, XMMatrixScaling(1000.f, 1000.f, 1000.f));
+		boxRitem.TexTransform = MathHelper::Identity4x4();
+		boxRitem.Mat = &GetRenderScene()->GetMaterial("FlameThrower")->data;
+		boxRitem.Geo = GetResourceManager()->GetGeometry("HDRCube");
+		boxRitem.PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		boxRitem.IndexCount = boxRitem.Geo->DrawArgs["HDRCube"].IndexCount;
+		boxRitem.StartIndexLocation = boxRitem.Geo->DrawArgs["HDRCube"].StartIndexLocation;
+		boxRitem.BaseVertexLocation = boxRitem.Geo->DrawArgs["HDRCube"].BaseVertexLocation;
+		GetRenderScene()->RegistRenderItem(boxRitem, E_Cube);
 #endif
 
 #if defined(Sakura_GBUFFER_DEBUG) 
 		for (int i = 0; i < 6; i++)
 		{
 			std::string Name = "DebugScreenQuad" + std::to_string(i);
-			screenQuad = std::make_unique<SDxRenderItem>();
-			screenQuad->World = MathHelper::Identity4x4();
-			screenQuad->TexTransform = MathHelper::Identity4x4();
-			screenQuad->ObjCBIndex = CBIndex++;
-			screenQuad->Mat = mMaterials["bricks0"];
-			screenQuad->Geo = mGeometries[Name].get();
-			screenQuad->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-			screenQuad->IndexCount = screenQuad->Geo->DrawArgs[Name].IndexCount;
-			screenQuad->StartIndexLocation = screenQuad->Geo->DrawArgs[Name].StartIndexLocation;
-			screenQuad->BaseVertexLocation = screenQuad->Geo->DrawArgs[Name].BaseVertexLocation;
-
-			mRenderLayers[SRenderLayers::E_GBufferDebug].push_back(screenQuad.get());
-			mAllRitems.push_back(std::move(screenQuad));
+			screenQuad.World = MathHelper::Identity4x4();
+			screenQuad.TexTransform = MathHelper::Identity4x4();
+			screenQuad.Mat = &GetRenderScene()->GetMaterial("FlameThrower")->data;
+			screenQuad.Geo = GetResourceManager()->GetGeometry(Name);
+			screenQuad.PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			screenQuad.IndexCount = screenQuad.Geo->DrawArgs[Name].IndexCount;
+			screenQuad.StartIndexLocation = screenQuad.Geo->DrawArgs[Name].StartIndexLocation;
+			screenQuad.BaseVertexLocation = screenQuad.Geo->DrawArgs[Name].BaseVertexLocation;
+			GetRenderScene()->RegistRenderItem(screenQuad, E_GBufferDebug);
 		}
 #endif
 	}
