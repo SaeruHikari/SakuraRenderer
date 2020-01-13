@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface\ISObject.h"
+#include "Framework/Interface\ISObject.h"
 #include "Framework\GraphicTypes\D3D12\DX12Definations.h"
 
 using namespace SakuraCore;

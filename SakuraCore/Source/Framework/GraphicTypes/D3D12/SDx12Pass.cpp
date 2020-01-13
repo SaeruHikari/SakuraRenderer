@@ -2,6 +2,7 @@
 #include "..\GraphicsInterface\ISRenderTarget.h"
 #include "..\GraphicsInterface\ISRenderResource.h"
 #include "..\RenderScene\SRenderScene.hpp"
+#include "SakuraCore_ECS\Source\Graphics\Utils\DX12SystemUtils.hpp"
 
 SGraphics::__dx12Pass::__dx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg,
 	const std::wstring& psPath, const std::string& psTarg,
@@ -18,14 +19,72 @@ SGraphics::SDx12Pass::SDx12Pass()
 	:__dx12Pass() {}
 
 SGraphics::SDx12Pass::SDx12Pass(ID3D12Device* device, const std::wstring& vsPath, const std::string& vsTarg, const std::wstring& psPath, const std::string& psTarg, const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-	: __dx12Pass(device, vsPath, vsTarg, psPath, psTarg, inputLayout) {}
+	: __dx12Pass(device, vsPath, vsTarg, psPath, psTarg, inputLayout) 
+{
+	ThrowIfFailed(device->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(mCmdListAlloc.GetAddressOf())));
+
+	// Create command list.
+	ThrowIfFailed(device->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		mCmdListAlloc.Get(),
+		nullptr,
+		IID_PPV_ARGS(mCommandList.GetAddressOf())));
+
+	// Start off in a closed state. This is because the first time we refer
+	// to the command list we will reset it, and it needs to be closed before
+	// calling rest.
+	mCommandList->Close();
+}
 
 SGraphics::SDx12Pass::SDx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps, const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
-	: __dx12Pass(device, vs, ps, inputLayout) {}
+	: __dx12Pass(device, vs, ps, inputLayout) 
+{
+	ThrowIfFailed(device->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(mCmdListAlloc.GetAddressOf())));
+
+	// Create command list.
+	ThrowIfFailed(device->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		mCmdListAlloc.Get(),
+		nullptr,
+		IID_PPV_ARGS(mCommandList.GetAddressOf())));
+
+	// Start off in a closed state. This is because the first time we refer
+	// to the command list we will reset it, and it needs to be closed before
+	// calling rest.
+	mCommandList->Close();
+}
 
 SGraphics::SDx12Pass::SDx12Pass(ID3D12Device* device)
-	: __dx12Pass(device) {}
+	: __dx12Pass(device) 
+{
+	ThrowIfFailed(device->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(mCmdListAlloc.GetAddressOf())));
 
+	// Create command list.
+	ThrowIfFailed(device->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		mCmdListAlloc.Get(),
+		nullptr,
+		IID_PPV_ARGS(mCommandList.GetAddressOf())));
+
+	// Start off in a closed state. This is because the first time we refer
+	// to the command list we will reset it, and it needs to be closed before
+	// calling rest.
+	mCommandList->Close();
+}
+
+
+REFLECTION_ENGINE(
+	registration::class_<SGraphics::SDx12Pass>("Dx12Pass");
+);
 
 bool SGraphics::__dx12Pass::Initialize()
 {
@@ -36,7 +95,7 @@ bool SGraphics::__dx12Pass::Initialize()
 
 bool SGraphics::__dx12Pass::StartUp(ID3D12GraphicsCommandList* cmdList)
 {
-	return cmdList != nullptr;
+	return true;
 }
 
 SGraphics::__dx12Pass::__dx12Pass(ID3D12Device* device, ID3DBlob* vs, ID3DBlob* ps, const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout)
@@ -84,12 +143,17 @@ void SGraphics::SDx12Pass::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_CPU_DE
 	cmdList->SetGraphicsRootSignature(mRootSignature.Get());
 	// Bind resource for this pass...
 	BindPerPassResource(cmdList, frameRes, passSrvNumOnFrameRes);
+	static Dx12MeshGeometry* Geo = nullptr;
 	// Draw
 	for (size_t j = 0; j < mRenderItems.size(); ++j)
 	{
 		auto ri = &mRenderItems[j]->dxRenderItem;
-		cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-		cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+		if (Geo != ri->Geo)
+		{
+			cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
+			cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+			Geo = ri->Geo;
+		}
 		cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
 		BindPerRenderItemResource(cmdList, frameRes, ri);
 		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
@@ -104,5 +168,16 @@ void SGraphics::SDx12Pass::Execute(ID3D12GraphicsCommandList* cmdList, D3D12_CPU
 		rtvs[i] = rts[i]->GetRenderTargetHandle()->hCpu;
 	Draw(cmdList, dsv, frameRes, rtvs, rtv_num, passSrvNumOnFrameRes);
 	delete[] rtvs;
+}
+
+SGraphics::SCommandList* SGraphics::SDx12Pass::GetCmdList()
+{
+	return mCommandList.Get();
+}
+
+void SGraphics::SDx12Pass::ClearCmd()
+{
+	ThrowIfFailed(mCmdListAlloc->Reset());
+	ThrowIfFailed(mCommandList->Reset(mCmdListAlloc.Get(), nullptr));
 }
 

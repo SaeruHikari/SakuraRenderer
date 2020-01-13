@@ -1,8 +1,14 @@
 #include "SakuraFrameGraph.h"
+#include "..\D3D12\CommandBuffer.h"
 
+
+using namespace SGraphics;
 
 bool SGraphics::SakuraFrameGraph::Initialize()
 {
+	mJobSys = std::make_unique<JobSystem>(8);
+	mExecuteBucket = std::make_unique<JobBucket>();
+	mMergeBucket = std::make_unique<JobBucket>();
 	return true;
 }
 
@@ -52,7 +58,7 @@ bool SGraphics::SakuraFrameGraph::Compile(SFG_PassNode* nodeToCompile)
 	{
 		for (size_t i = 0; i < InLength; i++)
 		{
-			if (nodeToCompile->InputResources[i].writer == "NULL") continue;
+			if (nodeToCompile->InputResources[i].writer == "NULL" || nodeToCompile->InputResources[i].writer == "null") continue;
 			auto parent = GetNamedPassNode(nodeToCompile->InputResources[i].writer);
 			if (parent == nullptr)
 			{
@@ -87,7 +93,7 @@ bool SGraphics::SakuraFrameGraph::Compile(SFG_PassNode* nodeToCompile)
 			RegistNewVersionResourceNode(nodeToCompile->OutputResources[i]);
 		}
 	}
-
+	
 	return true;
 }
 
@@ -101,9 +107,19 @@ SGraphics::SResourceHandle* SGraphics::SakuraFrameGraph::GetRenderTargetHandle(s
 	return pGraphicsResourceManager->GetRenderTargetHandle(rtName);
 }
 
-void SGraphics::SakuraFrameGraph::Execute(SCommandList* cmdList, SResourceCPUHandle* dsv, SResourceCPUHandle* backbuffer, SFrameResource* frameResource)
+void SGraphics::SakuraFrameGraph::Execute(SResourceCPUHandle* dsv, ISRenderTarget* backbuffer, SFrameResource* frameResource)
 {
-
+	// iterate.
+	//ThrowIfFailed(cmdAlloc->Reset());
+	for (auto& iter : mNamedPassNodes)
+	{
+		iter.second->ClearCmd();
+		iter.second->functor.backBuf = backbuffer;
+		iter.second->functor.dsv = dsv;
+		iter.second->functor.frameResource = frameResource;
+		mExecuteBucket->GetTask(iter.second->functor);
+	}
+	mJobSys->ExecuteBucket(mExecuteBucket.get(), 5);
 }
 
 void SGraphics::SakuraFrameGraph::RegistNewVersionResourceNode(const std::string& resource, const std::string& writer)

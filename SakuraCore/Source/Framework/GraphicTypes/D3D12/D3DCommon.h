@@ -10,7 +10,7 @@
 #include "FrameResource.h"
 #include "Utils/MeshImporter.h"
 #include "Dx12Samplers.h"
-#include "Interface\ISObject.h"
+#include "Framework/Interface\ISObject.h"
 #include "../GraphicsCommon/GraphicsConfigs.h"
 
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "D3DCommon.h"
 #include "..\GraphicsInterface\ISRenderPass.h"
+#include "..\..\Core\Reflection\SakuraReflection.h"
 
 namespace SGraphics
 {
@@ -61,6 +62,8 @@ namespace SGraphics
 		// Called once per render item before drawing.
 		virtual void BindPerRenderItemResource(ID3D12GraphicsCommandList* cmdList,
 			SFrameResource* frameResource, SDxRenderItem* ri) = 0;
+
+		REFLECTION_ENABLE()
 	public:
 		// Current implementation would cause repeat drawing.
 		virtual void PushRenderItems(std::vector<SGraphics::SRenderItem*> renderItems);
@@ -75,7 +78,12 @@ namespace SGraphics
 			SFrameResource* frameRes,
 			ISRenderTarget** rts, size_t rtv_num, size_t passSrvNumOnFrameRes = 0);
 
+		virtual SCommandList* GetCmdList() override;
+		virtual void ClearCmd() override;
+
 	protected:
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCmdListAlloc;
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 		std::vector<SRenderItem*> mRenderItems;
 	};
 }

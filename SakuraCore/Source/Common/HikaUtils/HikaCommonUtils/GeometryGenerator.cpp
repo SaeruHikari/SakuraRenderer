@@ -105,7 +105,8 @@ StaticMeshData GeometryGenerator::CreateBox(float width, float height, float dep
 	return meshData;
 }
 
-StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, uint32 stackCount)
+StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, uint32 stackCount,
+	float OffsetX, float OffsetY, float OffsetZ)
 {
 	StaticMeshData meshData;
 
@@ -116,8 +117,8 @@ StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, 
 	// Poles: note that there will be texture coordinate distortion as there is
 	// not a unique point on the texture map to assign to the pole when mapping
 	// a rectangular texture onto a sphere.
-	Vertex topVertex(0.0f, +radius, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	Vertex bottomVertex(0.0f, -radius, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	Vertex topVertex(0.0f + OffsetX, +radius + OffsetY, 0.0f + OffsetZ, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	Vertex bottomVertex(0.0f + OffsetX, -radius + OffsetY, 0.0f + OffsetZ, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
 	meshData.Vertices.push_back(topVertex);
 
@@ -137,9 +138,9 @@ StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, 
 			Vertex v;
 
 			// spherical to cartesian
-			v.Position.x = radius * sinf(phi) * cosf(theta);
-			v.Position.y = radius * cosf(phi);
-			v.Position.z = radius * sinf(phi) * sinf(theta);
+			v.Position.x = radius * sinf(phi) * cosf(theta) + OffsetX;
+			v.Position.y = radius * cosf(phi) + OffsetY;
+			v.Position.z = radius * sinf(phi) * sinf(theta) + OffsetZ;
 
 			// Partial derivative of P with respect to theta
 			v.TangentU.x = -radius * sinf(phi) * sinf(theta);
@@ -149,8 +150,12 @@ StaticMeshData GeometryGenerator::CreateSphere(float radius, uint32 sliceCount, 
 			XMVECTOR T = XMLoadFloat3(&v.TangentU);
 			XMStoreFloat3(&v.TangentU, XMVector3Normalize(T));
 
-			XMVECTOR p = XMLoadFloat3(&v.Position);
-			XMStoreFloat3(&v.Normal, XMVector3Normalize(p));
+			v.Normal.x = v.Position.x - OffsetX;
+			v.Normal.y = v.Position.y - OffsetY;
+			v.Normal.z = v.Position.z - OffsetZ;
+
+			XMVECTOR n = XMLoadFloat3(&v.Normal);
+			XMStoreFloat3(&v.Normal, XMVector3Normalize(n));
 
 			v.TexC.x = theta / XM_2PI;
 			v.TexC.y = phi / XM_PI;

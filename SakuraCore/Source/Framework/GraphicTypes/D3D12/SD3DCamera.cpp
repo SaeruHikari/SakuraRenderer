@@ -8,7 +8,7 @@ using namespace DirectX;
 
 SD3DCamera::SD3DCamera()
 {
-	SetLens(0.25f * MathHelper::Pi, 1.0f, 1.0f, 1000.0f);
+	SetLens(0.25f * MathHelper::Pi, 1.0f, 1.0f, 20000.0f);
 }
 
 SD3DCamera::~SD3DCamera()

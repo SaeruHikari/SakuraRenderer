@@ -112,7 +112,8 @@ namespace SGraphics
 		// Build Debug Render Items
 		void BuildRenderItems();
 
-		
+		void InitFGFromJson(std::string jsonPath);
+
 	private:
 		SFrameResource* mCurrFrameResource = nullptr;
 		int mCurrFrameResourceIndex = 0;

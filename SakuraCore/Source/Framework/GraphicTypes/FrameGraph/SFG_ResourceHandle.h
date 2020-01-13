@@ -15,7 +15,7 @@ namespace SGraphics
 	struct SFG_ResourceHandle
 	{
 		std::string name = "NULL";
-		std::string writer = "NULL";
+		std::string writer = "null";
 
 		__forceinline bool Is(const std::string& _name)
 		{

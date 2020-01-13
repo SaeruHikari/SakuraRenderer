@@ -5,7 +5,7 @@ Description:	  Sakura Core Reference, contains core functions and components.
 Details:			
 *******************************************************************************************/
 #pragma once
-#include "../../Interface/IRuntimeModule.h"
+#include "Framework/Interface/IRuntimeModule.h"
 #include <memory>
 #include "../Managers/Graphics/CommonInterface/SakuraGraphicsManagerBase.h"
 #include "SakuraCoreUtils.h"
@@ -38,6 +38,7 @@ namespace SakuraCore {
 		bool SakuraInitializeGraphicsCore(HWND hwnd, UINT weight, UINT height);
 
 		int Run();
+		void ShutDown();
 		void MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	public:
 		// Tick group.
@@ -45,6 +46,7 @@ namespace SakuraCore {
 		void MsgSakuraGraphicsCore(UINT Msg, UINT param0, UINT param1, UINT param2);
 		~SCore() {};
 
+		SakuraSceneNode* GetNode(SakuraSceneNode* parent, UINT Index);
 
 	private:
 		bool bRunning = false;

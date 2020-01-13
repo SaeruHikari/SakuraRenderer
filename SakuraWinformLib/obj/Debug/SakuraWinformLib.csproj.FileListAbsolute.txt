@@ -1,0 +1,5 @@
+D:\Coding\Sakura\SakuraWinformLib\bin\Debug\SakuraWinformLib.dll
+D:\Coding\Sakura\SakuraWinformLib\bin\Debug\SakuraWinformLib.pdb
+D:\Coding\Sakura\SakuraWinformLib\obj\Debug\SakuraWinformLib.csprojAssemblyReference.cache
+D:\Coding\Sakura\SakuraWinformLib\obj\Debug\SakuraWinformLib.dll
+D:\Coding\Sakura\SakuraWinformLib\obj\Debug\SakuraWinformLib.pdb

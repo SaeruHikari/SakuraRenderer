@@ -185,6 +185,7 @@ void SGraphics::SDxResourceManager::CreateCommandObjects()
 SGraphics::ISTexture* SGraphics::SDxResourceManager::LoadTexture(std::wstring Filename, std::string texName)
 {
 	// Reset the command list to prep for initialization commands.
+	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 	if (Filename.find(L".dds") != std::string::npos)
 	{
@@ -199,6 +200,7 @@ SGraphics::ISTexture* SGraphics::SDxResourceManager::LoadTexture(std::wstring Fi
 		ThrowIfFailed(mCommandList->Close());
 		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		FlushCommandQueue();
 		mResources[texName] = std::move(texMap);
 		return (ISTexture*)mResources[texName].get();
 	}
@@ -210,6 +212,7 @@ SGraphics::ISTexture* SGraphics::SDxResourceManager::LoadTexture(std::wstring Fi
 		ThrowIfFailed(mCommandList->Close());
 		ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+		FlushCommandQueue();
 		mResources[texName] = std::move(texMap);
 		return (ISTexture*)mResources[texName].get();
 	}

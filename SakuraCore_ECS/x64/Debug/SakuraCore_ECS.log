@@ -1,0 +1,7 @@
+﻿  dllmain.cpp
+D:\Coding\Sakura\SakuraCore_ECS\Source\dllmain.cpp(3,10): fatal error C1083: 无法打开预编译头文件: “x64\Debug\SakuraCore_ECS.pch”: No such file or directory
+  MathHelper.cpp
+D:\Coding\Sakura\SakuraCore_ECS\Source\Graphics\Utils\MathHelper.cpp(84,1): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "pch.h"”?
+  SakuraCore_ECS.cpp
+D:\Coding\Sakura\SakuraCore_ECS\Source\SakuraCore_ECS.cpp(2,10): fatal error C1083: 无法打开预编译头文件: “x64\Debug\SakuraCore_ECS.pch”: No such file or directory
+  正在生成代码...

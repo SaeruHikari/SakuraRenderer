@@ -10,6 +10,7 @@ Details:
 #include "Resource/SDxResourceManager.h"
 #include "Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.h"
 #include "../../../GraphicTypes/D3D12/SD3DCamera.h"
+#include "../../../GraphicTypes/D3D12/CommandBuffer.h"
 
 
 //Link necessary d3d12 libraries
@@ -35,7 +36,7 @@ namespace SGraphics
 		bool Get4xMsaaState() const;
 		void Set4xMsaaState(bool value);
 		float AspectRatio() const;
-	protected:
+	public:
 		inline auto GetResourceManager()
 		{
 			return (SDxResourceManager*)(pGraphicsResourceManager.get());
@@ -105,6 +106,7 @@ namespace SGraphics
 		Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
 
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
+		std::unique_ptr<CommandBuffer> mCommandBuffer = nullptr;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 

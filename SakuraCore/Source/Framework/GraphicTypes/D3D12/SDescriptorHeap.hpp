@@ -5,7 +5,7 @@ Description:	          Pool of d3d12 descriptor heaps.
 Details:
 *******************************************************************************************/
 #pragma once
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 #include "Framework/GraphicTypes/D3D12/D3DCommon.h"
 #include "../GraphicsCommon/GraphicsConfigs.h"
 #include "../GraphicsInterface/ISRenderResource.h"

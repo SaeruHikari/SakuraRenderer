@@ -22,6 +22,7 @@
 #include "Common/HikaUtils/HikaCommonUtils/MathHelper.h"
 #include "../GraphicsInterface/ISTexture.h"
 #include "../GraphicsInterface/ISGPUMeshGeometry.h"
+#include "../../Core/Reflection/SakuraReflection.h"
 
 ///<summary>
 /// Extern const int gNumFrameResources
@@ -41,6 +42,12 @@ public:
 	std::wstring FunctionName;
 	std::wstring Filename;
 	int LineNumber = -1;
+};
+
+struct SubmeshDesc
+{
+	std::string Name;
+	std::string Mat;
 };
 
 //Defines a subrange of geometry in a Dx12MeshGeometry. This is for when multiple
@@ -176,7 +183,6 @@ struct PBRMaterialConstants
 
 	DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 
-
 	// Index into SRV heap for diffuse texture.
 	int DiffuseSrvHeapIndex = -1;
 	// Index into SRV heap for roughness texture.
@@ -186,6 +192,7 @@ struct PBRMaterialConstants
 	// Index into SRV heap for normal texture.
 	int NormalSrvHeapIndex = -1;
 };
+
 
 struct OpaqueMaterial
 {

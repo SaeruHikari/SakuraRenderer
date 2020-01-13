@@ -226,7 +226,7 @@ void SGraphics::SakuraD3D12GraphicsManager::CreateCommandObjects()
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
-
+	mCommandBuffer = std::make_unique<CommandBuffer>(mCommandQueue.Get(), nullptr);
 	// Create command allocator.
 	ThrowIfFailed(md3dDevice->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -277,7 +277,7 @@ bool SGraphics::SakuraD3D12GraphicsManager::CreateResourceManager()
 {
 	pGraphicsResourceManager = std::make_unique<SDxResourceManager>(mdxgiFactory, md3dDevice, mFence, mDeviceInformation, mGraphicsConfs);
 	pGraphicsResourceManager->Initialize();
-	pFrameGraph = std::make_unique<SakuraFrameGraph>(pGraphicsResourceManager.get());
+	pFrameGraph = std::make_unique<SakuraFrameGraph>(pGraphicsResourceManager.get(), mCommandBuffer.get());
 	return pGraphicsResourceManager != nullptr;
 }
 

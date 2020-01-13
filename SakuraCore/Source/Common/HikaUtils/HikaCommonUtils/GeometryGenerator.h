@@ -16,7 +16,8 @@ public:
 	/// Creates a spheres centered at the origin with the given radius. The
 	/// slices and stacks parameters controls the degree of tessellation.
 	///</summary>
-	StaticMeshData CreateSphere(float radius, uint32 sliceCount, uint32 stackCount);
+	StaticMeshData CreateSphere(float radius, uint32 sliceCount, uint32 stackCount,
+		float OffsetX = 0.f, float OffsetY = 0.f, float OffsetZ = 0.f);
 
 	///<summary>
 	/// Creates a geosphere centered at the origin with the given radius. The

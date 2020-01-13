@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 #include "Framework/GraphicTypes/D3D12/DX12Definations.h"
 #include "Framework/Core/Object/SMaterial.h"
 #include "../D3D12/FrameResource.h"

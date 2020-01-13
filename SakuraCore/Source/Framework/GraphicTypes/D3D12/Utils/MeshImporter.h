@@ -1,5 +1,9 @@
-// This is a mesh importer which can import models from files
-// only support the special .text form in D3D12 book
+/*****************************************************************************************
+							 Copyrights   SaeruHikari
+CreateDate:							2020.11.1
+Description:	   Import Geometry from Assimp support files.
+Details:
+*******************************************************************************************/
 #pragma once
 #include <stdint.h>
 #include <memory>
@@ -51,9 +55,9 @@ namespace HikaD3DUtils
 		static std::unique_ptr<Dx12MeshGeometry> ImportMesh(ID3D12Device* device, 
 			ID3D12GraphicsCommandList* CommandList, std::string FilePath, ESupportFileForm FileForm = ESupportFileForm::TEXT);
 	private:
-		static void processNode(aiNode* node, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
-		static void processMesh(aiMesh* mesh, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
-		static void read_ply_file(const std::string& filepath, std::vector<StandardVertex>& vertices, std::vector<std::int32_t>& indices);
+		static void processNode(aiNode* node, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::uint32_t>& indices);
+		static void processMesh(aiMesh* mesh, const aiScene* scene, std::vector<StandardVertex>& vertices, std::vector<std::uint32_t>& indices);
+		static void read_ply_file(const std::string& filepath, std::vector<StandardVertex>& vertices, std::vector<std::uint32_t>& indices);
 
 	private:
 		class manual_timer

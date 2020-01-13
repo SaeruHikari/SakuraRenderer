@@ -52,24 +52,18 @@ namespace SGraphics
 			SubmeshGeometry subMesh;
 			subMesh.IndexCount = indices.size();
 			subMesh.VertexCount = vertices.size();
-			int startIndex = 0;
-			int baseVertex = 0;
 			if (mGeometries.find(geometryName) != mGeometries.end())
 			{
-				auto drawArg = mGeometries[geometryName]->DrawArgs.begin();
-				while (drawArg != mGeometries[geometryName]->DrawArgs.end())
-				{
-					startIndex = drawArg->second.StartIndexLocation > startIndex ?
-						drawArg->second.StartIndexLocation + drawArg->second.IndexCount : startIndex;
-					baseVertex = drawArg->second.BaseVertexLocation > baseVertex ?
-						drawArg->second.BaseVertexLocation + drawArg->second.VertexCount : baseVertex;
-				}
+				return mGeometries[geometryName].get();
 			}
-			subMesh.StartIndexLocation = startIndex;
-			subMesh.BaseVertexLocation = baseVertex;
+			else
+			{
+				mGeometries[geometryName] = std::make_unique<Dx12MeshGeometry>();
+			}
+			subMesh.StartIndexLocation = 0;
+			subMesh.BaseVertexLocation = 0;
 
-			auto geo = std::make_unique<Dx12MeshGeometry>();
-			geo->Name = geometryName;
+			Dx12MeshGeometry* geo = mGeometries[geometryName].get();
 
 			const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 			const UINT ibByteSize = (UINT)indices.size() * sizeof(Index);
@@ -96,9 +90,55 @@ namespace SGraphics
 			FlushCommandQueue();
 
 			geo->DrawArgs[drawArgName] = subMesh;
-			mGeometries[geometryName] = std::move(geo);
 			return mGeometries[geometryName].get();
 		}
+
+		template<typename Vertex, typename Index>
+		Dx12MeshGeometry* RegistGeometry(const std::string& geometryName,
+			const std::vector<Vertex>& vertices, const std::vector<Index>& indices,
+			const std::vector<std::pair<SubmeshDesc, SubmeshGeometry>>& submeshDatas)
+		{
+			ThrowIfFailed(mDirectCmdListAlloc->Reset());
+			ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+
+			if (mGeometries.find(geometryName) == mGeometries.end())
+			{
+				mGeometries[geometryName] = std::make_unique<Dx12MeshGeometry>();
+			}
+			for (auto i = 0u; i < submeshDatas.size(); i++)
+			{
+				mGeometries[geometryName]->DrawArgs[submeshDatas[i].first.Name] = submeshDatas[i].second;
+			}
+
+			Dx12MeshGeometry* geo = mGeometries[geometryName].get();
+
+			const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+			const UINT ibByteSize = (UINT)indices.size() * sizeof(Index);
+
+			// Create StandardVertex Buffer Blob
+			ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+			CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+			ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+			CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+			geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+				mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
+			geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+				mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+			geo->VertexByteStride = sizeof(Vertex);
+			geo->VertexBufferByteSize = vbByteSize;
+			geo->IndexFormat = sizeof(Index) == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+			geo->IndexBufferByteSize = ibByteSize;
+
+			// Execute the initialization commands.
+			ThrowIfFailed(mCommandList->Close());
+			ID3D12CommandList* cmdsList0[] = { mCommandList.Get() };
+			mCommandQueue->ExecuteCommandLists(_countof(cmdsList0), cmdsList0);
+			FlushCommandQueue();
+
+			return mGeometries[geometryName].get();
+		}
+
 		auto GetGeometry(const std::string& name)
 		{
 			return mGeometries[name].get();

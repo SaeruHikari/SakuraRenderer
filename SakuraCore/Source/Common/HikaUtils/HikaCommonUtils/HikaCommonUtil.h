@@ -17,6 +17,20 @@ namespace HikaCommonUtils
 		return wcstring;
 	}
 
+
+	inline std::string readFileIntoString(char* filename)
+	{
+		std::ifstream ifile(filename);
+		//将文件读入到ostringstream对象buf中
+		std::ostringstream buf;
+		char ch;
+		while (buf && ifile.get(ch))
+			buf.put(ch);
+		//返回与流对象buf关联的字符串
+		return buf.str();
+	}
+
+
 	inline std::wstring StringToWstring(const std::string str)
 	{ 
 		int num = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);

@@ -7,11 +7,18 @@ namespace SGraphics
 	{
 	public:
 		bool bWriteDepth = true;
+		SGBufferPass(ID3D12Device* device)
+			:SDx12Pass(device), bWriteDepth(false)
+		{
+
+		}
 		SGBufferPass(ID3D12Device* device, bool bwriteDpeth)
 			:SDx12Pass(device), bWriteDepth(bwriteDpeth)
 		{
 
 		}
+		REFLECTION_ENABLE(SDx12Pass)
+	public:
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources) override
 		{
 			if (PS == nullptr)

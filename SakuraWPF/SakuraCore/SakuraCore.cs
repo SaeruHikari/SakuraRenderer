@@ -7,8 +7,11 @@ using System.Runtime.InteropServices;
 
 namespace SakuraWPF
 {
-    class SakuraCore
+    partial class SakuraCore
     {
+        /// <summary>
+        /// Import functions.
+        /// </summary>
         public delegate void VoidFuncPointerType();
         public delegate void VoidWstringFuncPointerType([MarshalAs(UnmanagedType.LPWStr)] string param1);
 
@@ -26,7 +29,17 @@ namespace SakuraWPF
 
         [DllImport(@"SakuraCore64_dbg.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int Run();
+
+        [DllImport(@"SakuraCore64_dbg.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ShutDown();
+
+        [DllImport(@"SakuraCore64_dbg.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetSceneNode(IntPtr parent, uint index = 0);
+
+        [DllImport(@"SakuraCore64_dbg.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint GetChildrenNum(IntPtr node);
     }
+
 
     public enum SAKURA_INPUT_MOUSE_TYPES
     {

@@ -10,11 +10,11 @@ none
 false
 DEBUG;TRACE
 D:\Coding\Sakura\SakuraWPF\App.xaml
-12047530553
+11-1783272593
 
-81229936244
-22-1876915587
-UserControls\MainWindow.xaml;
+20-176877976
+271181374276
+Simple Styles.xaml;UserControls\DetailView.xaml;UserControls\MainWindow.xaml;UserControls\Properties\BoolSwitch.xaml;UserControls\Properties\ColorPicker.xaml;UserControls\Properties\EnumSet.xaml;UserControls\Properties\FloatSet.xaml;UserControls\Properties\FloatSlider.xaml;UserControls\Properties\StringSet.xaml;UserControls\Properties\SVectorSet.xaml;UserControls\SceneView.xaml;
 
-True
+False
 

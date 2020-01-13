@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="SakuraWPF.UserControls.Properties.StringSet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SakuraWPF.UserControls.Properties"
+             mc:Ignorable="d" 
+             d:DesignHeight="25" d:DesignWidth="260" VerticalAlignment="Stretch" Height="35" HorizontalContentAlignment="Stretch">
+    <Grid  Background="#FF232323" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Height="35">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+        <TextBlock HorizontalAlignment="Left" Margin="5,0,0,1"
+                   x:Name="ParamName" TextWrapping="Wrap" Foreground="#FFD1D1D1" FontSize="12" Text="StringParamName" VerticalAlignment="Bottom"/>
+        <TextBox Margin="0,0,4,0" x:Name ="ValueBox" MaxLines="1" MinLines="1" Width="140" 
+            Text="string" VerticalAlignment="Stretch" FontSize="12" VerticalContentAlignment="Bottom" TextChanged="ValueBox_TextChanged" />
+            </StackPanel>
+        </Grid>
+</UserControl>

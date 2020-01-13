@@ -11,6 +11,8 @@ namespace SGraphics
 		{
 
 		}
+		REFLECTION_ENABLE(SDx12Pass)
+	public:
 		virtual bool Initialize() override
 		{
 			if (PS == nullptr)

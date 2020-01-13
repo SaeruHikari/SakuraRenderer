@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="SakuraWPF.UserControls.DetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SakuraWPF.UserControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="200" MinWidth="240">
+    <Grid>
+        <TabControl Background="#FF232323" Margin="0">
+            <TabItem x:Name="SceneViewTab" Header="Details" Foreground="#FF609EE9" Background="#FF232323" Margin="-2,-2,-2,0">
+                <DockPanel Margin="0" Name ="DetailsDock" UseLayoutRounding="False" LastChildFill="False" HorizontalAlignment="Stretch">
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

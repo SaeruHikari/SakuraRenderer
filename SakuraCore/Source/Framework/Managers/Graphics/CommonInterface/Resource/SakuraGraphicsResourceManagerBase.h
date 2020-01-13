@@ -1,7 +1,7 @@
 #pragma once
 #include <map>
 #include "Framework/GraphicTypes/GraphicsCommon/GraphicsConfigs.h"
-#include "Interface/IRuntimeModule.h"
+#include "Framework/Interface/IRuntimeModule.h"
 #include "Framework/GraphicTypes/GraphicsInterface/ISRenderTarget.h"
 #include "Framework/GraphicTypes/GraphicsInterface/ISTexture.h"
 
@@ -18,7 +18,10 @@ namespace SGraphics
 		SakuraGraphicsResourceManagerBase(const SakuraGraphicsResourceManagerBase& rhs) = delete;
 		SakuraGraphicsResourceManagerBase& operator=(const SakuraGraphicsResourceManagerBase& rhs) = delete;
 	public:
-		~SakuraGraphicsResourceManagerBase() {};
+		~SakuraGraphicsResourceManagerBase() 
+		{
+
+		};
 		// Initialize function.
 		virtual bool Initialize() = 0;
 		// Finalize function.

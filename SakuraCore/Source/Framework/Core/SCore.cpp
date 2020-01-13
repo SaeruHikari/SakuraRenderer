@@ -45,8 +45,9 @@ bool SakuraCore::SCore::SakuraInitializeGraphicsCore(HWND hwnd, UINT width, UINT
 		mGraphicsManager->OnResize(width, height);
 		SakuraInitScene();
 	}
-	else return false;
-	bRunning = true;
+	else 
+		return false;
+	
 	return true;
 }
 
@@ -60,12 +61,13 @@ int SakuraCore::SCore::Run()
 	{
 		MSG msg = { 0 };
 		mTimer->Reset();
+		bRunning = true;
 		while (msg.message != WM_QUIT)
 		{
 			// If there are Window messages then process them.
-			if (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE))
+			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
-				PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
+				//PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			} 
@@ -93,6 +95,18 @@ int SakuraCore::SCore::Run()
 	return 0;
 }
 
+void SakuraCore::SCore::ShutDown()
+{
+	mAppPaused = true;
+	bRunning = false;
+	mTimer.reset();
+	CurrScene.reset();
+	CurrSceneMng.reset();
+	::SendMessage(mGraphicsManager->GetHwnd(), WM_CLOSE, 0, 0);
+	mGraphicsManager.reset();
+	delete this;
+}
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -103,8 +117,9 @@ void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	}
 	static bool LMDown = false;
 	static bool RMDown = false;
-	static bool Resizing = false;
-
+	static bool mMinimized = false;
+	static bool mMaximized = false;
+	static bool mResizing = false;
 	switch (msg)
 	{
 		// WM_ACTIVATE is sent when the window is activated or deactivated.
@@ -124,15 +139,64 @@ void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		return; 
 		// WM_SIZE is sent when the user resizes the window.
 	case WM_SIZE:
-		if(bRunning && !Resizing)
-			mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
+		if (bRunning)
+		{
+			if (wParam == SIZE_MINIMIZED)
+			{
+				mAppPaused = true;
+				mMinimized = true;
+				mMaximized = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				mAppPaused = false;
+				mMinimized = false;
+				mMaximized = true;
+				mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+
+				// Restoring from minimized state?
+				if (mMinimized)
+				{
+					mAppPaused = false;
+					mMinimized = false;
+					mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
+				}
+
+				// Restoring from maximized state?
+				else if (mMaximized)
+				{
+					mAppPaused = false;
+					mMaximized = false;
+					mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
+				}
+				else if (mResizing)
+				{
+					// If user is dragging the resize bars, we do not resize
+					// the buffers here because as the user continuously
+					// drags the resize bars, a stream of WM_SIZE messages are
+					// sent to the window, and it would be pointless (and slow)
+					// to resize for each WM_SIZE message received from dragging
+					// the resize bars.  So instead, we reset after the user is
+					// done resizing the window and releases the resize bars, which
+					// sends a WM_EXITSIZEMOVE message.
+				}
+				else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				{
+					mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
+				}
+			}
+		}
 		return; 
 		// WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
 	case WM_ENTERSIZEMOVE:
 		if (bRunning)
 		{
-			Resizing = true;
 			mAppPaused = true;
+			mResizing = true;
+			mTimer->Stop();
 		}
 		return;
 		// WM_EXITSIZEMOVE is sent when the user releases the resize bars.
@@ -141,7 +205,9 @@ void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		if (bRunning)
 		{
 			mAppPaused = false;
-			Resizing = false;
+			mResizing = false;
+			mTimer->Start();
+			mGraphicsManager->OnResize(LOWORD(lParam), HIWORD(lParam));
 		}
 		return; 
 		// WM_DESTROY is sent when the window is being destroyed.
@@ -189,13 +255,17 @@ void SakuraCore::SCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEMOVE:
 		if (bRunning)
 		{
-			if(RMDown)
+			if((GetAsyncKeyState(VK_RBUTTON) & 0x8000))
 				mGraphicsManager->OnMouseMove(SAKURA_INPUT_MOUSE_RBUTTON, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-			else if(LMDown)
+			else if((GetAsyncKeyState(VK_LBUTTON) & 0x8000))
 				mGraphicsManager->OnMouseMove(SAKURA_INPUT_MOUSE_LBUTTON, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		}
 		return; 
 	case WM_KEYUP:
+	case WM_PAINT:
+	case WM_ERASEBKGND:
+		return;
+	default:
 		return;
 	}
 }
@@ -234,3 +304,14 @@ void SakuraCore::SCore::MsgSakuraGraphicsCore(UINT Msg, UINT param0, UINT param1
 		mGraphicsManager->OnKeyDown((SAKURA_INPUT_KEY)param0);
 	}
 }
+
+SScene::SakuraSceneNode* SakuraCore::SCore::GetNode(SakuraSceneNode* parent, UINT Index)
+{
+	if (parent == nullptr)
+		return CurrScene->GetRoot();
+	else
+	{
+		return parent->GetChild(Index);
+	}
+}
+

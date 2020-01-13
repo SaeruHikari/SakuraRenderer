@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 #include "Framework/GraphicTypes/GraphicsCommon/GraphicsConfigs.h"
 
 namespace SGraphics

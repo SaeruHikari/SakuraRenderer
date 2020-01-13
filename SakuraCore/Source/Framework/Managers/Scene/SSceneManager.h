@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface/IRuntimeModule.h"
+#include "Framework/Interface/IRuntimeModule.h"
 #include "Framework/Core/Scene/SakuraScene.h"
 #include "Framework/GraphicTypes/RenderScene/SRenderScene.hpp"
 #include "Framework/Core/Object/SStaticMesh.h"
@@ -12,7 +12,8 @@ namespace SakuraCore
 	{
 	public:
 		SSceneManager();
-		SIndex RegistMesh(SStaticMesh* data, std::string matname = "NULL", ERenderLayer renderLayer = E_Opaque);
+		SIndex RegistRenderItem(const std::string& geomName, const std::string& drawArgName,
+			std::string matname = "DefaultMat", ERenderLayer renderLayer = E_Opaque);
 		// Material need to be registed in graphics layer.
 		SMaterial* RegistOpaqueMat(const std::string& name, OpaqueMaterial& opaqueMat);
 

@@ -6,6 +6,7 @@ Details:
 #pragma once
 #include "Interface.hpp"
 #include "ObjectCommonInclude.h"
+#include "Framework/Core/Reflection/SakuraReflection.h"
 
 typedef xg::Guid SGuid;
 
@@ -15,7 +16,7 @@ namespace SakuraCore
 
 	class SakuraGraphicsManagerBase;
 	class SSceneManager;
-	SInterface ISSilentObject
+	struct ISSilentObject
 	{
 	protected:
 		inline static SakuraGraphicsManagerBase* pGraphicsManager = nullptr;
@@ -28,6 +29,9 @@ namespace SakuraCore
 		virtual ~ISSilentObject() {};
 		virtual SGuid GetID() { return ID; }
 		virtual void SetID(SGuid id) { ID = id; }
+		virtual int Serialize();
+		virtual char* GetSClassName() { return (char*)"ISSilentObject"; };
+		REFLECTION_ENABLE()
 	protected:
 		SGuid ID;
 	};
@@ -36,6 +40,11 @@ namespace SakuraCore
 	{
 	public:
 		ISTickObject() = default;
+		REFLECTION_ENABLE()
+		virtual char* GetSClassName() override
+		{
+			return (char*)"ISSilentObject"; 
+		};
 		// Initialize function.
 		virtual bool Initialize() = 0;
 		// Finalize function.

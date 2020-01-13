@@ -4,7 +4,7 @@ Description:	          Master class of Graphics Managers
 Details:		This entity pull graphic functions away from our application.
 *******************************************************************************************/
 #pragma once
-#include "Interface/IRuntimeModule.h"
+#include "Framework/Interface/IRuntimeModule.h"
 #include <windows.h>
 #include "SakuraCoreUtils.h"
 #include "Resource/SakuraGraphicsResourceManagerBase.h"
@@ -28,6 +28,10 @@ namespace SakuraCore
 		{
 			mhMainWnd = hwnd;
 		};
+		HWND GetHwnd()
+		{
+			return mhMainWnd;
+		}
 		virtual void Clear() = 0;
 		virtual void Draw() = 0;
 		virtual void Present() = 0;

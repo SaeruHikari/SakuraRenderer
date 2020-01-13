@@ -42,6 +42,7 @@ void SGraphics::SDx12ImGuiDebugger::Draw(ID3D12GraphicsCommandList* cmdList, Sak
 		static int counter = 0;
 		ImGui::Begin("Render Graph");   
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		
 		imnodes::BeginNodeEditor();
 		imnodes::StyleColorsDark();
 		for (size_t i = 0; i < frameGraph->RootNodes.size(); i++)
@@ -135,7 +136,7 @@ void SGraphics::SDx12ImGuiDebugger::DrawPassNode(SFG_PassNode* ToDraw, float lay
 		imnodes::BeginInputAttribute(std::hash<std::string>{}(PassNode->mName + PassNode->InputResources[j].name + "Input"));
 		ImGui::Text(PassNode->InputResources[j].name.c_str());
 		imnodes::EndAttribute();
-		if (bFirstDraw && PassNode->InputResources[j].writer != "NULL")
+		if (bFirstDraw && PassNode->InputResources[j].writer != "null")
 		{
 			std::pair<int, int> _pair;
 			_pair.first = std::hash<std::string>{}(PassNode->InputResources[j].writer + PassNode->InputResources[j].name + "Output");

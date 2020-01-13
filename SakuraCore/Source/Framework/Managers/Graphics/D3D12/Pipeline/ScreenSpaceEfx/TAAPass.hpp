@@ -10,6 +10,8 @@ namespace SGraphics
 		{
 
 		}
+		REFLECTION_ENABLE(SDx12Pass)
+	public:
 		virtual bool Initialize(std::vector<ID3D12Resource*> srvResources) override
 		{
 			if (PS == nullptr)

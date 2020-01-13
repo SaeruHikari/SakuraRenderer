@@ -1,4 +1,13 @@
 ﻿
 FD:\Coding\Sakura\SakuraWPF\App.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\DetailView.xaml;;
 FD:\Coding\Sakura\SakuraWPF\UserControls\MainWindow.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\BoolSwitch.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\ColorPicker.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\EnumSet.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\FloatSet.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\FloatSlider.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\StringSet.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\Properties\SVectorSet.xaml;;
+FD:\Coding\Sakura\SakuraWPF\UserControls\SceneView.xaml;;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 #include "Common/EngineDefinations/MeshData.hpp"
 #include "Common/HikaUtils/HikaCommonUtils/GeometryGenerator.h"
 
@@ -16,6 +16,11 @@ namespace SEngine
 	class SStaticMesh : SImplements ISSilentObject
 	{
 	public:
+		SStaticMesh(const StaticMeshData& meshData)
+		{
+			ISSilentObject::ISSilentObject();
+
+		}
 		SStaticMesh()
 		{
 			ISSilentObject::ISSilentObject();

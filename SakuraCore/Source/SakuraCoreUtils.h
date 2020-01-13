@@ -1,5 +1,59 @@
+/*****************************************************************************************
+								 Copyrights   SaeruHikari
+CreateDate:								2020.1.5
+Description:				Sakura Core export type and utils.
+Details:				Includes reflection meta data, msg defines...
+*******************************************************************************************/
 #pragma once
+struct StringWrapper
+{
+	StringWrapper(char* _data)
+		:data(_data)
+	{
 
+	}
+	char* data = nullptr;
+};
+
+struct WStringWrapper
+{
+	WStringWrapper(wchar_t* _data)
+		:data(_data) {}
+	wchar_t* data = nullptr;
+};
+
+struct SVectorWrapper
+{
+	SVectorWrapper(float _x, float _y, float _z)
+		:x(_x), y(_y), z(_z){}
+	float x;
+	float y;
+	float z;
+};
+
+struct SPropertyDataWrapper
+{
+	SPropertyDataWrapper()
+	{
+		
+	}
+	~SPropertyDataWrapper()
+	{
+		delete SourceType;
+		delete PropName;
+		delete PropType;
+		delete PropDescription;
+	}
+	char* SourceType = nullptr;
+	char* PropName = nullptr;
+	char* PropType = nullptr;
+	char* PropDescription = nullptr;
+};
+struct SPropertyDataArrayWrapper
+{
+	SPropertyDataWrapper** wrappers = nullptr;
+	UINT num = 0;
+};
 typedef
 enum SAKURA_INPUT_MOUSE_TYPES
 {

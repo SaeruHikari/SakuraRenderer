@@ -15,9 +15,10 @@ namespace SakuraWPF.UserControls
     {
         protected bool bInitialized = false;
         //protected TextBlock TitleText;
-        public DispatcherTimer SysTimer = new DispatcherTimer();
         protected string Title;
         public SakuraWinformLib.Viewport MainViewPort = new SakuraWinformLib.Viewport();
+        public SceneView sceneView;
+        public DetailView detailsView;
         public double totalTime = 0;
         public double deltaTime = 0;
 
@@ -29,29 +30,14 @@ namespace SakuraWPF.UserControls
         public MainWindow()
         {
             InitializeComponent();
-            this.Activated += MainWindow_SourceInitialized;
-        }
-
-        protected void MainWindow_SourceInitialized(object sender, System.EventArgs e)
-        {
             ExitButton.Click += ExitButton_Click;
             TitleBar.MouseLeftButtonDown += TitleBar_MouseLeftButtonDown;
             MaxButton.Click += MaxButton_Click;
-
-            if (!bInitialized)
-            {
-                bInitialized = true;
-                SakuraCore.CreateSakuraCore((uint)CORE_GRAPHICS_API_CONF.SAKURA_DRAW_WITH_D3D12);
-                MainViewPort.BorderStyle = BorderStyle.None;
-                viewportHost.Child = MainViewPort;
-                IntPtr Hwnd = MainViewPort.Handle;
-                SakuraCore.InitSakuraGraphicsCore(Hwnd, (uint)MainViewPort.Width, (uint)MainViewPort.Height);
-                SakuraCore.Run();
-                //System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-                //timer.Interval = 1;
-                //timer.Tick += MasterTick;
-                //timer.Start();
-            }
+            // Initialize scene view.
+            sceneView = new SceneView(this);
+            SceneViewDock.Content = sceneView;
+            detailsView = new DetailView();
+            DetailsDock.Content = detailsView;
         }
 
         private void MaxButton_Click(object sender, RoutedEventArgs e)
@@ -90,6 +76,11 @@ namespace SakuraWPF.UserControls
 
         }
 
+        public void SceneViewTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            detailsView.RefreshActiveNode(sceneView.ActiveNode);
+        }
+
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             this.DragMove();
@@ -97,6 +88,7 @@ namespace SakuraWPF.UserControls
 
         private void ExitButton_Click(object sender, RoutedEventArgs e)
         {
+            SakuraCore.ShutDown();
             SakuraWPF.App.Current.Shutdown();
         }
 
@@ -108,5 +100,19 @@ namespace SakuraWPF.UserControls
             SakuraCore.TickSakuraCore(deltaTime);
         }
 
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (!bInitialized)
+            {
+                bInitialized = true;
+                SakuraCore.CreateSakuraCore((uint)CORE_GRAPHICS_API_CONF.SAKURA_DRAW_WITH_D3D12);
+                MainViewPort.BorderStyle = BorderStyle.None;
+                viewportHost.Child = MainViewPort;
+                IntPtr Hwnd = MainViewPort.Handle;
+                SakuraCore.InitSakuraGraphicsCore(Hwnd, (uint)MainViewPort.Width, (uint)MainViewPort.Height);
+                sceneView.InitializeSceneView();
+                SakuraCore.Run();
+            }
+        }
     }
 }

@@ -6,13 +6,38 @@ Details:				Includes transform(loc, rot, scale) etc...
 *******************************************************************************************/
 #pragma once
 #include <DirectXMath.h>
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 
 using namespace DirectX;
 
 namespace SakuraMath
 {
-	typedef DirectX::XMFLOAT3 SVector;
+	struct SVector : public DirectX::XMFLOAT3
+	{
+		SVector() = default;
+		SVector(float _x, float _y, float _z)
+		{
+			x = _x;
+			y = _y;
+			z = _z;
+		}
+		void operator*=(const SVector& toMul)
+		{
+			auto vec = XMLoadFloat3(this);
+			auto vec2 = XMLoadFloat3(&toMul);	
+			vec2 = vec* vec2;
+			XMStoreFloat3(this, vec2);
+		}
+		SVector& operator*(const SVector& toMul)
+		{
+			SVector result = {0, 0, 0};
+			auto vec = XMLoadFloat3(this);
+			auto vec2 = XMLoadFloat3(&toMul);
+			vec2 = vec * vec2;
+			XMStoreFloat3(&result, vec2);
+			return result;
+		}
+	};
 }
 
 namespace SakuraCore

@@ -2,6 +2,8 @@
 #include "SDxRendererGM.h"
 #include "../../../Core/Nodes/EngineNodes/SStaticMeshNode.hpp"
 #include "../../../GraphicTypes/FrameGraph/SakuraFrameGraph.h"
+#include "../CJsonObject/CJsonObject.hpp"
+#include "../HikaUtils/HikaCommonUtils/HikaCommonUtil.h"
 #define Sakura_Full_Effects
 //#define Sakura_Debug_PureColor
 
@@ -37,6 +39,28 @@
 #include "Pipeline/DeferredPass.hpp"
 #include "Debug/GBufferDebugPass.hpp"
 
+namespace SGraphics
+{
+	REFLECTION_ENGINE(
+	registration::class_<SkySpherePass>("SkySpherePass")
+		.constructor<ID3D12Device*>();
+	registration::class_<SsaoPass>("SsaoPass")
+		.constructor<ID3D12Device*>();
+	registration::class_<SMotionVectorPass>("SMotionVectorPass")
+		.constructor<ID3D12Device*>();
+	registration::class_<SGBufferPass>("SGBufferPass")
+		.constructor<ID3D12Device*>();
+	registration::class_<SDeferredPass>("SDeferredPass")
+		.constructor<ID3D12Device*>();
+	registration::class_<STaaPass>("STaaPass")
+		.constructor<ID3D12Device*>();
+	registration::class_<SGBufferDebugPass>("SGBufferDebugPass")
+		.constructor<ID3D12Device*>();
+	);
+}
+
+
+
 #define TINYEXR_IMPLEMENTATION
 #include "Includes/tinyexr.h"
 
@@ -46,6 +70,7 @@ namespace SGraphics
 	{
 		if (!SakuraD3D12GraphicsManager::Initialize())
 			return false;
+		GetFrameGraph()->Initialize();
 		BuildGeometry();
 
 		// Reset the command list to prep for initialization commands.
@@ -178,30 +203,37 @@ namespace SGraphics
 		}
 		//¡ý Do have dependency on dx12 resources
 		BindPassResources();
+		BuildFrameResources();
+		mCurrFrameResource = GetRenderScene()->GetFrameResource(mCurrFrameResourceIndex);
 
 		std::string DS = "DepthStencil";
+		//InitFGFromJson((char*)"Resources/RenderPipeline/StandardPipeline.json");
+		
+#pragma region GraphInit
 		// Pass declares:
+		
 #if defined(Sakura_Defferred)
 #if defined(Sakura_MotionVector)
 		auto mGbufferPass = GetFrameGraph()->
-			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, md3dDevice.Get(), false);
+			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, false, md3dDevice.Get(), false);
 		GetFrameGraph()->
-			RegistNamedPassNode<SMotionVectorPass>(ConsistingPasses::MotionVectorPassName, md3dDevice.Get());
+			RegistNamedPassNode<SMotionVectorPass>(ConsistingPasses::MotionVectorPassName, false, md3dDevice.Get());
 		auto mMotionVectorPassNode = GetFrameGraph()->GetNamedPassNode(ConsistingPasses::MotionVectorPassName);
 		mMotionVectorPassNode->ConfirmOutput(RT2Ds::MotionVectorRTName);
 #else
 		auto mGbufferPass = GetResourceManager()->
-			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, md3dDevice.Get(), true);
+			RegistNamedPassNode<SGBufferPass>(ConsistingPasses::GBufferPassName, false, md3dDevice.Get(), true);
 #endif
 		SFG_PassNode* mGbufferPassNode = GetFrameGraph()->
 			GetNamedPassNode(ConsistingPasses::GBufferPassName);
+		mGbufferPassNode->GetPass()->StartUp(mCommandList.Get());
 		mGbufferPassNode->ConfirmInput(GBufferPassResources, mMotionVectorPassNode);
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferPassName)
 			->ConfirmOutput(RT2Ds::GBufferRTNames[0], RT2Ds::GBufferRTNames[1],
 				RT2Ds::GBufferRTNames[2], RT2Ds::GBufferRTNames[3]);
 #if defined(Sakura_SSAO)
 		auto mSsaoPassNode = GetFrameGraph()->
-			RegistNamedPassNode<SsaoPass>(ConsistingPasses::SsaoPassName, md3dDevice.Get());
+			RegistNamedPassNode<SsaoPass>(ConsistingPasses::SsaoPassName, false, md3dDevice.Get());
 		mSsaoPassNode->GetPass()->StartUp(mCommandList.Get());
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SsaoPassName)
 			->ConfirmInput(
@@ -212,12 +244,9 @@ namespace SGraphics
 #endif
 #endif
 
-		BuildFrameResources();
-		mCurrFrameResource = GetRenderScene()->GetFrameResource(mCurrFrameResourceIndex);
-
 #if defined(Sakura_Defferred)
 		auto mDeferredPass = GetFrameGraph()->
-			RegistNamedPassNode<SDeferredPass>(ConsistingPasses::DeferredPassName, md3dDevice.Get());
+			RegistNamedPassNode<SDeferredPass>(ConsistingPasses::DeferredPassName, false, md3dDevice.Get());
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::DeferredPassName)
 			->ConfirmInput(
 				mGbufferPassNode->GetOutput(RT2Ds::GBufferRTNames[0]),
@@ -241,7 +270,7 @@ namespace SGraphics
 		brdfPass->Initialize();
 		//Update the viewport transform to cover the client area
 		auto mDrawSkyPassNode = GetFrameGraph()->
-			RegistNamedPassNode<SkySpherePass>(ConsistingPasses::SkySpherePassName, md3dDevice.Get());
+			RegistNamedPassNode<SkySpherePass>(ConsistingPasses::SkySpherePassName, false, md3dDevice.Get());
 		mMotionVectorPassNode->GetPass()->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Opaque));
 		GetFrameGraph()->GetNamedPassNode(ConsistingPasses::SkySpherePassName)
 			->ConfirmInput(RT3Ds::SkyCubeRTNames[0], RT3Ds::SkyCubeRTNames[1], RT3Ds::SkyCubeRTNames[2],
@@ -253,7 +282,7 @@ namespace SGraphics
 
 #if defined(Sakura_TAA)
 		auto mTaaPass = GetFrameGraph()->
-			RegistNamedPassNode<STaaPass>(ConsistingPasses::TaaPassName, md3dDevice.Get());
+			RegistNamedPassNode<STaaPass>(ConsistingPasses::TaaPassName, true, md3dDevice.Get());
 		GetFrameGraph()->
 			GetNamedPassNode(ConsistingPasses::TaaPassName)
 			->ConfirmOutput(RT2Ds::TAARTNames[1], RT2Ds::TAARTNames[2]);
@@ -268,7 +297,7 @@ namespace SGraphics
 #if defined(Sakura_Defferred)
 	#if defined(Sakura_GBUFFER_DEBUG)
 			auto mGBufferDebugPass = GetFrameGraph()->
-				RegistNamedPassNode<SGBufferDebugPass>(ConsistingPasses::GBufferDebugPassName, md3dDevice.Get());
+				RegistNamedPassNode<SGBufferDebugPass>(ConsistingPasses::GBufferDebugPassName, true, md3dDevice.Get());
 			GetFrameGraph()->GetNamedPassNode(ConsistingPasses::GBufferDebugPassName)
 				->ConfirmInput(
 					mGbufferPassNode->GetOutput(RT2Ds::GBufferRTNames[0]),
@@ -282,6 +311,7 @@ namespace SGraphics
 					GetFrameGraph()->GetNamedPassNode(ConsistingPasses::TaaPassName));
 	#endif
 #endif
+#pragma endregion 
 
 #if defined(Sakura_IBL_HDR_INPUT)
 		std::shared_ptr<SHDR2CubeMapPass> mHDRUnpackPass = nullptr;
@@ -513,10 +543,60 @@ namespace SGraphics
 		return true;
 	}
 
+	void SDxRendererGM::InitFGFromJson(std::string jsonPath)
+	{
+		auto jsonstr = HikaCommonUtils::readFileIntoString((char*)jsonPath.c_str());
+		neb::CJsonObject oJson(jsonstr);
+		for (auto i = 0u; i < oJson["Passes"].GetArraySize(); i++)
+		{
+			std::string SinglePass;
+			if (oJson["Passes"][i].GetKey(SinglePass))
+			{
+				auto singlePassNode = GetFrameGraph()->
+					RegistNamedPassNode(SinglePass, oJson["Passes"][i][SinglePass]["Type"].ToString(), md3dDevice.Get());
+			}
+		}
+		for(auto i = 0u; i < oJson["Passes"].GetArraySize(); i++)
+		{
+			std::string SinglePass;
+			if (oJson["Passes"][i].GetKey(SinglePass))
+			{
+				auto singlePassNode = GetFrameGraph()->GetNamedPassNode(SinglePass);
+				std::vector<SFG_PassNode*> dependencies;
+				dependencies.resize(oJson["Passes"][i][SinglePass]["Dependencies"].GetArraySize());
+				for (auto j = 0u; j < dependencies.size(); j++)
+				{
+					dependencies[j] = GetFrameGraph()->GetNamedPassNode(oJson["Passes"][SinglePass]["Dependencies"][j].ToString());
+				}
+				std::vector<SFG_ResourceHandle> inputs;
+				inputs.resize(oJson["Passes"][i][SinglePass]["ResourceIn"].GetArraySize());
+				for (auto j = 0u; j < inputs.size(); j++)
+				{
+					SFG_ResourceHandle handle;
+					inputs[j].name = oJson["Passes"][i][SinglePass]["ResourceIn"][j]["Name"].ToString();
+					inputs[j].writer = oJson["Passes"][i][SinglePass]["ResourceIn"][j]["Writer"].ToString();
+				}
+
+				singlePassNode->ConfirmInput(dependencies, inputs);
+
+				std::vector<std::string> outputs;
+				outputs.resize(oJson["Passes"][i][SinglePass]["ResourceOut"].GetArraySize());
+				for (auto j = 0u; j < outputs.size(); j++)
+				{
+					outputs[j] = oJson["Passes"][i][SinglePass]["ResourceOut"][j]["Name"].ToString();
+				}
+				singlePassNode
+					->ConfirmOutput(outputs);
+
+				singlePassNode->GetPass()->StartUp(mCommandList.Get());
+			}
+		}
+	}
+
 	void SDxRendererGM::OnResize(UINT Width, UINT Height)
 	{
 		SakuraD3D12GraphicsManager::OnResize(Width, Height);
-		mCamera.SetLens(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+		mCamera.SetLens(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 20000.0f);
 		//
 #if defined(Sakura_Defferred)
 		for (int i = 0; i < GBufferRTNum; i++)
@@ -563,6 +643,10 @@ namespace SGraphics
 			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_GBufferDebug));
 		GetFrameGraph()->GetNamedRenderPass(ConsistingPasses::MotionVectorPassName)
 			->PushRenderItems(GetRenderScene()->GetRenderLayer(ERenderLayer::E_Opaque));
+
+		GetFrameGraph()->Execute(&DepthStencilView(), 
+			(ISRenderTarget*)GetFrameGraph()->GetNamedRenderResource(CurrBufName), mCurrFrameResource);
+
 #if defined(Sakura_TAA)
 		auto mTaaPass = GetFrameGraph()->
 			GetNamedRenderPass<STaaPass>(ConsistingPasses::TaaPassName);
@@ -913,13 +997,10 @@ namespace SGraphics
 		mMainPassCB.EyePosW = mCamera.GetPosition3f();
 		mMainPassCB.RenderTargetSize = XMFLOAT2((float)mGraphicsConfs->clientWidth, (float)mGraphicsConfs->clientHeight);
 		mMainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / mGraphicsConfs->clientWidth, 1.0f / mGraphicsConfs->clientHeight);
-#if defined(REVERSE_Z)
-		mMainPassCB.FarZ = 1.0f;
-		mMainPassCB.NearZ = 1000.0f;
-#else
-		mMainPassCB.NearZ = 1.0f;
-		mMainPassCB.FarZ = 1000.0f;
-#endif
+
+		mMainPassCB.FarZ = mCamera.GetFarZ();
+		mMainPassCB.NearZ = mCamera.GetNearZ();
+
 		mMainPassCB.TotalTime = 1;
 		mMainPassCB.DeltaTime = 1;
 
@@ -1125,7 +1206,6 @@ namespace SGraphics
 	
 	void SDxRendererGM::BuildRenderItems()
 	{
-		/**/
 #if defined(Sakura_Full_Effects)
 		SDxRenderItem opaqueRitem;
 		XMStoreFloat4x4(&opaqueRitem.World, XMMatrixScaling(.2f, .2f, .2f) * 
@@ -1138,7 +1218,7 @@ namespace SGraphics
 		opaqueRitem.IndexCount = opaqueRitem.Geo->DrawArgs["mesh"].IndexCount;
 		opaqueRitem.StartIndexLocation = opaqueRitem.Geo->DrawArgs["mesh"].StartIndexLocation;
 		opaqueRitem.BaseVertexLocation = opaqueRitem.Geo->DrawArgs["mesh"].BaseVertexLocation;
-		GetRenderScene()->RegistRenderItem(opaqueRitem, E_Opaque);
+		//GetRenderScene()->RegistRenderItem(opaqueRitem, E_Opaque);
 #endif
 		SDxRenderItem screenQuad;
 		screenQuad.World = MathHelper::Identity4x4();
@@ -1192,7 +1272,6 @@ namespace SGraphics
 		}
 #endif
 	}
-
 
 	void SDxRendererGM::CreateRtvAndDsvDescriptorHeaps()
 	{
@@ -1276,7 +1355,7 @@ namespace SGraphics
 		for (int i = 0; i < 6; ++i)
 		{
 			mCubeMapCamera[i].LookAt(center, targets[i], ups[i]);
-			mCubeMapCamera[i].SetLens(0.5f * XM_PI, 1.0f, 0.1f, 1000.0f);
+			mCubeMapCamera[i].SetLens(0.5f * XM_PI, 1.0f, 0.1f, 20000.0f);
 			mCubeMapCamera[i].UpdateViewMatrix();
 		}
 	}

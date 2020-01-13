@@ -1,5 +1,5 @@
 #pragma once
-#include "Interface/ISObject.h"
+#include "Framework/Interface/ISObject.h"
 #include "Framework/GraphicTypes/GraphicsCommon/GraphicsConfigs.h"
 #include "..\D3D12\FrameResource.h"
 #include "SFG_ResourceHandle.h"
@@ -19,11 +19,19 @@ namespace SGraphics
 		friend class SDx12ImGuiDebugger;
 		friend class SGraphics::SakuraFrameGraph;
 	public:
-		SFG_PassNode(SakuraFrameGraph* frameGraph, const std::string& name)
-			:ISSilentObject(), mName(name)
+		SFG_PassNode(SakuraFrameGraph* frameGraph, const std::string& name, bool renderToScreen = false)
+			:ISSilentObject(), mName(name), bRenderToScreen(renderToScreen)
 		{
 			pFrameGraph = frameGraph;
 		}
+		template<typename... Params>
+		__forceinline void Create(const std::string& _type, Params... params)
+		{
+			rttr::type rtype = rttr::type::get_by_name(_type);
+			auto var = rtype.create({ params... });
+			SGraphics::SRHIPass* ptr = &var.get_value<SGraphics::SRHIPass>();
+		}
+
 		template<typename PassClass, typename... Params,
 			typename std::enable_if<std::is_convertible<PassClass*, SRHIPass*>::value>::type * = nullptr>
 		__forceinline void Create(Params... params)
@@ -35,6 +43,16 @@ namespace SGraphics
 			return mPass.get();
 		}
 	public:
+		struct Functor
+		{
+			Functor(SFG_PassNode* _node);
+			SFG_PassNode* node = nullptr;
+			SResourceCPUHandle* dsv;
+			SFrameResource* frameResource;
+			ISRenderTarget* backBuf;
+			void operator()();
+		}functor = Functor(this);
+
 		SFG_ResourceHandle GetOutput(const std::string& resourceName);
 	public:
 		virtual void Setup();
@@ -42,8 +60,6 @@ namespace SGraphics
 		virtual void Execute(SCommandList* cmdList, SResourceCPUHandle* dsv, SFrameResource* frameResource);
 		virtual void Execute(SCommandList* cmdList, SResourceCPUHandle* dsv, SFrameResource* frameResource, SGraphics::ISRenderTarget* backbuffer);
 	public:
-		void ConfirmInput_Internal(const std::vector<std::string>& ResourcesIn);
-
 		template<typename... Resources>
 		void ConfirmInput(Resources... resources)
 		{
@@ -59,7 +75,15 @@ namespace SGraphics
 			OutputResources.reserve(sizeof...(resources));
 			ConfirmOutput_Internal(resources...);
 		}
+
+		SCommandList* GetCmdList();
+		void ClearCmd();
+
 	private:
+		void ConfirmInput_Internal(const std::vector<std::string>& ResourcesIn);
+		void ConfirmOutput_Internal(const std::vector<std::string>& ResourcesOut);
+		void ConfirmInput_Internal(const std::vector<SFG_PassNode*>& PassesIn);
+		void ConfirmInput_Internal(const std::vector<SFG_ResourceHandle>& HandlesIn);
 		template<typename Resource,
 			typename std::enable_if<std::is_convertible<Resource*, std::string*>::value>::type * = nullptr>
 			void ConfirmInput_Internal(const Resource& resource)
@@ -146,6 +170,7 @@ namespace SGraphics
 		std::vector<SFG_PassNode*> PurePassPrevs;
 		std::unique_ptr<SGraphics::SRHIPass> mPass;
 		SakuraFrameGraph* pFrameGraph = nullptr;
+		bool bRenderToScreen = false;
 		bool bCompiled = false;
 	};
 }

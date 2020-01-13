@@ -127,10 +127,12 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;SAKURACORE_EXPORTS;_WINDOWS;_USRDLL;_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;SAKURACORE_EXPORTS;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USRDLL;_AMD64_;RTTR_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Coding\Sakura\SakuraCore\Source\Common\Thirdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -197,6 +199,16 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\HikaCommonUtil.h" />
     <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.h" />
     <ClInclude Include="Source\Common\HikaUtils\HikaCommonUtils\TextureLoader.hpp" />
+    <ClInclude Include="Source\Common\Thirdparty\CJsonObject\cJSON.h" />
+    <ClInclude Include="Source\Common\Thirdparty\CJsonObject\CJsonObject.hpp" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\Common\MetaLib.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\Common\Pool.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\JobSystem\ConcurrentQueue.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\JobSystem\JobBucket.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\JobSystem\JobHandle.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\JobSystem\JobNode.h" />
+    <ClInclude Include="Source\Common\Thirdparty\Job\JobSystem\JobSystem.h" />
+    <ClInclude Include="Source\Framework\Core\Reflection\SakuraReflection.h" />
     <ClInclude Include="Source\Common\Thirdparty\guid.hpp" />
     <ClInclude Include="Source\Common\Thirdparty\Imgui\imconfig.h" />
     <ClInclude Include="Source\Common\Thirdparty\Imgui\imgui.h" />
@@ -210,6 +222,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\Core\Nodes\EngineNodes\SStaticMeshNode.hpp" />
     <ClInclude Include="Source\Framework\Core\Object\SMaterial.h" />
     <ClInclude Include="Source\Framework\Core\Object\SStaticMesh.h" />
+    <ClInclude Include="Source\Framework\GraphicTypes\D3D12\CommandBuffer.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\SDescriptorHeap.hpp" />
     <ClInclude Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.h" />
@@ -234,6 +247,10 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISRenderTarget.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\GraphicsInterface\ISTexture.h" />
     <ClInclude Include="Source\Framework\GraphicTypes\RenderScene\SRenderScene.hpp" />
+    <ClInclude Include="Source\Framework\Interface\Interface.hpp" />
+    <ClInclude Include="Source\Framework\Interface\IRuntimeModule.h" />
+    <ClInclude Include="Source\Framework\Interface\ISObject.h" />
+    <ClInclude Include="Source\Framework\Interface\ObjectCommonInclude.h" />
     <ClInclude Include="Source\Framework\Managers\Graphics\CommonInterface\Resource\SakuraGraphicsResourceManagerBase.h" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Debug\GBufferDebugPass.hpp" />
     <ClInclude Include="Source\Framework\Managers\Graphics\D3D12\Pipeline\DeferredPass.hpp" />
@@ -269,6 +286,8 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\GameTimer.cpp" />
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\GeometryGenerator.cpp" />
     <ClCompile Include="Source\Common\HikaUtils\HikaCommonUtils\MathHelper.cpp" />
+    <ClCompile Include="Source\Common\Thirdparty\CJsonObject\cJSON.c" />
+    <ClCompile Include="Source\Common\Thirdparty\CJsonObject\CJsonObject.cpp" />
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imgui.cpp" />
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imgui_demo.cpp" />
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imgui_draw.cpp" />
@@ -276,7 +295,14 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imgui_widgets.cpp" />
     <ClCompile Include="Source\Common\Thirdparty\Imgui\imnodes.cpp" />
+    <ClCompile Include="Source\Common\Thirdparty\Job\JobSystem\JobBucket.cpp" />
+    <ClCompile Include="Source\Common\Thirdparty\Job\JobSystem\JobHandle.cpp" />
+    <ClCompile Include="Source\Common\Thirdparty\Job\JobSystem\JobNode.cpp" />
+    <ClCompile Include="Source\Common\Thirdparty\Job\JobSystem\JobSystem.cpp" />
+    <ClCompile Include="Source\Framework\Core\Nodes\EngineNodes\SStaticMeshNode.cpp" />
+    <ClCompile Include="Source\Framework\Core\Nodes\SakuraSceneNode.cpp" />
     <ClCompile Include="Source\Framework\Core\Object\SStaticMesh.cpp" />
+    <ClCompile Include="Source\Framework\GraphicTypes\D3D12\CommandBuffer.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SD3DCamera.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\SDx12Pass.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\D3D12\Utils\d3dUtil.cpp" />
@@ -288,6 +314,7 @@ xcopy /r /y $(ProjectDir)Source\$(ProjectName)Utils.h $(SolutionDir)Libs</Comman
     <ClCompile Include="Source\Framework\GraphicTypes\Debugger\DirectX\SDx12ImGuiDebugger.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\FrameGraph\SakuraFrameGraph.cpp" />
     <ClCompile Include="Source\Framework\GraphicTypes\FrameGraph\SFG_PassNode.cpp" />
+    <ClCompile Include="Source\Framework\Interface\ISObject.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\Resource\SDxResourceManager.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SDxRendererGM.cpp" />
     <ClCompile Include="Source\Framework\Managers\Graphics\D3D12\SakuraD3D12GraphicsManager.cpp" />

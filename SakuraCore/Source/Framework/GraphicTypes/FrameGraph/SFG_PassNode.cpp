@@ -63,6 +63,13 @@ void SGraphics::SFG_PassNode::Execute(SCommandList* cmdList, SResourceCPUHandle*
 
 
 
+SGraphics::SCommandList* SGraphics::SFG_PassNode::GetCmdList() { return mPass->GetCmdList(); };
+
+void SGraphics::SFG_PassNode::ClearCmd()
+{
+	return mPass->ClearCmd();
+}
+
 void SGraphics::SFG_PassNode::Execute(SCommandList* cmdList, SResourceCPUHandle* dsv,
 	SFrameResource* frameResource, ISRenderTarget* backbuffer)
 {
@@ -74,14 +81,62 @@ void SGraphics::SFG_PassNode::Execute(SCommandList* cmdList, SResourceCPUHandle*
 
 void SGraphics::SFG_PassNode::ConfirmInput_Internal(const std::vector<std::string>& ResourcesIn)
 {
-	InputResources.resize(ResourcesIn.size());
-	for (size_t i = 0; i < ResourcesIn.size(); i++)
+	size_t _ori = InputResources.size();
+	InputResources.resize(InputResources.size() + ResourcesIn.size());
+	for (size_t i = _ori; i < InputResources.size(); i++)
 	{
 		InputResources[i].name = ResourcesIn[i];
+	}
+}
+
+void SGraphics::SFG_PassNode::ConfirmInput_Internal(const std::vector<SFG_ResourceHandle>& HandlesIn)
+{
+	for (size_t i = 0; i < HandlesIn.size(); i++)
+	{
+		auto handle = HandlesIn[i];
+		InputResources.push_back(handle);
+	}
+}
+
+void SGraphics::SFG_PassNode::ConfirmOutput_Internal(const std::vector<std::string>& ResourcesOut)
+{
+	for (size_t i = 0; i < ResourcesOut.size(); i++)
+	{
+		auto resource = ResourcesOut[i];
+		SFG_ResourceHandle handle;
+		handle.name = resource;
+		handle.writer = mName;
+		OutputResources.push_back(handle);
+	}
+}
+
+void SGraphics::SFG_PassNode::ConfirmInput_Internal(const std::vector<SFG_PassNode*>& PassesIn)
+{
+	for (size_t i = 0; i < PassesIn.size(); i++)
+	{
+		auto pass = PassesIn[i];
+		AddInputPass(pass);
+		if (std::find(PurePassPrevs.begin(), PurePassPrevs.end(), pass) == PurePassPrevs.end())
+			PurePassPrevs.push_back(pass);
 	}
 }
 
 SGraphics::SFG_PassNode* SGraphics::SFG_PassNode::GetNamedNode(std::string name)
 {
 	return pFrameGraph->GetNamedPassNode(name);
+}
+
+SGraphics::SFG_PassNode::Functor::Functor(SFG_PassNode* _node)
+  :node(_node)
+{
+
+}
+
+void SGraphics::SFG_PassNode::Functor::operator()()
+{
+	auto cmdList = node->mPass->GetCmdList();
+	if (node->bRenderToScreen)
+		node->Execute(cmdList, dsv, frameResource, backBuf);
+	if (node->OutputResources.size() > 0)
+		node->Execute(cmdList, dsv, frameResource);
 }
